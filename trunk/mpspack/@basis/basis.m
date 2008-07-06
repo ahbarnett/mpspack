@@ -9,12 +9,10 @@ classdef basis < handle
           % the type of basis
     end 
     methods (Abstract)
-        [A, A1, A2] = eval(b,pts) 
+        [A, An, Ax, Ay] = eval(b,pts) 
                                 % Evaluate a basis on a set of points
                                 % A=eval(pts) returns only fct. values
-                                % [A An]=eval(pts) returns fct. values plus
-                                % normal derivatives.
-                                % [A Ax Ay] returns fct. values plus x,y
+                                % [A An Ax Ay] returns fct. values plus x,y
                                 % derivatives
                                 
     end
