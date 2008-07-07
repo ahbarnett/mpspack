@@ -1,7 +1,0 @@
-% TRAPRULE  quadrature points and weights for composite N+1-point trapezoid rule
-
-function [x w] = traprule(N)
-
-x = 2*(N:-1:0)'/N - 1;             % note: same ordering +1 -> -1 as clencurt
-w = (2/N)*ones(1, N+1);
-w(1) = 1/N; w(N+1) = w(1);
