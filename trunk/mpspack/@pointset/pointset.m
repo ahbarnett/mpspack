@@ -9,13 +9,14 @@ classdef pointset < handle
     end
 
     methods
-        function pts=pointset(x,nx)
+        function pts = pointset(x,nx)
             pts.x=[]; pts.nx=[];
             if nargin<2, nx=[]; end;
             if nargin<1, x=[]; end;
             pts.x=x; pts.nx=nx;
         end
 
-
+        h = plot(pts)
+        
     end
 end

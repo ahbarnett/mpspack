@@ -1,5 +1,7 @@
 % CLENCURT  nodes x (Chebyshev points) and weights w
 %           for Clenshaw-Curtis quadrature
+%
+%   Trefethen book, modified by Barnett to return x in increasing order
 
   function [x,w] = clencurt(N)
   theta = pi*(0:N)'/N; x = cos(theta);
@@ -13,4 +15,6 @@
     for k=1:(N-1)/2, v = v - 2*cos(2*k*theta(ii))/(4*k^2-1); end
   end
   w(ii) = 2*v/N;
-
+  % now flip the order...
+  x = x(end:-1:1); w = w(end:-1:1);
+  

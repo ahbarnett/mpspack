@@ -1,7 +1,7 @@
 classdef utils
 
   methods(Static)
-    v = approxpolygon(seglist, pmlist)
+    % none
   end
 
 end
