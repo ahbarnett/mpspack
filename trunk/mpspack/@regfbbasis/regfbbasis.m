@@ -1,9 +1,13 @@
 classdef regfbbasis < handle & basis
 
-    % Basis of regular Fourier-Bessel functions.
-
+    % REGFBBASIS - create a regular Fourier-Bessel (cylindrical J-exp) basis set
+    %
+    %  b = REGFBBASIS(origin, N, realflag, k) creates a regular FB basis
+    %   object.
+    %
     % To Do:
-    % * only calc Ax Ay if asked for them (more efficient)
+    % * only calc Ax Ay if asked for them (more efficient), not An ?
+    % * re-order so -N...N, with an Noffset
     
     properties
         origin   % Origin of the Fourier-Bessel fct.
@@ -12,9 +16,9 @@ classdef regfbbasis < handle & basis
     end
 
     methods
-        function regfb = regfbbasis(origin,N,realflag,k)     % constructor
-                           % Alex might vote instead for an options argument
-                           % so opts.realflag etc allows for other flags.
+        function regfb = regfbbasis(origin, N, realflag, k)     % constructor
+                           % An idea: instead have an options argument
+                           % so opts.realflag etc allows for other flags?
             if nargin<4, k=NaN; end;
             if nargin<3 | isempty(realflag)  % allows [] input
               realflag=1;           % By default use real arithmetic

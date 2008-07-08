@@ -3,7 +3,7 @@
 % adapted from ~/physics/leslie/latticesum/test_basis_and_multipole.m
 %
 % To Do:
-% * prefer [A Ax Ay] output args
+% * prefer [A Ax Ay] output args ?
 % * reg FB: fix |x|=0 NaN problem
 % * check y-derivs too
 
@@ -54,9 +54,10 @@ for type = 1:2;
     caxis(c*[-1 1]); set(gca, 'ydir', 'normal'); axis equal tight, end
   subplotspace('vertical', -10); subplotspace('horizontal', -15);
   if ~realflag, figure('name', sprintf('%d: FD err in Im[du_j/dn(x)]', type));
-  for j=1:numel(js), subplot(nv, nh, j);
-    imagesc(g(2:end-1), g, imag(squeeze(unje(:,:,j))));
-    caxis(c*[-1 1]); set(gca, 'ydir', 'normal'); axis equal tight, end
-  subplotspace('vertical', -10); subplotspace('horizontal', -15);
+    for j=1:numel(js), subplot(nv, nh, j);
+      imagesc(g(2:end-1), g, imag(squeeze(unje(:,:,j))));
+      caxis(c*[-1 1]); set(gca, 'ydir', 'normal'); axis equal tight, end
+    subplotspace('vertical', -10); subplotspace('horizontal', -15);
   end  
 end
+

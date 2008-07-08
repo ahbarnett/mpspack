@@ -11,7 +11,8 @@
 %   of handles of segment objects s, using the list of senses pm (each element
 %   is the number +1 or -1). A warning is given if the segments do not appear
 %   to connect up at corners. Normals should all point outwards, ie away from
-%   the domain, otherwise a warning is given.
+%   the domain, otherwise a warning is given. If pm has only 1 element, it will
+%   be duplicated as necessary.
 %
 %  d = DOMAIN() or d = DOMAIN([], []) creates an exterior domain equal to the
 %   whole plane R^2.
@@ -28,9 +29,11 @@
 %
 % *** Not yet implemented :
 %
-% d = DOMAIN(s, pm, si, pmi, k) makes a domain with wavenumber k.
+%  d = DOMAIN(s, pm, si, pmi, k) makes a domain with wavenumber k.
 %
-% d = DOMAIN(s, pm, si, pmi, k, b) makes domain with a list of basis objects b.
+% *** Issues:
+% * should diam, center, x, w, boundingbox, etc, be precomputed on construction,
+%   only recomputed if a segment changes?
 %
 % See also: SEGMENT, domain/PLOT
 
@@ -45,7 +48,7 @@ classdef domain
         perim                     % perimeter (via quadr pts; spectral acc)
         area                      % area (via quadr pts; only O(1/M^2) acc)
         exterior                  % true if exterior domain (bnded complement) 
-        bases                     % pointer list to basis set objects (row vec)
+        bas                       % pointer list to basis set objects (cell arr)
         k                         % wavevector for domain
 %       cseg                      % numel(cloc)-by-2 corner-seg connectivity
 %       n                         % refractive index of domain
@@ -80,6 +83,8 @@ classdef domain
           fprintf('domain warning: probable bad sense of segment normals!\n')
           norout
         end
+        
+        d.bas = {};                            % initialize w/ no basis sets
       end
 
       function norout = normalscheck(d) % ....... check normal senses of domain
@@ -131,20 +136,51 @@ classdef domain
         end
       end
       
+      function bb = boundingbox(d) % ......... bounding box
+        x = d.x;
+        bb = [min(real(x)), max(real(x)), min(imag(x)), max(imag(x))];
+      end
+      
+      function xc = center(d) % .............. center of bounding box
+        bb = boundingbox(d);
+        xc = (bb(1)+bb(2)+1i*bb(3)+1i*bb(4))/2;
+      end
+      
+      function diam = diam(d) % .............. diameter of domain (about center)
+        diam = max(abs(d.x - center(d)));    % not quite optimal since uses box
+      end
+      
+      function [zz ii gx gy] = grid(d, dx) % ... make grid covering domain.
+      % ii is the indices to where in a regular grid the zz points are
+        if dx<=0, error('dx must be positive!'); end
+        bb = d.boundingbox;
+        bb(1) = dx * floor(bb(1)/dx);            % quantize to grid through 0
+        bb(3) = dx * floor(bb(3)/dx);
+        gx = bb(1):dx:bb(2); gy = bb(3):dx:bb(4);         % plotting region
+        [xx yy] = meshgrid(gx, gy); zz = xx(:) + 1i*yy(:); ii = d.inside(zz);
+        zz = zz(ii);                             % keep only inside points
+      end
+      
       function deletecorner(d,j)
         d.cloc(j) = NaN;                 % note this doesn't shorten c arrays
+      end
+      
+      function Nf = Nf(d) % ................. total # of basis funcs in domain
+        Nf = 0;
+        for b = d.bas, Nf = Nf + b{1}.Nf; end    % cell array {1} feels clumsy
       end
       
       % methods defined by separate files...
       d = addconnectedsegs(d, s, pm, o)  % helper routine for constructor
       h = plot(d, o)                     % domain plot: o is plot opts struct
+      d = addregfbbasis(d, origin, N, realflag, k) % adds reg FB basis object
+      [A An Ax Ay] = evalbases(d, p)     % evaluate all basis funcs in domain
       
-      % ****** not yet implemented *****
+      % ****** not yet implemented ***** ( low priority, mostly)
       checktopology(d)             % checks all pieces in interior, normals
       d = requadrature(d, M, type, inds) % resets M, quadr, in some segments
       d = subtract(d, dint)              % remove (exclude) domain dint from d
       d = changek(d, k)                  % changes wave# of basis sets in domain
-      d = addbasis(d, b)                 % adds a basis family object to domain
     end
     
     % --------------------------------------------------------------------
