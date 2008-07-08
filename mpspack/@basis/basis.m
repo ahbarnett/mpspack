@@ -4,9 +4,10 @@ classdef basis < handle
     % common for all basis objects.
     
     properties
-        k % Wave vector
-        N % Number or degree of basis fct. Exact specification depends on
-          % the type of basis
+        k                       % Wavevector
+        N                       % Number or degree of basis fct. Exact
+                                % specification depends on type of basis
+        Nf                      % Actual number of basis functions
     end 
     methods (Abstract)
         [A, An, Ax, Ay] = eval(b,pts) 

@@ -2,6 +2,9 @@ classdef regfbbasis < handle & basis
 
     % Basis of regular Fourier-Bessel functions.
 
+    % To Do:
+    % * only calc Ax Ay if asked for them (more efficient)
+    
     properties
         origin   % Origin of the Fourier-Bessel fct.
         realflag % Decide whether the basis is evaluated using real
@@ -9,9 +12,13 @@ classdef regfbbasis < handle & basis
     end
 
     methods
-        function regfb = regfbbasis(origin,N,realflag,k)
+        function regfb = regfbbasis(origin,N,realflag,k)     % constructor
+                           % Alex might vote instead for an options argument
+                           % so opts.realflag etc allows for other flags.
             if nargin<4, k=NaN; end;
-            if nargin<3, realflag=1; end; % By default use real arithmetic
+            if nargin<3 | isempty(realflag)  % allows [] input
+              realflag=1;           % By default use real arithmetic
+            end
             if nargin<2, N=20; end; % Default degree of FB fct.
             if nargin<1, origin=0; end; % Default origin is zero
 
@@ -19,7 +26,10 @@ classdef regfbbasis < handle & basis
             regfb.realflag=realflag;
             regfb.N=N;
             regfb.origin=origin;
+            regfb.Nf = 2*N+1;           % there are 2N+1 functions
         end
+        
+        % ............................................ evaluate
         function [A, An, Ax, Ay] = eval(regfb,pts)
 
             % Evaluates the basis at a given set of points
@@ -31,7 +41,7 @@ classdef regfbbasis < handle & basis
             c=cos(ang*(1:N));
             s=sin(ang*(1:N));
             A=[bes(:,1), bes(:,2:end).*c, bes(:,2:end).*s];
-            if nargout>1,
+            if nargout>1,                               % derivs wanted
                 bespp=[bes(:,2:end),besselj(N+1,k*R)];
                 besr=(repmat(0:N,np,1).*bes-k*repmat(R,1,N+1).*bespp)./repmat(R,1,N+1);
                 bestc=-repmat(0:N,np,1).*bes.*sin(ang*(0:N));
