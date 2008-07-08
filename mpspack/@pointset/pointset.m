@@ -5,7 +5,7 @@ classdef pointset < handle
 
     properties
         x                      % quadrature points in C (col vec)
-        nx                     % outward unit normals in C (col vec)
+        nx                     % (optional) outward unit normals in C (col vec)
     end
 
     methods

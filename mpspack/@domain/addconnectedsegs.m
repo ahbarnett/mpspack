@@ -1,6 +1,8 @@
 % ADDCONNECTEDSEGMENTS - append a domain's params, corners given conn seg list 
 %
 %  This is a helper routine for domain constructor. Doc to be written
+%
+%  If pm has length 1 it will be expanded to a vector of the correct length.
 
 function d = addconnectedsegs(d, s, pm, o)
 
@@ -8,7 +10,14 @@ if nargin<4, o = []; end
 if ~isfield(o, 'hole'), o.hole = 0; end    % default is an outer bdry (+ve area)
 
 if isempty(s), return; end                 % nothing to do if no segments added
-s = reshape(s, [1 numel(s)]); pm = reshape(pm, [1 numel(pm)]); 
+s = reshape(s, [1 numel(s)]);
+if numel(pm)==1
+  pm = pm*ones(1, numel(s));               % expand one sign to whole list
+elseif numel(pm)==numel(s)
+  pm = reshape(pm, [1 numel(pm)]);
+else
+  error('pm must either be same length as seg or length 1!');
+end
 d.seg = [d.seg s]; d.pm = [d.pm pm];       % append segments and signs as is
 if ~o.hole
   d.spiece = zeros(size(s));               % outer bdry always piece # 0 (pri)
