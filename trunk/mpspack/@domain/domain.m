@@ -173,7 +173,7 @@ classdef domain
       % methods defined by separate files...
       d = addconnectedsegs(d, s, pm, o)  % helper routine for constructor
       h = plot(d, o)                     % domain plot: o is plot opts struct
-      d = addregfbbasis(d, origin, N, realflag, k) % adds reg FB basis object
+      d = addregfbbasis(d, origin, N, k, opts) % adds reg FB basis object
       [A An Ax Ay] = evalbases(d, p)     % evaluate all basis funcs in domain
       
       % ****** not yet implemented ***** ( low priority, mostly)
