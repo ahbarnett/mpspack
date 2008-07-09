@@ -1,7 +1,8 @@
 classdef utils
 
   methods(Static)
-    % none
+    [res,err]=gslbesselj(nmin,nmax,x);
+    [res,err]=gslbesseljnu(v,x);
   end
 
 end

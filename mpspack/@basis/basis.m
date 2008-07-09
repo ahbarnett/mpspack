@@ -10,11 +10,13 @@ classdef basis < handle
         Nf                      % Actual number of basis functions
     end 
     methods (Abstract)
-        [A, An, Ax, Ay] = eval(b,pts) 
+        [A, A1, A2] = eval(b,pts) 
                                 % Evaluate a basis on a set of points
                                 % A=eval(pts) returns only fct. values
-                                % [A An Ax Ay] returns fct. values plus x,y
-                                % derivatives
+                                % [A A1]=eval(pts) returns fct. values plus normal
+                                % derivatives.
+                                % [A A1 A2]=eval(pts) returns fct. values plus
+                                % x and y derivatives.
                                 
     end
 end
