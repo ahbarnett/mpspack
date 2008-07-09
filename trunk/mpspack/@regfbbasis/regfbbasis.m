@@ -5,17 +5,16 @@ classdef regfbbasis < handle & basis
     %  b = REGFBBASIS(origin, N, k, opts) creates a regular FB basis
     %   object, with origin, N being max order, wavenumber k, and options:
     %   opts.real: if true, use real values (cos and sin type), otherwise exp.
-    %   opts.fast: if true, use fast evaluation, otherwise Matlab's besselJ, exp
     %
     % To Do:
-    % * only calc Ax Ay if asked for them (more efficient), not An ?
-    % * re-order so -N...N, with an Noffset
-    
+    %
+    %  - Give user choice to use Matlab based recursive Bessel instead of
+    %    GSL
+    %  - Get derivatives at zero right
     properties
         origin   % Origin of the Fourier-Bessel fct.
         realflag % Decide whether the basis is evaluated using real
-                 % sine/cos or complex exponentials
-        fast     % true if fast evaluation
+        % sine/cos or complex exponentials
     end
 
     methods
@@ -23,72 +22,63 @@ classdef regfbbasis < handle & basis
             if nargin<3, k=NaN; end;
             if nargin<4, opts = []; end
             if ~isfield(opts,'real'), opts.real = 1; end   % default
-            if ~isfield(opts,'fast'), opts.fast = 0; end   % default
             if nargin<2, N=20; end; % Default degree of FB fct.
             if nargin<1, origin=0; end; % Default origin is zero
 
             regfb.k=k;
             regfb.realflag=opts.real;
-            regfb.fast = opts.fast;
             regfb.N=N;
             regfb.origin=origin;
             regfb.Nf = 2*N+1;           % there are 2N+1 functions
         end
-        
-        % ............................................ evaluate
-        function [A, An, Ax, Ay] = eval(regfb, pts)
+        function [A, A1, A2] = eval(regfb,pts)
 
-        if ~regfb.fast                       % ................. Timo's code
             % Evaluates the basis at a given set of points
             N=regfb.N; k=regfb.k;
             np=length(pts.x); % Number of points
             R=abs(pts.x-regfb.origin);
             ang=angle(pts.x-regfb.origin);
-            bes=besselj(0:N,k*R);
+            [bes,err]=utils.gslbesselj(0,N,k*R); % Use GSL function
+            if nnz(err)>0, 
+                warning('Error in computing regular Bessel functions. Try to reduce basis size.');
+            end
             c=cos(ang*(1:N));
             s=sin(ang*(1:N));
             A=[bes(:,1), bes(:,2:end).*c, bes(:,2:end).*s];
-            if nargout>1,                               % derivs wanted
-                bespp=[bes(:,2:end),besselj(N+1,k*R)];
-                besr=(repmat(0:N,np,1).*bes-k*repmat(R,1,N+1).*bespp)./repmat(R,1,N+1);
+            if nargout>1, % derivs wanted
+                if numel(find(R==0))>0,
+                    warning('Computing x/y or normal derivatives of regular Bessel functions at origin not implemented');
+                end
+                [bplus,err]=utils.gslbesselj(N+1,N+1,k*R);
+                if nnz(err)>0,
+                    warning('Error in computing regular Bessel functions. Try to reduce basis size.');
+                end                    
+                besr=k/2*([-bes(:,2),bes(:,1:end-1)]-[bes(:,2:end),bplus]);
                 bestc=-repmat(0:N,np,1).*bes.*sin(ang*(0:N));
                 bests=repmat(1:N,np,1).*bes(:,2:end).*cos(ang*(1:N));
                 Ar=[besr(:,1),besr(:,2:end).*c,besr(:,2:end).*s];
                 At=[bestc,bests];
-                Ax=repmat(cos(ang),1,2*N+1).*Ar-repmat(sin(ang),1,2*N+1).*At./repmat(R,1,2*N+1);
-                Ay=repmat(sin(ang),1,2*N+1).*Ar+repmat(cos(ang),1,2*N+1).*At./repmat(R,1,2*N+1);
-                nx1=real(pts.nx); nx2=imag(pts.nx);
-                An=repmat(nx1,1,2*N+1).*Ax+repmat(nx2,1,2*N+1).*Ay;
-            end
-            if ~regfb.realflag,
-                A=[A(:,2:N+1)-1i*A(:,N+2:end),A(:,1),A(:,2:N+1)+1i*A(:,N+2:end)];
-                if nargout>1,
-                    An=[An(:,2:N+1)-1i*An(:,N+2:end),An(:,1),An(:,2:N+1)+1i*An(:,N+2:end)];
-                    Ax=[Ax(:,2:N+1)-1i*Ax(:,N+2:end),Ax(:,1),Ax(:,2:N+1)+1i*Ax(:,N+2:end)];
-                    Ay=[Ay(:,2:N+1)-1i*Ay(:,N+2:end),Ay(:,1),Ay(:,2:N+1)+1i*Ay(:,N+2:end)];
+                cc=repmat(cos(ang),1,2*N+1); ss=repmat(sin(ang),1,2*N+1);
+                RR=repmat(R,1,2*N+1);
+                if nargout==2,
+                    nx=repmat(real(pts.nx),1,2*N+1); ny=repmat(imag(pts.nx),1,2*N+1);
+                    A1=Ar.*(nx.*cc+ny.*ss)+At.*(ny.*cc-nx.*ss)./RR;
+                end
+                if nargout==3,
+                    A1=cc.*Ar-ss.*At./RR; A2=ss.*Ar+cc.*At./RR;
                 end
             end
-        
-        else  % ................... fast method, currently for complex only
-          N=regfb.N; k=regfb.k;
-          % This code adapted from ~/bdry/inclus/evalbasis.m, interface to fast:
-          b = []; b.N = 2*N+1; b.maxorder = N;  % choose offset.
-          b.rescale = 0;
-          p = [real(pts.x)'; imag(pts.x)'];
-          if nargout==1                           % value only
-            A = basis_fast_besselJ(k, b, p);
-          elseif nargout==2                       % directional deriv only
-            pn = [real(pts.nx)'; imag(pts.nx)'];
-            [A An] = basis_fast_besselJ(k, b, p, pn);
-          else                          % n,x,y-derivs (thrice as slow - bad!)
-            pn = [real(pts.nx)'; imag(pts.nx)'];
-            [A An] = basis_fast_besselJ(k, b, p, pn);
-            pn = [ones(size(pts.nx))'; zeros(size(pts.nx))'];
-            [A Ax] = basis_fast_besselJ(k, b, p, pn);
-            pn = [zeros(size(pts.nx))'; ones(size(pts.nx))'];
-            [A Ay] = basis_fast_besselJ(k, b, p, pn);         % sad - fix this!
-          end
-        end  
+            if ~regfb.realflag,
+                sp=repmat((-1).^(N:-1:1),np,1);
+                A=[sp.*(A(:,N+1:-1:2)-1i*A(:,end:-1:N+2)),A(:,1),A(:,2:N+1)+1i*A(:,N+2:end)];
+                if nargout==2,
+                    A1=[sp.*(A1(:,N+1:-1:2)-1i*A1(:,end:-1:N+2)),A1(:,1),A1(:,2:N+1)+1i*A1(:,N+2:end)];
+                end
+                if nargout==3,
+                    A1=[sp.*(A1(:,N+1:-1:2)-1i*A1(:,end:-1:N+2)),A1(:,1),A1(:,2:N+1)+1i*A1(:,N+2:end)];
+                    A2=[sp.*(A2(:,N+1:-1:2)-1i*A2(:,end:-1:N+2)),A2(:,1),A2(:,2:N+1)+1i*A2(:,N+2:end)];
+                end
+            end
         end   % ....................... end function eval
     end % ... end methods
 end
