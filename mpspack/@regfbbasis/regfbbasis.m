@@ -2,8 +2,10 @@ classdef regfbbasis < handle & basis
 
     % REGFBBASIS - create a regular Fourier-Bessel (cylindrical J-exp) basis set
     %
-    %  b = REGFBBASIS(origin, N, realflag, k) creates a regular FB basis
-    %   object.
+    %  b = REGFBBASIS(origin, N, k, opts) creates a regular FB basis
+    %   object, with origin, N being max order, wavenumber k, and options:
+    %   opts.real: if true, use real values (cos and sin type), otherwise exp.
+    %   opts.fast: if true, use fast evaluation, otherwise Matlab's besselJ, exp
     %
     % To Do:
     % * only calc Ax Ay if asked for them (more efficient), not An ?
@@ -13,29 +15,30 @@ classdef regfbbasis < handle & basis
         origin   % Origin of the Fourier-Bessel fct.
         realflag % Decide whether the basis is evaluated using real
                  % sine/cos or complex exponentials
+        fast     % true if fast evaluation
     end
 
     methods
-        function regfb = regfbbasis(origin, N, realflag, k)     % constructor
-                           % An idea: instead have an options argument
-                           % so opts.realflag etc allows for other flags?
-            if nargin<4, k=NaN; end;
-            if nargin<3 | isempty(realflag)  % allows [] input
-              realflag=1;           % By default use real arithmetic
-            end
+        function regfb = regfbbasis(origin, N, k, opts)     % constructor
+            if nargin<3, k=NaN; end;
+            if nargin<4, opts = []; end
+            if ~isfield(opts,'real'), opts.real = 1; end   % default
+            if ~isfield(opts,'fast'), opts.fast = 0; end   % default
             if nargin<2, N=20; end; % Default degree of FB fct.
             if nargin<1, origin=0; end; % Default origin is zero
 
             regfb.k=k;
-            regfb.realflag=realflag;
+            regfb.realflag=opts.real;
+            regfb.fast = opts.fast;
             regfb.N=N;
             regfb.origin=origin;
             regfb.Nf = 2*N+1;           % there are 2N+1 functions
         end
         
         % ............................................ evaluate
-        function [A, An, Ax, Ay] = eval(regfb,pts)
+        function [A, An, Ax, Ay] = eval(regfb, pts)
 
+        if ~regfb.fast                       % ................. Timo's code
             % Evaluates the basis at a given set of points
             N=regfb.N; k=regfb.k;
             np=length(pts.x); % Number of points
@@ -65,6 +68,27 @@ classdef regfbbasis < handle & basis
                     Ay=[Ay(:,2:N+1)-1i*Ay(:,N+2:end),Ay(:,1),Ay(:,2:N+1)+1i*Ay(:,N+2:end)];
                 end
             end
-        end
-    end
+        
+        else  % ................... fast method, currently for complex only
+          N=regfb.N; k=regfb.k;
+          % This code adapted from ~/bdry/inclus/evalbasis.m, interface to fast:
+          b = []; b.N = 2*N+1; b.maxorder = N;  % choose offset.
+          b.rescale = 0;
+          p = [real(pts.x)'; imag(pts.x)'];
+          if nargout==1                           % value only
+            A = basis_fast_besselJ(k, b, p);
+          elseif nargout==2                       % directional deriv only
+            pn = [real(pts.nx)'; imag(pts.nx)'];
+            [A An] = basis_fast_besselJ(k, b, p, pn);
+          else                          % n,x,y-derivs (thrice as slow - bad!)
+            pn = [real(pts.nx)'; imag(pts.nx)'];
+            [A An] = basis_fast_besselJ(k, b, p, pn);
+            pn = [ones(size(pts.nx))'; zeros(size(pts.nx))'];
+            [A Ax] = basis_fast_besselJ(k, b, p, pn);
+            pn = [zeros(size(pts.nx))'; ones(size(pts.nx))'];
+            [A Ay] = basis_fast_besselJ(k, b, p, pn);         % sad - fix this!
+          end
+        end  
+        end   % ....................... end function eval
+    end % ... end methods
 end

@@ -4,8 +4,8 @@
 clear all classes
 M = 20; s = segment.polyseglist(M, [1 1i exp(4i*pi/3)]);  % CCW tri from INCL
 d = domain(s, 1);
-k = 10;
-d = d.addregfbbasis(0, 10, 1, k);  % must return d since domain is value class
+k = 10; opts.real = 1; opts.fast = 0;
+d = d.addregfbbasis(0, 10, k, opts); % must return d since domain is value class
 js = 1:d.Nf;                       % which basis func indices to plot
 
 [zz ii gx gy] = d.grid(0.01);      % set up grid then evaluate
