@@ -8,13 +8,12 @@ classdef regfbbasis < handle & basis
     %
     % To Do:
     %
-    %  - Give user choice to use Matlab based recursive Bessel instead of
-    %    GSL
     %  - Get derivatives at zero right
     properties
         origin   % Origin of the Fourier-Bessel fct.
         realflag % Decide whether the basis is evaluated using real
         % sine/cos or complex exponentials
+        usegsl % Use GSL Bessel function if true
     end
 
     methods
@@ -22,11 +21,13 @@ classdef regfbbasis < handle & basis
             if nargin<3, k=NaN; end;
             if nargin<4, opts = []; end
             if ~isfield(opts,'real'), opts.real = 1; end   % default
+            if ~isfield(opts,'usegsl'), opts.usegsl=0; end
             if nargin<2, N=20; end; % Default degree of FB fct.
             if nargin<1, origin=0; end; % Default origin is zero
 
             regfb.k=k;
             regfb.realflag=opts.real;
+            regfb.usegsl=opts.usegsl;
             regfb.N=N;
             regfb.origin=origin;
             regfb.Nf = 2*N+1;           % there are 2N+1 functions
@@ -38,24 +39,24 @@ classdef regfbbasis < handle & basis
             np=length(pts.x); % Number of points
             R=abs(pts.x-regfb.origin);
             ang=angle(pts.x-regfb.origin);
-            [bes,err]=utils.gslbesselj(0,N,k*R); % Use GSL function
-            if nnz(err)>0, 
+            [bes,err]=regfb.besselwrapper(N+1,k*R); % Use GSL function
+            if nnz(err)>0,
                 warning('Error in computing regular Bessel functions. Try to reduce basis size.');
             end
             c=cos(ang*(1:N));
             s=sin(ang*(1:N));
-            A=[bes(:,1), bes(:,2:end).*c, bes(:,2:end).*s];
+            A=[bes(:,1), bes(:,2:end-1).*c, bes(:,2:end-1).*s];
             if nargout>1, % derivs wanted
                 if numel(find(R==0))>0,
                     warning('Computing x/y or normal derivatives of regular Bessel functions at origin not implemented');
                 end
-                [bplus,err]=utils.gslbesselj(N+1,N+1,k*R);
+                
                 if nnz(err)>0,
                     warning('Error in computing regular Bessel functions. Try to reduce basis size.');
-                end                    
-                besr=k/2*([-bes(:,2),bes(:,1:end-1)]-[bes(:,2:end),bplus]);
-                bestc=-repmat(0:N,np,1).*bes.*sin(ang*(0:N));
-                bests=repmat(1:N,np,1).*bes(:,2:end).*cos(ang*(1:N));
+                end
+                besr=k/2*([-bes(:,2),bes(:,1:end-2)]-bes(:,2:end));
+                bestc=-repmat(0:N,np,1).*bes(:,1:end-1).*sin(ang*(0:N));
+                bests=repmat(1:N,np,1).*bes(:,2:end-1).*cos(ang*(1:N));
                 Ar=[besr(:,1),besr(:,2:end).*c,besr(:,2:end).*s];
                 At=[bestc,bests];
                 cc=repmat(cos(ang),1,2*N+1); ss=repmat(sin(ang),1,2*N+1);
@@ -81,4 +82,18 @@ classdef regfbbasis < handle & basis
             end
         end   % ....................... end function eval
     end % ... end methods
+    methods (Access=private)
+        function [ret,err]=besselwrapper(regfb,N,r)
+            % Depending on regfb.usegsl return either Bessel's up to order
+            % N computed by GSL or use Matlab implementation of recursive
+            % Bessel functions
+
+            if regfb.usegsl,
+                [ret,err]=utils.gslbesselj(0,N,r);
+            else
+                ret=utils.recursivebessel(N,r);
+                err=0; % No error checking implemented for utils.recursivebessel
+            end
+        end
+    end
 end
