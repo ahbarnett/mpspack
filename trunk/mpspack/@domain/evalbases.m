@@ -3,7 +3,7 @@
 %   Issues:
 %   * it's ugly that each b is a 1x1 cell which then needs a {1} reference
 
-function [A An Ax Ay] = evalbases(d, p)
+function [A A1 A2] = evalbases(d, p)
 
 A = []; An = []; Ax = []; Ay = [];   % matrices will be stacked as columns
 
@@ -11,9 +11,9 @@ for b=d.bas                          % loop over basis set objects in domain
   if nargout==1
     [bA] = b{1}.eval(p); A = [A bA]; % stack as blocks of columns
   elseif nargout==2
-    [bA bAn] = b{1}.eval(p); A = [A bA]; An = [An bAn];
+    [bA bA1] = b{1}.eval(p); A = [A bA]; A1 = [A1 bA1];
   else
-    [bA bAn bAx bAy] = b{1}.eval(p);
-    A = [A bA]; An = [An bAn]; Ax = [Ax bAx]; Ay = [Ay bAy]; 
+    [bA bA1 bA2] = b{1}.eval(p);
+    A = [A bA]; A1 = [A1 bA1]; A2 = [A2 bA2]; 
   end
 end
