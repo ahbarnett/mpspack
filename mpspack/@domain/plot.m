@@ -8,12 +8,15 @@
 %   opts.gridinside: only if >0, show gridpoints inside domain (default 0)
 %
 %   Also all options in SHOWSEGMENTS have effect.
+%
+% To do: filled patch for domain (somehow handle non-simply connected patch?)
 
 function h = plot(d, o)
 
 if nargin<2, o = []; end
 if ~isfield(o, 'gridinside'), o.gridinside=0; end  % default no grid
 if ~isfield(o, 'approxp'), o.approxp = 1; end  % default show polygon
+if ~isfield(o, 'filled'), o.filled=0; end   % to show domains as solid ?? to do
 
 h = domain.showsegments(d.seg, d.pm, o);       % show all segments
 
@@ -35,16 +38,9 @@ for j=find(~isnan(d.cloc))         % show list of valid corners only
   h = [h; patch([x+l*real(t) x], [y+l*imag(t) y], 'k')]; % filled polygon patch
 end
 
-if o.gridinside>0                  % want grid of pts inside the domain
-  if d.exterior
-    x1 = [-2;2]; x2 = [-2;2];      % rect box to show ext domain grid
-  else
-    x1 =real(d.x); x2 =imag(d.x);  % x1,x2 coords of all quadr pts
-  end
-  [xx,yy] = meshgrid(min(x1):o.gridinside:max(x1), ...
-                     min(x2):o.gridinside:max(x2));
-  i = d.inside(xx+1i*yy);
-  hold on; h = [h; plot(xx(i), yy(i), '.', 'markersize', 1)];
+if o.gridinside>0                  % want grid of pts inside the domain?
+  [zz] = d.grid(o.gridinside);
+  h = [h; plot(real(zz), imag(zz), '.', 'markersize', 1)];
 end
 
 % show stats... the 1,1 are in case d.x=[] which happens for the entire plane
