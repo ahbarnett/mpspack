@@ -3,9 +3,8 @@
 % A domain is an ordered connected list of segments defining the exterior
 % boundary, with one or more ordered connected lists of segments defining the
 % boundaries of excluded regions. If the exterior boundary is empty it is
-% taken to be the whole plane, ie an exterior domain.
-%
-% * Currently it's a value rather than handle object, to be able to make copies
+% taken to be the whole plane, ie an exterior domain. We implement it as a
+% handle class.
 %
 %  d = DOMAIN(s, pm) creates an interior domain whose boundary is the list
 %   of handles of segment objects s, using the list of senses pm (each element
@@ -28,16 +27,15 @@
 %   domain with excluded region(s).
 %
 % *** Not yet implemented :
-%
 %  d = DOMAIN(s, pm, si, pmi, k) makes a domain with wavenumber k.
 %
 % *** Issues:
 % * should diam, center, x, w, boundingbox, etc, be precomputed on construction,
-%   only recomputed if a segment changes?
+%   only recomputed if a segment changes? Currently not. Not a big deal.
 %
 % See also: SEGMENT, domain/PLOT
 
-classdef domain
+classdef domain < handle
     properties
         seg                       % pointer list to segments (row vec)
         pm                        % sense (+-1) of each segment (row vec)
@@ -50,6 +48,7 @@ classdef domain
         exterior                  % true if exterior domain (bnded complement) 
         bas                       % pointer list to basis set objects (cell arr)
         k                         % wavevector for domain
+        noff                      % dof offset used as temp in bvp.fillbcmatrix
 %       cseg                      % numel(cloc)-by-2 corner-seg connectivity
 %       n                         % refractive index of domain
     end
@@ -61,7 +60,7 @@ classdef domain
         d.cloc = []; d.cang = []; d.cangoff = [];     % start corner lists
         if nargin>1 & ~isempty(s)              % seg list gives primary bdry
           d.area = 0; d.exterior = 0;
-          d = addconnectedsegs(d, s, pm);
+          addconnectedsegs(d, s, pm);
         else                                   % empty primary seg list
           d.area = Inf; d.exterior = 1; d.spiece = [];
         end
@@ -70,8 +69,8 @@ classdef domain
             si = {si}; pmi = {pmi};            % if one int piece, make cells
           end
           for i=1:numel(si)                    % loop thru cell arr, int pieces
-            dcur = d;                          % make copy of *current* domain
-            oh = []; oh.hole = 1; d = addconnectedsegs(d, si{i}, pmi{i}, oh);
+            dcur = utils.copy(d);              % deep copy of *current* domain
+            oh = []; oh.hole = 1; addconnectedsegs(d, si{i}, pmi{i}, oh);
             js = find(d.spiece==i);            % topo test segments just added
             if ~isempty(find(~dcur.inside(vertcat(d.seg(js).x)))) % fell out?
               fprintf('domain warning: piece %d not in current domain!\n', i)
@@ -87,7 +86,13 @@ classdef domain
         d.bas = {};                            % initialize w/ no basis sets
       end
 
+      %function delete(d) % .............................. destructor
+      % This removes links in the segment object connecting to this domain
+      % However this is too messy. Use segment.disconnect
+      %end
+      
       function norout = normalscheck(d) % ....... check normal senses of domain
+      % NORMALSCHECK - check that senses of normals point away from a domain
         eps = 1e-8;           % small dist from bdry to move in normal direc
         t = 1/2;              % where to test along seg; so Napprox must be even
         p = zeros(size(d.seg));
@@ -98,6 +103,7 @@ classdef domain
       end
       
       function i = inside(d, p) % .................................... inside
+      % INSIDE - return true (false) for points inside (outside) a domain
         if d.exterior
           i = logical(ones(size(p)));
         else                                % interior domain
@@ -113,9 +119,12 @@ classdef domain
       end
 
       function x = x(d) % ................. get all quadr pts assoc w/ domain
-        x = domain.stackquadpts(d.seg, d.pm);
+      % X - return column vector of quadrature points on a domain boundary
+      x = domain.stackquadpts(d.seg, d.pm);
       end
+      
       function nx = nx(d) % ............... get all normals assoc w/ domain
+      % NX - return column vector of unit outward normals on a domain boundary
         nx = [];
         for j=1:numel(d.seg)
           if d.pm(j)==1
@@ -125,33 +134,49 @@ classdef domain
           end
         end
       end
+      
       function w = w(d) % ................... get all quadr wei assoc w/ domain
+      % W - return row vector of quadrature weights for a domain boundary
         w = [];
         for j=1:numel(d.seg)
           if d.pm(j)==1
-            w = [w; d.seg(j).w];
+            w = [w, d.seg(j).w];
           else                            % reverse order
-            w = [w; d.seg(j).w(end:-1:1)];
+            w = [w, d.seg(j).w(end:-1:1)];
           end
         end
       end
       
       function bb = boundingbox(d) % ......... bounding box
+      % BOUNDINGBOX - return [xmin xmax ymin ymax] for interior domain
+      %
+      %  If the domain is exterior, a box enclosing the boundary with some
+      %   extra padding is returned.
         x = d.x;
         bb = [min(real(x)), max(real(x)), min(imag(x)), max(imag(x))];
+        if d.exterior
+          pad = 0.5;
+          bb = bb + pad*[-1 1 -1 1];  % pad exterior region for ext domains
+        end
       end
       
       function xc = center(d) % .............. center of bounding box
+      % CENTER - return center x (as complex number) of bounding box of domain
         bb = boundingbox(d);
         xc = (bb(1)+bb(2)+1i*bb(3)+1i*bb(4))/2;
       end
       
-      function diam = diam(d) % .............. diameter of domain (about center)
-        diam = max(abs(d.x - center(d)));    % not quite optimal since uses box
+      function diam = diam(d) % ..... diameter of interior domain (about center)
+      % DIAM - approximate diameter of interior domain
+        diam = max(abs(d.x - center(d))); % not quite optimal since uses box
       end
       
-      function [zz ii gx gy] = grid(d, dx) % ... make grid covering domain.
-      % ii is the indices to where in a regular grid the zz points are
+      function [zz ii gx gy] = grid(d, dx) % ............. grid covering domain
+      % GRID - make grid covering interior domain, or some of exterior domain
+      %
+      %  [zz ii gx gy] = grid(dom, dx) returns list of C-#s zz and the indices
+      %   ii to where these fall in a regular rectangular grid with x- and
+      %   y-grids gx and gy respectively.
         if dx<=0, error('dx must be positive!'); end
         bb = d.boundingbox;
         bb(1) = dx * floor(bb(1)/dx);            % quantize to grid through 0
@@ -159,34 +184,44 @@ classdef domain
         gx = bb(1):dx:bb(2); gy = bb(3):dx:bb(4);         % plotting region
         [xx yy] = meshgrid(gx, gy); zz = xx(:) + 1i*yy(:); ii = d.inside(zz);
         zz = zz(ii);                             % keep only inside points
+        ii = reshape(ii, size(xx));              % return ii to rect array
       end
       
       function deletecorner(d,j)
+      % DELETECORNER - remove a given corner number from a domain
         d.cloc(j) = NaN;                 % note this doesn't shorten c arrays
       end
       
       function Nf = Nf(d) % ................. total # of basis funcs in domain
+      % NF - total number of basis functions (dofs) associated with domain
         Nf = 0;
         for b = d.bas, Nf = Nf + b{1}.Nf; end    % cell array {1} feels clumsy
       end
       
+      function clearbases(d) % .............. removes all basis sets from domain
+      % CLEARBASES - remove all basis sets from a domain
+        d.bas = {};
+      end
+      
       % methods defined by separate files...
-      d = addconnectedsegs(d, s, pm, o)  % helper routine for constructor
+      addconnectedsegs(d, s, pm, o)  % helper routine for constructor
       h = plot(d, o)                     % domain plot: o is plot opts struct
-      d = addregfbbasis(d, origin, N, k, opts) % adds reg FB basis object
+      addregfbbasis(d, origin, N, k, opts) % add reg FB basis object
+      addrpwbasis(d, N, k, opts)           % add real PW basis
       [A A1 A2] = evalbases(d, p)     % evaluate all basis funcs in domain
       
       % ****** not yet implemented ***** ( low priority, mostly)
       checktopology(d)             % checks all pieces in interior, normals
-      d = requadrature(d, M, type, inds) % resets M, quadr, in some segments
-      d = subtract(d, dint)              % remove (exclude) domain dint from d
-      d = changek(d, k)                  % changes wave# of basis sets in domain
-    end
+      requadrature(d, M, type, inds) % resets M, quadr, in some segments
+      subtract(d, dint)              % remove (exclude) domain dint from d
+      changek(d, k)                  % changes wave# of basis sets in domain
+    end % methods
     
     % --------------------------------------------------------------------
     methods(Static)    % these don't need domain obj to exist to call them...
       v = approxpolygon(seg, pm)
       h = showsegments(seg, pm, o)
       x = stackquadpts(seg, pm)
+      h = showdomains(dlist, opts)
     end
 end

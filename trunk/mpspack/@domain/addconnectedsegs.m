@@ -1,6 +1,6 @@
 % ADDCONNECTEDSEGMENTS - append a domain's params, corners given conn seg list 
 %
-%  This is a helper routine for domain constructor. Doc to be written
+%  This is a helper routine for domain constructor. Doc to be written.
 %
 %  If pm has length 1 it will be expanded to a vector of the correct length.
 
@@ -52,4 +52,8 @@ for j=1:length(s)                          % loop over possible corners in list
   % now need to take the log with branch cut along +ve real axis...
   d.cang = [d.cang, pi + imag(log(-cang))]; % this is angle in (0,2pi)
                                  % note nothing changes here if hole domain
+  ind = i(j);                    % 1 or 2, depending on if pm(j) = + or -
+  if ~isempty(s(j).dom{ind}), fprintf('domain warning: segment %d side %d already bordering a domain!\n', j, ind), end
+  s(j).dom{ind} = d;             % link the segment side to current domain
+  s(j).domseg(ind) = j;
 end
