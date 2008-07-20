@@ -109,6 +109,27 @@ eigenvalue problems (EVP) with particular and fundamental solution methods.
 
 Define BVP, EVP
 
+\subsection{Boundary-value problems}
+
+Let $\Omega \subset \mathbb{R}^2$
+
+\bea
+(\Delta+k^2)u& =& 0 \qquad \mbox{in } \Omega\\
+au + b u_n&=&f\qquad \mbox{on } \pO
+\eea
+
+In our implementation we restrict to functions $a$, $b$ that are
+constant on segments used to define the boundary $\pO$.
+
+If $\Omega$ is an exterior domain, we may wish to impose
+additional boundary conditions at infinity, such as Sommerfeld's
+radiation condition.
+This may be achieved by choosing basis sets satisfying this condition.
+
+See \cite{mfs} for
+an example of using the Method of Fundamental Solutions to solve
+an interior Helmholtz problem.
+
 To solve a BVP the usual flow is as follows:
 
 \ben
@@ -123,6 +144,11 @@ linear system to get the basis coefficient vector
 \een
 
 \ldots
+
+\subsection{Eigenvalue problems}
+
+
+
 
 \subsection{Geometry}
 
@@ -153,8 +179,8 @@ b^+ u_n^+(s) + b^- u_n^-(s) &=& g(s)
 where $a^+,a^-,b^+,b^- \in \mathbb{C}$.
 In the above $f$ and $g$ are functions on the boundary.
 In our implementation the user
-may supply these as handles to functions of position, or as data on the segment
-quadrature points.
+may supply these as handles to functions of segment parameter
+$t\in[0,1]$, or as a data column vector on the segment quadrature points.
 
 \section{In-depth examples}
 

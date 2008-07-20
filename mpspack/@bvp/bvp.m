@@ -35,7 +35,7 @@ classdef bvp < problem & handle
           if isnumeric(s.f)
             rhs = [rhs; s.f];       % data vector, stack as one big column
           else
-            rhs = [rhs; s.f(s.x)];  % function of x, stack as one big column
+            rhs = [rhs; s.f(s.t)];  % function of t, stack as one big column
           end
         end
       end
