@@ -20,11 +20,13 @@
 
 classdef segment < handle & pointset
     properties
+        t                      % quadrature parameter values in [0,1]
         w                      % quadrature weights, sum = seg len (row vec)
         eloc                   % [start point; end point] as C-#s
         eang                   % [start angle; end angle] as C-#s on unit circle
-        Z                      % analytic function Z(t) on [0,1]
-        Zp                     % derivative dZ/dt on [0,1]
+        Z                      % analytic function handle Z(t) on [0,1]
+        Zp                     % derivative function handle dZ/dt on [0,1]
+        Zn                     % unit normal function handle on [0,1]
         approxv                % vertex list for polygonal approximation
         dom                    % domain handles bordered on + & - sides (2-cell)
         domseg                 % which segment # in bordering domains (1-by-2)
@@ -67,11 +69,12 @@ classdef segment < handle & pointset
           error(sprintf('segment: unknown quadrature type %s!', qtype));
         end
         [z s.w] = quadrule(M);  % NB must give monotonic increasing x in [-1,1]
-        t = (1+z)/2;            % t in [0,1], increasing
-        s.x = s.Z(t);
-        dZdt = s.Zp(t);         % Z' eval at t
+        s.t = (1+z)/2;            % t in [0,1], increasing
+        s.x = s.Z(s.t);
+        dZdt = s.Zp(s.t);         % Z' eval at t
         s.w = s.w/2 .* abs(dZdt).';  % quadr weights wrt arclength on segment
         s.nx = -1i*dZdt./abs(dZdt);
+        s.Zn = @(t) -1i*s.Zp(t)./abs(s.Zp(t)); % new; supercedes normal method
         s.eloc = s.Z([0;1]);
         eZp = s.Zp([0;1]);                     % derivs at the 2 ends
         s.eang = eZp./abs(eZp);
@@ -82,6 +85,9 @@ classdef segment < handle & pointset
       end
       
       function n = normal(s, t) % ................. returns normal at t in [0,1]
+      % NORMAL - compute unit normal as C-# given segment parameter t in [0,1]
+      %
+      %  Note: this is duplicated by the property Zn in segment object
         dZdt = s.Zp(t);
         n = -1i*dZdt./abs(dZdt);
       end
@@ -99,7 +105,7 @@ classdef segment < handle & pointset
       %   normal sense as above. a, b are constants (may be functions in future)
       %
       %  setbc(seg, pm, type, [], f) imposes inhomogeneous BC of type 'd' or 'n'
-      %   with data func f(x) where x is location (in C) on the segment, if f is
+      %   with data func f(t) where t in [0,1] parametrizes the segment, if f is
       %   a function handle. If instead f is a (col vec) array of same size as
       %   seg.x, is interpreted as data sampled on the quadrature points.
       %
@@ -110,7 +116,7 @@ classdef segment < handle & pointset
           error(sprintf('side %d of seg not connected to a domain!', pm));
         end
         s.bcside = pm;               % should be +-1
-        if nargin<5, f = @(x) zeros(size(x)); end    % covers homogeneous case
+        if nargin<5, f = @(t) zeros(size(s.t)); end   % covers homogeneous case
         s.f = f;           % may be func handle (not eval'd until need) or array
         if isempty(b)
           switch a
@@ -123,8 +129,8 @@ classdef segment < handle & pointset
           end
         else
           s.a = a; s.b = b;
-        end                          % ...now s.f, s.a, s.b are guaranteed set
-      end
+        end
+      end % func
       
       function setmatch(s, a, b, f, g) % ....................... setmatch
       % SETMATCH - set (in)homogeneous matching conditions across a segment
@@ -138,21 +144,21 @@ classdef segment < handle & pointset
       %                                   b^+ u_n^+ + b^- u_n^- = 0
       %
       %  setmatch(seg, a, b, f, g) replaces the right hand sides of the
-      %   above by inhomogeneous matching functions f and g.
+      %   above by inhomogeneous matching functions f,g of t in [0,1]
         if isempty(s.dom(1)) | isempty(s.dom(2))
           error('both sides of seg must be connected to a domain!');
         end
         s.bcside = 0;
-        if nargin<4, f = @(x) zeros(size(x)); end    % covers homog f case
-        if nargin<5, g = @(x) zeros(size(x)); end    % covers homog g case
+        if nargin<4, f = @(t) zeros(size(s.t)); end    % covers homog f case
+        if nargin<5, g = @(t) zeros(size(s.t)); end    % covers homog g case
         s.f = f; s.g = g;
         if numel(a)~=2 | numel(b)~=2, error('a and b must be 1-by-2!');
           s.a = a; s.b = b;
         end
-      end
+      end % func
       
       h = plot(s, pm, o)
-    end
+    end % methods
 
     % --------------------------------------------------------------------
     methods(Static)    % these don't need segment obj to exist to call them...
@@ -164,6 +170,6 @@ classdef segment < handle & pointset
           s.domseg = [0 0];            % dummy segment #s in bordering domains
         end
       end
-    end
+    end % methods
 end
 
