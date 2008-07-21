@@ -28,10 +28,12 @@ classdef bvp < problem & handle
       rhs = [];                 % get ready to stack stuff onto it as a big col
       for s=pr.segs
         if s.bcside==0          % matching condition
-          rhs = [rhs; s.f(s.x); s.g(s.x)];  % stack twice the seg M
-          %  finish data vector case
-          % ...
-        elseif s.bcside==1 | s.bcside==-1   % BC (segment dofs natural order)
+          if isnumeric(s.f)
+            rhs = [rhs; s.f; s.g];           % data vec, stack as one big col
+          else
+            rhs = [rhs; s.f(s.t); s.g(s.t)]; % func of t, stack as one big col
+          end
+        elseif s.bcside==1 | s.bcside==-1    % BC (segment dofs natural order)
           if isnumeric(s.f)
             rhs = [rhs; s.f];       % data vector, stack as one big column
           else

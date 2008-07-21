@@ -1,8 +1,8 @@
 % ADDMFSBASIS - create an MFS (fundamental solutions) basis object in a domain
 %
 %  ADDMFSBASIS(d, Z, tau, N, k, opts) creates a fundamental solutions basis
-%   object within a domain object whose handle is d.
-%   Other arguments are as in MFSBASIS.
+%   object within a domain object whose handle is d, with other arguments
+%   as in MFSBASIS.
 %   A warning is given if any charge point is inside the domain.
 %
 %  ADDMFSBASIS(d, [], tau, N, k, opts) makes an intelligent choice of MFS charge
@@ -13,7 +13,7 @@
 % See also: MFSBASIS
 %
 % To do: include better methods to choose charge locations given things about
-% the domain - this is *hard* in general. Maybe user should provide?
+% the domain - this is *hard* in general.
 
 function addmfsbasis(d, varargin)
 
@@ -26,7 +26,7 @@ if isempty(varargin{1})                     % Z was empty
     end
     Z = @(t) d.seg(1).Z(t/2/pi);            % use the segment's parametric func
   else
-    fprintf('warning: addmfsbasis does not know a good way to choose MFS pts!');
+    fprintf('warning: addmfsbasis does not know a good way to choose MFS pts!')
   end
   b = mfsbasis(Z, tau, varargin{3:end});    % pass in the above Z and tau
 else

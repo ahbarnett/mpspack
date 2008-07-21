@@ -152,9 +152,8 @@ classdef segment < handle & pointset
         if nargin<4, f = @(t) zeros(size(s.t)); end    % covers homog f case
         if nargin<5, g = @(t) zeros(size(s.t)); end    % covers homog g case
         s.f = f; s.g = g;
-        if numel(a)~=2 | numel(b)~=2, error('a and b must be 1-by-2!');
-          s.a = a; s.b = b;
-        end
+        if numel(a)~=2 | numel(b)~=2, error('a and b must be 1-by-2!'); end
+        s.a = a; s.b = b;
       end % func
       
       h = plot(s, pm, o)
