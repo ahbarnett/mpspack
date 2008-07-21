@@ -1,9 +1,10 @@
 % test program for all basis types: reg FB (incl fast), real PWs, ...
-% barnett 7/10/08
+% barnett 7/10/08, MFS added 7/20/08
 % adapted from ~/bdry/inclus/test_evalbasis.m
 %
 % To Do:
-% * reg FB: fix |x|=0 NaN problem
+% * reg FB: - fix |x|=0 NaN problem
+%           - include GSL test cases (need to compile on Alex's machine)
 
 clear all classes
 verb = 0;                            % use verb=0, N=50, for more of a test.
@@ -13,20 +14,28 @@ M = numel(xx);
 p = pointset([xx(:) + 1i*yy(:)], ones(size(xx(:)))); % set up n for x-derivs
 k = 10;
 
-for type = 1:5
+for type = 1:7
   switch type
    case {1,2,3}             % ................. Reg FB: slow real/cmplx, fast
     N = 10;               
     opts.real = (type==1); opts.fast = (type==3);
-    c = 0.5; b = regfbbasis(0, N, k, opts);
+    b = regfbbasis(0, N, k, opts);
+    c = 0.5;                 % set caxis scale for this basis type
     js = 1:b.Nf;             % indices to plot, here all of them
     fprintf('evaluating Reg FB basis... real=%d, fast=%d\n', opts.real, opts.fast)
    case {4,5}              % ................. real plane waves: real/cmplx
     N = 10;
     opts.real = (type==4);
     b = rpwbasis(N, k, opts);
-    c = 2.0; js = 1:b.Nf;             % indices to plot, here all of them
+    c = 2.0; js = 1:b.Nf;
     fprintf('evaluating real plane wave basis... real=%d\n', opts.real)
+   
+   case {6,7}              % ................. MFS: real/cmplx
+    N = 10;
+    opts.real = (type==6);
+    b = mfsbasis(@(t) exp(1i*t), -0.4, N, k, opts);  % tau keeps them outside
+    c = 1.0; js = 1:b.Nf;
+    fprintf('evaluating MFS basis... real=%d\n', opts.real)
   end
   tic; [A Ax Ay] = b.eval(p); t=toc;
   fprintf('\t%d evals (w/ x,y derivs) in %.2g secs = %.2g us per eval\n',...
