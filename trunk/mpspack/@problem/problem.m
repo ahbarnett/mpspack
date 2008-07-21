@@ -67,7 +67,7 @@ classdef problem < handle
     function [u di] = pointsolution(pr, p) % ...........eval soln on pointset
     % POINTSOLUTION - evaluate solution to a problem on a pointset, given coeffs
     %
-    %  [u di] = gridsolution(pr, pts) returns array of values u, and
+    %  [u di] = pointsolution(pr, pts) returns array of values u, and
     %   optionally, domain index list di (integer array of same shape as u).
     %   A separate routine should be used for evaluation of u, u_n on boundary.
     %   Decisions about which domain a gridpoint is in are done using
