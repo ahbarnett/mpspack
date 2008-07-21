@@ -65,7 +65,7 @@ ght.$}
 and Timo Betcke\footnote{School
 of Mathematics, The University of Manchester,
   Manchester, M13 9PL, UK}}
-\date{code revision 14: \today}
+\date{code revision 16: \today}
 
 \maketitle
 \begin{abstract}
@@ -208,12 +208,11 @@ data corresponding to exact fields
 \item eigenvalue problems: MPS, scaling method
 \item segment methods to create analytic interpolant function from boundary
 point data, enabling user to specify a segment using points on a curve.
-\item add MFS basis, real and complex
-\item add automated ways to choose MFS charge points
+\item add better automated ways to choose MFS charge points, based on JCP paper
 \item add layer-potential bases, and associated periodic quadrature methods
 \item write {\tt segment.bdrysolution} which evaluates $u$, $u_n$ on one
 or other side of a boundary. For layer potentials this would take into account
-jump relations.
+jump relations. This should then be used in {\tt problem.fillbcmatrix}
 \item keep discrepancy and evaluation matrices, for efficiency in multiple
 right-hand sides.
 \item classes which symmetrize basis sets for single reflection, $C_4$, etc
@@ -221,6 +220,8 @@ symmetry, by wrapping the calls to basis evaluations using reflection
 points
 \item dielectric constants, overall frequency,
 automatically changing $k$ in domains
+\item periodic boundary conditions connecting values and derivatives
+on given sides of two different segments, needed for photonic crystals
 \ei
 
 \section{Known bugs}

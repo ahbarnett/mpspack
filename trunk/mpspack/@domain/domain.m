@@ -154,9 +154,10 @@ classdef domain < handle
       %   extra padding is returned.
         x = d.x;
         bb = [min(real(x)), max(real(x)), min(imag(x)), max(imag(x))];
+        if isempty(bb), bb = zeros(1,4); end    % only if d is whole plane
         if d.exterior
-          pad = 0.5;
-          bb = bb + pad*[-1 1 -1 1];  % pad exterior region for ext domains
+          pad = 0.5;                      % pad exterior region for ext domains
+          bb = bb + pad*[-1 1 -1 1];
         end
       end
       
@@ -208,6 +209,7 @@ classdef domain < handle
       h = plot(d, o)                     % domain plot: o is plot opts struct
       addregfbbasis(d, origin, N, k, opts) % add reg FB basis object
       addrpwbasis(d, N, k, opts)           % add real PW basis
+      addmfsbasis(d, Z, tau, N, k, opts)   % add MFS basis
       [A A1 A2] = evalbases(d, p)     % evaluate all basis funcs in domain
       
       % ****** not yet implemented ***** ( low priority, mostly)

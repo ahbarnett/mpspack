@@ -1,6 +1,6 @@
 % ADDRPWBASIS - create a real plane wave basis object in a domain
 %
-%  ADDREGFBBASIS(d, N, k, opts) creates a real plane wave basis
+%  ADDRPWBASIS(d, N, k, opts) creates a fundamental solutions basis
 %   object within a domain object whose handle is d.
 %   Other arguments are as in RPWBASIS
 %
