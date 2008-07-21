@@ -1,5 +1,6 @@
-% PROBLEM - abstract class defining interfaces for
-%  Helmholtz or Laplace BVP or EVP.
+% PROBLEM - abstract class defining interfaces for Helmholtz/Laplace BVP or EVP
+%
+% To do: fillbcmatrix should use a special evaluate_on_segment routine
 
 classdef problem < handle
   properties
@@ -27,16 +28,23 @@ classdef problem < handle
     end % func
     
     function A = fillbcmatrix(pr)   % ........... make bdry discrepancy matrix
-    % FILLBCMATRIX - computes matrix mapping basis coeffs to bdry discrepancy 
+    % FILLBCMATRIX - computes matrix mapping basis coeffs to bdry discrepancy
       if isempty(pr.sqrtwei), error('must fill quadrature weights first'); end
       N = 0;                        % N will be total # dofs (cols of A)
-      for d=pr.doms, d.noff = N; N = N+d.Nf; end % setup noff's in d's
+      for d=pr.doms, d.noff = N; N = N+d.Nf; end    % setup noff's in d's
       A = [];            % get ready to stack block rows, dof order matches rhs
       for s=pr.segs
         if s.bcside==0            % matching condition (2M segment dofs needed)
-          % to do...
-          
-          
+          dp = s.dom{1}; dm = s.dom{2};   % domain handles on the + and - side
+          [Ap Apn] = dp.evalbases(s); [Am Amn] = dm.evalbases(s); 
+          Arow = zeros(size(s.x, 1), N);     % start with empty block-row
+          Arow(:,dp.noff+(1:dp.Nf)) = s.a(1) * Ap;
+          Arow(:,dm.noff+(1:dm.Nf)) = s.a(2) * Am;  % won't clash since diff dom
+          A = [A; Arow];                     % stack block rows
+          Arow = zeros(size(s.x, 1), N);
+          Arow(:,dp.noff+(1:dp.Nf)) = s.b(1) * Apn;
+          Arow(:,dm.noff+(1:dm.Nf)) = s.b(2) * Amn;
+          A = [A; Arow];
         elseif s.bcside==1 | s.bcside==-1  % BC (M segment dofs, natural order)
           ind = (1-s.bcside)/2+1; % index 1 or 2 for which side the BC on
           d = s.dom(ind);         % handle of domain on the revelant side
@@ -48,7 +56,6 @@ classdef problem < handle
             Ablock = s.a*Ablock + s.b*Anblock;
           end
           Arow = zeros(size(s.x, 1), N);     % start with empty block-row
-          %size(Arow), size(Ablock), d.noff, d.Nf   % debug
           Arow(:,d.noff+(1:d.Nf)) = Ablock;  % copy in nonzero block
           A = [A; Arow];                     % stack block rows
         end
