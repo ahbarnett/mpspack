@@ -208,6 +208,7 @@ classdef domain < handle
       addconnectedsegs(d, s, pm, o)  % helper routine for constructor
       h = plot(d, o)                     % domain plot: o is plot opts struct
       addregfbbasis(d, origin, N, k, opts) % add reg FB basis object
+      addnufbbasis(d,origin,nu,offset,branch,N,k,opts) % add irreg. FB basis
       addrpwbasis(d, N, k, opts)           % add real PW basis
       addmfsbasis(d, Z, tau, N, k, opts)   % add MFS basis
       [A A1 A2] = evalbases(d, p)     % evaluate all basis funcs in domain
