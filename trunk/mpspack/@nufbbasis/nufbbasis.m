@@ -59,34 +59,35 @@ classdef nufbbasis < handle & basis
             ang=angle(-(pts.x-nufb.origin)./nufb.branch);
             offang=angle(-nufb.offset./nufb.branch);
             if nufb.type=='s',
-                bes=besselj(nu*(0:N+1),k*R);
+                bes=besselj((1:N)*nu,k*R);
                 s=sin(nu*(ang-offang)*(1:N));
-                A=bes(:,2:end-1).*s;
+                A=bes.*s;
             elseif nufb.type=='c',
-                bes=besselj(nu*(-1:N+1),k*R);
+                bes=besselj((0:N)*nu,k*R);
                 c=cos(nu*(ang-offang)*(0:N));
-                A=bes(:,2:end-1).*c;
+                A=bes.*c;
             elseif strcmp(nufb.type,'cs'),
-                bes=besselj(nu*(-1:N+1),k*R);
+                bes=besselj((0:N)*nu,k*R);
                 s=sin(nu*(ang-offang)*(1:N));
                 c=cos(nu*(ang-offang)*(0:N));
-                A=[bes(:,2:end-1).*c,bes(:,3:end-1).*s];
+                A=[bes.*c,bes(:,2:end).*s];
             end
             if nargin>1,
                 if numel(find(R==0))>0,
                     warning('Computing x/y or normal derivatives of regular Bessel functions at origin not implemented');
                 end
-                besr=k/2*(bes(:,1:end-2)-bes(:,3:end));
+                %besr=k/2*(bes(:,1:end-2)-bes(:,3:end));
+                besr=k/2*besselj(nu*(0:N)-1,k*R)-besselj(nu*(0:N)+1,k*R);
                 if nufb.type=='s',
-                    Ar=besr.*s;
-                    At=nu*repmat(1:N,np,1).*bes(:,2:end-1).*cos(nu*(ang-offang)*(1:N));
+                    Ar=besr(:,2:end).*s;
+                    At=nu*repmat(1:N,np,1).*bes.*cos(nu*(ang-offang)*(1:N));
                 elseif nufb.type=='c',
                     Ar=besr.*c;
-                    At=-nu*repmat(0:N,np,1).*bes(:,2:end-1).*sin(nu*(ang-offang)*(0:N));
+                    At=-nu*repmat(0:N,np,1).*bes.*sin(nu*(ang-offang)*(0:N));
                 elseif strcmp(nufb.type,'cs'),
                     Ar=[besr.*c,besr(:,2:end).*s];
-                    At=[-nu*repmat(0:N,np,1).*bes(:,2:end-1).*sin(nu*(ang-offang)*(0:N)),...
-                        nu*repmat(1:N,np,1).*bes(:,3:end-1).*cos(nu*(ang-offang)*(1:N))];
+                    At=[-nu*repmat(0:N,np,1).*bes.*sin(nu*(ang-offang)*(0:N)),...
+                        nu*repmat(1:N,np,1).*bes(:,2:end).*cos(nu*(ang-offang)*(1:N))];
                 end
                 ang0=angle(pts.x-origin); % Angle with respect to the original
                 % coordinate system shifted by
