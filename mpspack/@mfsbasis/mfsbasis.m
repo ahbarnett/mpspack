@@ -68,5 +68,9 @@ classdef mfsbasis < handle & basis
       if b.realflag, A = real(A); end           % keeps only the Y-0 part    
     end
     
+    function showgeom(bas) % ....................... crude show MFS pts, etc
+      plot(real(bas.y), imag(bas.y), 'r+');
+    end % func
+        
   end % methods
 end

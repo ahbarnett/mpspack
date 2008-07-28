@@ -1,7 +1,7 @@
-% BVP - define a Helmholtz or Laplace boundary value problem from segments
+% BVP - define a Helmholtz or Laplace boundary value problem from domains
 %
 %  pr = bvp(doms) creates a BVP object pr which comprises the domains doms
-%   (doms is a row vec of segment handles), using their segments and the
+%   (doms is a row vec of domain handles), using their segments and the
 %   boundary conditions they carry, and the basis sets associated with the
 %   domains.
 
@@ -12,6 +12,7 @@ classdef bvp < problem & handle
   
   methods % ---------------------------------- methods particular to BVPs
     function pr = bvp(doms) % .................... constructor
+      if nargin==0, pr = []; return; end     % needs empty constructor
       pr.doms = doms;
       pr.segs = [];             % now build a list of segments, crude O(N^2)
       for d=doms

@@ -97,7 +97,17 @@ classdef problem < handle
     % To do: * keep evalbases matrices Ad for later use, multiple RHS's etc.
     % * what if evalbases matrices too big to store, sum basis vals by hand?
     %
-    % See also POINTSOLUTION.
+    % See also POINTSOLUTION, GRIDBOUNDINGBOX
+      o = pr.gridboundingbox(o);
+      gx = o.bb(1):o.dx:o.bb(2); gy = o.bb(3):o.dx:o.bb(4);  % plotting region
+      [xx yy] = meshgrid(gx, gy); zz = xx + 1i*yy;  % keep zz rect array
+      [u di] = pr.pointsolution(pointset(zz));
+    end % func
+    
+    function o = gridboundingbox(pr, o)
+    % GRIDBOUNDINGBOX - set default options giving grid spacing and bound box
+    %
+    %  This code was pulled from gridsolution so scattering class can access it
       if nargin<2, o = []; end
       if ~isfield(o, 'dx'), o.dx = 0.03; end    % default grid spacing
       if o.dx<=0, error('dx must be positive!'); end
@@ -111,16 +121,31 @@ classdef problem < handle
       end
       o.bb(1) = o.dx * floor(o.bb(1)/o.dx);         % quantize to grid through 0
       o.bb(3) = o.dx * floor(o.bb(3)/o.dx);         % ... make this optional?
-      gx = o.bb(1):o.dx:o.bb(2); gy = o.bb(3):o.dx:o.bb(4);  % plotting region
-      [xx yy] = meshgrid(gx, gy); zz = xx + 1i*yy;  % keep zz rect array
-      [u di] = pr.pointsolution(pointset(zz));
-    end % func
+    end
     
     function h = showbdry(pr)   % ........................ crude plot bdry
     % SHOWBDRY - shows boundary segments in a problem, with their natural sense
       h = domain.showsegments(pr.segs, ones(size(pr.segs)));
     end
     
+    function h = showbasesgeom(pr)   % ................ crude plot bases geom
+      for d=pr.doms
+        d.showbasesgeom;
+      end
+    end
+    
+    function setoverallwavenumber(pr, k) % ................. overall k
+    % SETOVERALLWAVENUMBER - set problem k, in each domain using refactive index
+    %
+    %  setoverallwavenumber(pr, k) propagates overall wavenumber k to each
+    %   domain, and its basis sets. If a domain has refractive index n, then
+    %   its wavenumber will become n^2 k.
+      pr.k = k;
+      for d=pr.doms
+        d.k = d.refr_ind^2 * k;
+        for b = [d.bas{:}], b.k = d.k; end % do basis sets, if any, each domain
+      end
+    end
     
     % *** Methods to be written ........... ****
     [u un] = bdrysolution(pr, seg, pm) % ........... evaluate soln on a bdry

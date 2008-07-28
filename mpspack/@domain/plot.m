@@ -46,3 +46,7 @@ end
 % show stats... the 1,1 are in case d.x=[] which happens for the entire plane
 h = [h; text(max([real(d.x); 1]), max([imag(d.x); 1]), ...
              sprintf('area = %g\nperim = %g', d.area, d.perim))];
+
+if d.refr_ind ~= 1.0
+  h = [h; text(real(d.center), imag(d.center), sprintf('n=%.3g', d.refr_ind))];
+end
