@@ -1,4 +1,4 @@
-function J = fast_besselJ_recurrence(M,x)
+function J = recursivebessel(M,x)
 % Computes J bessel at all orders 0<=M for multiple arguments x, using
 % Miller's method of downwards-stable recurrence relations (Num Rec sec 5.4,
 % and 6.5, 3rd Ed). Recurrence is started so absolute errors are around 1e-16.
@@ -7,10 +7,11 @@ function J = fast_besselJ_recurrence(M,x)
 % for each x starting the true recurrence only when needed, but before this
 % a fake O(1) recurrence is used.
 %
-% output: J is N-by(2*M+1), where N is numel(x)
+% output: J is N-by(M+1), where N is numel(x)     [note changed from Alex code]
 %
 % barnett 2/28/08
 % Modified for inclusion in mpspack by Timo Betcke 13/07/08
+% debugged nst check at end, barnett 7/27/08
 
 N = numel(x);
 x = reshape(x, [N 1]);                          % make col vec
@@ -47,17 +48,11 @@ norms = J(:,noff) + 2*sum(J(:,noff+(2:2:nst)), 2); % compute known unity sum
 J = J .* repmat(1./norms, [1 size(J,2)]);
 % reinsert the effectively zero args...
 J(z,:) = repmat([1 zeros(1,nst)], [numel(z) 1]);
-J=J(:,1:noff+M);
 
-% % now reflect for the negative orders, depending on how many orders needed...
-% if M<=nst
-%   % shocking that profiler shows the next 3 lines take nearly 1/2 total time...
-%   en = 2:2:M; Jneg(:,M+1-en) = J(:,noff+en);     % even n's (reflection)
-%   on = 1:2:M; Jneg(:,M+1-on) = -J(:,noff+on);    % odd n's  (reflection)
-%   J = [Jneg J(:,1:noff+M)];                      % stick together (expensive)
-% else
-%   en = 2:2:nst; Jneg(:,nst+1-en) = J(:,noff+en);       % even n's
-%   on = 1:2:nst; Jneg(:,nst+1-on) = -J(:,noff+on);      % odd n's
-%   extran = M-nst;                                % how many cols to add in n
-%   J = [zeros(N, extran) Jneg J(:,1:noff+nst) zeros(N, extran)];
-% end
+% now trim depending on how many orders needed... (Alex reinserted nst check)
+if M<=nst
+   J = J(:,1:noff+M);
+else
+  extran = M-nst;                                % how many cols to add in n
+  J = [J(:,1:noff+nst) zeros(N, extran)];
+end

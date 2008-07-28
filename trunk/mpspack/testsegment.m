@@ -1,5 +1,5 @@
 % test segment class
-% barnett 7/7/08
+% barnett 7/7/08, added 7/26/08 some geometry tools
 %
 % Also see for more thorough tests: TESTDOMAIN
 
@@ -22,3 +22,15 @@ Z = @(s) exp(2i*pi*s).*R(2*pi*s);
 z = segment(100, {Z, @(s) 2*pi*(1i*Z(s) + exp(2i*pi*s).*Rt(2*pi*s))}, 'p');
 figure; subplot(1,2,1); z.plot(1); axis equal; title('analytic seg with pm=+');
 subplot(1,2,2); z.plot(-1); axis equal; title('analytic seg with pm=-');
+
+% geometry helper tools...
+M = 50; s = segment.smoothstar(M, 0.3, 3);
+s2 = s.scale(.5); s2.translate(1+1i); s2.rotate(pi/6);
+s.plot; s2.plot; axis equal
+t = translate([s s2], 5i);          % should not change s or s2
+t(1).plot; t(2).plot;
+t = rotate([s s2], -pi/12);         % should overwrite t
+t(1).plot; t(2).plot; axis equal
+translate([s s2], 5);
+rotate([s s2], pi/6);
+s.plot; s2.plot;

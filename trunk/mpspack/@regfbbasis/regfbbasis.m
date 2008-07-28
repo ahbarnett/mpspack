@@ -12,8 +12,8 @@ classdef regfbbasis < handle & basis
     properties
         origin   % Origin of the Fourier-Bessel fct.
         realflag % Decide whether the basis is evaluated using real
-        % sine/cos or complex exponentials
-        usegsl % Use GSL Bessel function if true
+                                   % sine/cos or complex exponentials
+        usegsl   % Use GSL Bessel function if true
     end
 
     methods
@@ -81,6 +81,12 @@ classdef regfbbasis < handle & basis
                 end
             end
         end   % ....................... end function eval
+        
+        function showgeom(regfb)
+          % dummy for now...
+          % NOP
+        end % func
+        
     end % ... end methods
     methods (Access=private)
         function [ret,err]=besselwrapper(regfb,N,r)

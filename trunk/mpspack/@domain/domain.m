@@ -26,7 +26,7 @@
 %  d = DOMAIN(s, pm, si, pmi) combines the above features, creating a bounded
 %   domain with excluded region(s).
 %
-% *** Not yet implemented :
+% *** Not yet implemented, or needed?
 %  d = DOMAIN(s, pm, si, pmi, k) makes a domain with wavenumber k.
 %
 % *** Issues:
@@ -49,8 +49,9 @@ classdef domain < handle
         bas                       % pointer list to basis set objects (cell arr)
         k                         % wavevector for domain
         noff                      % dof offset used as temp in bvp.fillbcmatrix
+        refr_ind                  % refractive index of domain (default = 1)
+        isair                     % 1 if gets an inc wave, 0 if not (scattering)
 %       cseg                      % numel(cloc)-by-2 corner-seg connectivity
-%       n                         % refractive index of domain
     end
     methods % ---------------------------------------------------------------
 
@@ -82,7 +83,7 @@ classdef domain < handle
           fprintf('domain warning: probable bad sense of segment normals!\n')
           norout
         end
-        
+        d.refr_ind = 1.0;                       % default refractive index
         d.bas = {};                            % initialize w/ no basis sets
       end
 
@@ -204,6 +205,12 @@ classdef domain < handle
         d.bas = {};
       end
       
+      function showbasesgeom(d) % ................. crude show MFS pts, etc
+        for b=[d.bas{:}]
+          b.showgeom;
+        end
+      end
+      
       % methods defined by separate files...
       addconnectedsegs(d, s, pm, o)  % helper routine for constructor
       h = plot(d, o)                     % domain plot: o is plot opts struct
@@ -212,6 +219,7 @@ classdef domain < handle
       addrpwbasis(d, N, k, opts)           % add real PW basis
       addmfsbasis(d, Z, tau, N, k, opts)   % add MFS basis
       [A A1 A2] = evalbases(d, p)     % evaluate all basis funcs in domain
+      setrefractiveindex(doms, n)
       
       % ****** not yet implemented ***** ( low priority, mostly)
       checktopology(d)             % checks all pieces in interior, normals

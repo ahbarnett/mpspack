@@ -16,6 +16,8 @@
 %           'c': Clenshaw-Curtis (includes endpoints, M+1 pts)
 %           'g': Gauss (takes O(M^3) to compute, M pts)
 %
+%  s = SEGMENT() creates an empty segment object.
+%
 % See also: POINTSET, segment/PLOT
 
 classdef segment < handle & pointset
@@ -37,6 +39,7 @@ classdef segment < handle & pointset
    end
     methods
       function s = segment(M, p, qtype)
+        if nargin==0, return; end               % empty constructor (for copy)
         if nargin<3, qtype='c'; end             % default quadrature type
       
         % convert different types of input format all to an analytic curve...
@@ -109,8 +112,13 @@ classdef segment < handle & pointset
       %   a function handle. If instead f is a (col vec) array of same size as
       %   seg.x, is interpreted as data sampled on the quadrature points.
       %
-      %  Note that a seg can currently carry only one BC, or instead a matching
+      %  Notes
+      %  1) a seg can currently carry only one BC, or instead a matching
       %   condition (which is a pair of relations on the segment).
+      %  2) this routine merely copies info into the segment. The chief routines
+      %   which interpret and calculate using the BC/matching include
+      %   problem.fillbcmatrix, bvp.fillrighthandside, and
+      %   scattering.setincidentwave. 
         ind = (1-pm)/2+1;            % index
         if isempty(s.dom(ind))
           error(sprintf('side %d of seg not connected to a domain!', pm));
@@ -145,30 +153,119 @@ classdef segment < handle & pointset
       %
       %  setmatch(seg, a, b, f, g) replaces the right hand sides of the
       %   above by inhomogeneous matching functions f,g of t in [0,1]
-        if isempty(s.dom(1)) | isempty(s.dom(2))
+      %
+      %  setmatch(seg, 'diel', pol) uses the dielectric constants of the
+      %   bordering domains to set (a,b) as above appropriate for a dielectric
+      %   matching condition. pol is either 'tm' or 'te' for
+      %   transverse-magnetic (E_z is scalar) or transverse-electric (H_z is
+      %   scalar). f and g may be appended as above. 
+      %
+      % Notes: see Notes for SETBC
+      %
+      % Also see: DIELECTRICCOEFFS
+        if isempty(s.dom{1}) | isempty(s.dom{2})
           error('both sides of seg must be connected to a domain!');
         end
         s.bcside = 0;
         if nargin<4, f = @(t) zeros(size(s.t)); end    % covers homog f case
         if nargin<5, g = @(t) zeros(size(s.t)); end    % covers homog g case
         s.f = f; s.g = g;
-        if numel(a)~=2 | numel(b)~=2, error('a and b must be 1-by-2!'); end
-        s.a = a; s.b = b;
+        if a=='diel'                                   % use dielectric match
+          [s.a s.b] = segment.dielectriccoeffs(b, s.dom{1}.refr_ind, s.dom{2}.refr_ind);
+        else                                         % use a,b passed in
+          if numel(a)~=2 | numel(b)~=2, error('a and b must be 1-by-2!'); end
+          s.a = a; s.b = b;
+        end
       end % func
       
+      function newseg = scale(seg, fac)  % ................... dilate a segment
+      % SCALE - rescale (dilate) a segment (or list) about the origin
+      %
+      %  scale(seg, fac) changes the segment seg (or an array of segments)
+      %   to be rescaled about the origin by factor fac>0.
+      %
+      %  newseg = scale(seg, fac) makes a new segment (or list) which is seg
+      %   rescaled about the origin by factor fac>0.
+        if nargout>0                             % make a duplicate
+          newseg = [];
+          for s=seg; newseg = [newseg utils.copy(s)]; end
+        else
+          newseg = seg;                          % copy handle, modify original
+        end
+        for s=newseg
+          s.x = fac * s.x;
+          s.w = fac * s.w;
+          Z = s.Z; Zp = s.Zp;
+          s.Z = @(t) fac * Z(t);
+          s.Zp = @(t) fac * Zp(t);
+          s.eloc = fac * s.eloc;
+          s.approxv = fac * s.approxv;
+        end
+      end % func
+      
+      function newseg = translate(seg, a)  % ............. translate a segment
+      % TRANSLATE - translate a segment (or list of segments)
+      %
+      %  translate(seg, a) changes the segment (or array of segments) seg by
+      %   translating by the complex number a.
+      %
+      %  newseg = translate(seg, a) instead returns a new segment (or list)
+      %   obtained by translating the segment (or list) seg.
+        if nargout>0                             % make a duplicate
+          newseg = [];
+          for s=seg; newseg = [newseg utils.copy(s)]; end
+        else
+          newseg = seg;                          % copy handle, modify original
+        end
+        for s=newseg
+          s.x = s.x + a;
+          Z = s.Z;
+          s.Z = @(t) Z(t) + a;
+          s.eloc = s.eloc + a;
+          s.approxv = s.approxv + a;
+        end
+      end % func
+      
+      function newseg = rotate(seg, t)  % ............. rotate a segment
+      % ROTATE - rotate a segment (or list of segments) about the origin
+      %
+      %  rotate(seg, t) changes the segment (or array of segments) seg by
+      %   rotating CCW by the angle t
+      %
+      %  newseg = rotate(seg, t) instead returns a new segment (or list)
+      %   obtained by rotating the segment (or list) seg.
+        a = exp(1i*t);                           % a is on unit circle
+        if nargout>0                             % make a duplicate
+          newseg = [];
+          for s=seg; newseg = [newseg utils.copy(s)]; end
+        else
+          newseg = seg;                          % copy handle, modify original
+        end
+        for s=newseg
+          s.x = a * s.x; s.nx = a * s.nx;
+          Z = s.Z; Zp = s.Zp; Zn = s.Zn;
+          s.Z = @(t) a * Z(t); s.Zp = @(t) a * Zp(t); s.Zn = @(t) a * Zn(t);
+          s.eloc = a * s.eloc; s.eang = a * s.eang;
+          s.approxv = a * s.approxv;
+        end
+      end % func
+      
+     function disconnect(segs)  % ...... disconnect a seg list from any domains
+     % DISCONNECT - disconnect a segment or segment list from any domains
+        for s=segs
+          s.dom = {[] []};             % not bordering any domains
+          s.domseg = [0 0];            % dummy segment #s in bordering domains
+        end
+      end
+
       h = plot(s, pm, o)
     end % methods
 
     % --------------------------------------------------------------------
     methods(Static)    % these don't need segment obj to exist to call them...
       s = polyseglist(M, p)
-      
-      function disconnect(segs)  % ...... disconnect a seg list from any domains
-        for s=segs
-          s.dom = {[] []};             % not bordering any domains
-          s.domseg = [0 0];            % dummy segment #s in bordering domains
-        end
-      end
+      s = smoothstar(M, a, w)
+      [a b] = dielectriccoeffs(pol, np, nm)
     end % methods
 end
 
