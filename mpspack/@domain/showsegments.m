@@ -11,6 +11,8 @@
 
 function h = showsegments(segs, pm, o)
 if nargin<3, o = []; end
+if nargin<2, pm = ones(size(segs)); end        % default is +
+if numel(pm)==1, pm = pm*ones(size(segs)); end
 if ~isfield(o, 'label'), o.label = 1; end      % default is label
 
 h = [];

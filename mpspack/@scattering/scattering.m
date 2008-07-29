@@ -130,22 +130,26 @@ classdef scattering < bvp & handle
     %   if opts.testtransparent is true, then the final plot is error from
     %    transparency, reports L2 error estimated over grid too.
     %   if opts.imag = true, plots imag instead of real part
+    %   opts.bdry = true, shows boundary too
     %
     %  Need to * make a real/complex flag
     %          * store Ad eval matrices for later access (expensive to fill)?
       if nargin<2, o = []; end
       if ~isfield(o, 'imag'), o.imag = 0; end
+      if ~isfield(o, 'bdry'), o.bdry = 0; end
       subplot(1,3,1);
       [ui gx gy di] = pr.gridincidentwave(o);
       if o.imag, imagesc(gx, gy, imag(ui)); title('Im[u_i]');
       else, imagesc(gx, gy, real(ui)); title('Re[u_i]'); end
       c = caxis; caxis([-1 1]*max(c));           % make colorscale symmetric
-      axis equal tight;colorbar; set(gca,'ydir','normal'); hold on; pr.showbdry;
+      axis equal tight;colorbar; set(gca,'ydir','normal'); hold on;
+      if o.bdry, pr.showbdry; end
       subplot(1,3,2); [us gx gy di] = pr.gridsolution(o);
       if o.imag, imagesc(gx, gy, imag(us)); title('Im[u_s]');
       else, imagesc(gx, gy, real(us)); title('Re[u_s]'); end
       c = caxis; caxis([-1 1]*max(c));
-      axis equal tight;colorbar; set(gca,'ydir','normal'); hold on; pr.showbdry;
+      axis equal tight;colorbar; set(gca,'ydir','normal'); hold on;
+      if o.bdry, pr.showbdry; end
       subplot(1,3,3);
       if isfield(o,'testtransparent') & o.testtransparent
         [xx yy] = meshgrid(gx, gy); zz = xx + 1i*yy;
@@ -162,7 +166,8 @@ classdef scattering < bvp & handle
         else, imagesc(gx, gy, real(ui+us)); title('Re[u_t] = Re[u_i+u_s]'); end
       end
       c = caxis; caxis([-1 1]*max(c));
-      axis equal tight;colorbar; set(gca,'ydir','normal'); hold on; pr.showbdry;
+      axis equal tight;colorbar; set(gca,'ydir','normal'); hold on;
+      if o.bdry, pr.showbdry; end
       subplotspace('h', -15);            % squeeze the plots together
     end % func
     

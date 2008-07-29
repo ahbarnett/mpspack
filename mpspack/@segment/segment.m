@@ -263,7 +263,7 @@ classdef segment < handle & pointset
 
     % --------------------------------------------------------------------
     methods(Static)    % these don't need segment obj to exist to call them...
-      s = polyseglist(M, p)
+      s = polyseglist(M, p, qtype)
       s = smoothstar(M, a, w)
       [a b] = dielectriccoeffs(pol, np, nm)
     end % methods
