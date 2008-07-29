@@ -102,8 +102,17 @@ classdef nufbbasis < handle & basis
                     A1=cc.*Ar-ss.*At./RR; A2=ss.*Ar+cc.*At./RR;
                 end
             end
-        end
-    end
+        end  % func
+
+
+        function showgeom(b)              % plotting of nufb basis geom
+          plot(real(b.origin), imag(b.origin), 'o');
+          text(real(b.origin), imag(b.origin), sprintf('%.2g', b.nu));
+        end % func
+        
+ 
+
+    end  % methods
 end
 
             

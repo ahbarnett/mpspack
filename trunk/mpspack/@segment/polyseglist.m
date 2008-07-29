@@ -4,10 +4,16 @@
 %   them, corresponding to a closed polygon with vertices in the list p. An
 %   equal number M of quadrature points are used per edge. If sense is CCW then
 %   normals of segments point outwards.
+%
+%  s = POLYSEGLIST(M, p, qtype) uses specified quadrature type (see SEGMENT).
 
-function s = polyseglist(M, p);
+function s = polyseglist(M, p, qtype);
 p = reshape(p, [1 numel(p)]);
 nextp = circshift(p, [0 -1]);
 for j=1:numel(p)
-  s(j) = segment(M, [p(j) nextp(j)]);
+  if nargin==2
+    s(j) = segment(M, [p(j) nextp(j)]);
+  else
+    s(j) = segment(M, [p(j) nextp(j)], qtype);
+  end
 end
