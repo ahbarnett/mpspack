@@ -206,8 +206,8 @@ classdef domain < handle
       end
       
       function showbasesgeom(d) % ................. crude show MFS pts, etc
-        for b=[d.bas{:}]
-          b.showgeom;
+        for i=1:numel(d.bas)
+          d.bas{i}.showgeom;
         end
       end
       
