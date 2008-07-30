@@ -170,7 +170,7 @@ classdef segment < handle & pointset
         if nargin<4, f = @(t) zeros(size(s.t)); end    % covers homog f case
         if nargin<5, g = @(t) zeros(size(s.t)); end    % covers homog g case
         s.f = f; s.g = g;
-        if a=='diel'                                   % use dielectric match
+        if strcmp(a,'diel')                                   % use dielectric match
           [s.a s.b] = segment.dielectriccoeffs(b, s.dom{1}.refr_ind, s.dom{2}.refr_ind);
         else                                         % use a,b passed in
           if numel(a)~=2 | numel(b)~=2, error('a and b must be 1-by-2!'); end

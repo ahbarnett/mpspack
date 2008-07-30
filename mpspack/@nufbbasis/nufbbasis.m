@@ -72,12 +72,11 @@ classdef nufbbasis < handle & basis
                 c=cos(nu*(ang-offang)*(0:N));
                 A=[bes.*c,bes(:,2:end).*s];
             end
-            if nargin>1,
+            if nargout>1,
                 if numel(find(R==0))>0,
-                    warning('Computing x/y or normal derivatives of regular Bessel functions at origin not implemented');
+                    warning('Computing x/y or normal derivatives of irregular Bessel functions at origin not implemented');
                 end
-                %besr=k/2*(bes(:,1:end-2)-bes(:,3:end));
-                besr=k/2*besselj(nu*(0:N)-1,k*R)-besselj(nu*(0:N)+1,k*R);
+                besr=k/2*(besselj(nu*(0:N)-1,k*R)-besselj(nu*(0:N)+1,k*R));
                 if nufb.type=='s',
                     Ar=besr(:,2:end).*s;
                     At=nu*repmat(1:N,np,1).*bes.*cos(nu*(ang-offang)*(1:N));

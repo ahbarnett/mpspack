@@ -21,6 +21,6 @@ for j=1:numel(segs)
   h = [h; plot(s, pm(j), o)]; hold on;          % pass opts to segment.plot
   if o.label
     xm = s.Z(1/2);                   % label at location half way along seg
-    h = [h; text(real(xm), imag(xm), sprintf('%d',j))];
+    h = [h; text(real(xm), imag(xm), sprintf('%d',j),'Fontsize',14,'Fontweight','demi')];
   end
 end
