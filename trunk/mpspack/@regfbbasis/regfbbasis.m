@@ -32,14 +32,13 @@ classdef regfbbasis < handle & basis
             regfb.origin=origin;
             regfb.Nf = 2*N+1;           % there are 2N+1 functions
         end
-        function [A, A1, A2] = eval(regfb,pts)
+        function [A, A1, A2] = eval(regfb,pts,opts)
 
             % Evaluates the basis at a given set of points
             N=regfb.N; k=regfb.k;
             np=length(pts.x); % Number of points
             R=abs(pts.x-regfb.origin);
             ang=angle(pts.x-regfb.origin);
-            ang
             [bes,err]=regfb.besselwrapper(N+1,k*R); % Use GSL function
             if nnz(err)>0,
                 warning('Error in computing regular Bessel functions. Try to reduce basis size.');

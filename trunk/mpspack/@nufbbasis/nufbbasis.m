@@ -50,7 +50,7 @@ classdef nufbbasis < handle & basis
             if strcmp(opts.type,'cs'), nufb.type='cs'; nufb.Nf=2*N+1; end;
 
         end
-        function [A, A1, A2] = eval(nufb,pts)
+        function [A, A1, A2] = eval(nufb,pts,opts)
 
             % Evaluates the basis at a given set of points
             N=nufb.N; k=nufb.k; nu=nufb.nu; origin=nufb.origin;
