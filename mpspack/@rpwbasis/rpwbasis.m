@@ -22,7 +22,7 @@ classdef rpwbasis < handle & basis
       b.dirs = exp(1i*pi*(1:N)/N);    % uniform in angle (need not be)
     end
     
-    function [A Ax Ay] = eval(b, p) % ................ evaluator at points p
+    function [A Ax Ay] = eval(b, p, opts) % .............. evaluator at points p
       N = b.N;
       ks = b.k * b.dirs;               % kvectors as C-#s
       kdotx = real( repmat(ks, size(p.x)) .* conj(repmat(p.x, size(ks))) );

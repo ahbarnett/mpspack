@@ -41,7 +41,7 @@ classdef mfsbasis < handle & basis
       end
     end
     
-    function [A B C] = eval(b, p)
+    function [A B C] = eval(b, p, opts)
     % EVAL - evaluate MFS basis values, and maybe derivatives, at set of points
     %
     % Code adapted from /home/alex/bdry/inclus/evalbasis.m

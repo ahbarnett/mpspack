@@ -25,7 +25,7 @@ else                                                     % compute from scratch
     end
   else                              % ......... helmholtz
     % if self-interactions (square & const diag), assume symm, do upper tri only
-    if size(r,1)==size(r,2) & norm(diag(r)-99)<1e-14
+    if size(r,1)==size(r,2) & norm(diag(r)-999)<1e-14
       %disp(sprintf('self, diag(r)=%g', r(1,1)));
       B = triu(besselh(1, 1, k*triu(r,1)),1);
       B = B.' + B;

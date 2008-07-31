@@ -8,7 +8,9 @@
 %
 %  s = SEGMENT(M, {Z, Zp}) analytic curve given by image of analytic function
 %   Z:[0,1]->C. Zp must be the derivative function Z'. Note the argument is a
-%   1-by-2 cell array of function handles.
+%   1-by-2 cell array of function handles. If instead the 2nd argument is
+%   {Z, Zp, Zpp} where Zpp is the 2nd derivative Z'', curvature information is
+%   also generated (which is useful for layer potentials).
 %
 %  s = SEGMENT(M, p, qtype) where p is any of the above, chooses quadrature type
 %   qtype = 'p': periodic trapezoid (appropriate for periodic segments, M pts)
@@ -16,18 +18,24 @@
 %           'c': Clenshaw-Curtis (includes endpoints, M+1 pts)
 %           'g': Gauss (takes O(M^3) to compute, M pts)
 %
+%  If M is empty, a default value of 20 is used.
+%
 %  s = SEGMENT() creates an empty segment object.
 %
 % See also: POINTSET, segment/PLOT
 
 classdef segment < handle & pointset
     properties
-        t                      % quadrature parameter values in [0,1]
+        t                      % quadrature parameter values in [0,1] (col vec)
         w                      % quadrature weights, sum = seg len (row vec)
+        speed                  % |dZ/dt| at quadrature pts (col vec)
+        kappa                  % kappa curvature at quad pts (col vec; optional)
+        qtype                  % quadrature type
         eloc                   % [start point; end point] as C-#s
         eang                   % [start angle; end angle] as C-#s on unit circle
         Z                      % analytic function handle Z(t) on [0,1]
         Zp                     % derivative function handle dZ/dt on [0,1]
+        Zpp                    % 2nd deriv d^2Z/dt^2 on [0,1] (optional)
         Zn                     % unit normal function handle on [0,1]
         approxv                % vertex list for polygonal approximation
         dom                    % domain handles bordered on + & - sides (2-cell)
@@ -44,39 +52,28 @@ classdef segment < handle & pointset
       
         % convert different types of input format all to an analytic curve...
         if iscell(p)         % ------------ analytic function (cell array)
-          s.Z = p{1};        % use passed-in analytic func handles Z, Zp
+          s.Z = p{1};        % use passed-in analytic func handles Z, Zp {,Zpp}
           s.Zp = p{2};
+          if numel(p)>2
+            s.Zpp = p{3};
+          end
           Napprox = 100;     % # pts for crude inside-polygon test, must be even
         elseif numel(p)==2   % ------------ straight line
           d = p(2)-p(1);
           s.Z = @(t) p(1) + d*t;
-          s.Zp = @(t) d + 0*t;     % constant (0*t trick to make size of t) 
+          s.Zp = @(t) d + 0*t;     % constant (0*t trick to make size of t)
+          s.Zpp = @(t) 0*t;
           Napprox = 1;
         elseif numel(p)==4   % ------------- arc of circle
           s.Z = @(t) p(1) + p(2)*exp(1i*(p(3) + t*(p(4)-p(3))));
           s.Zp = @(t) 1i*(p(4)-p(3))*p(2)*exp(1i*(p(3) + t*(p(4)-p(3))));
+          s.Zpp = @(t) -(p(4)-p(3))^2*p(2)*exp(1i*(p(3) + t*(p(4)-p(3))));
           Napprox = 50;      % # pts for crude inside-polygon test, must be even
         else
           error('segment second argument not valid!');
         end
-        switch qtype % choose a quadrature rule function on [-1,1]...
-         case 'p',
-          quadrule = @quadr.peritrap;
-         case 't',
-          quadrule = @quadr.traprule;
-         case 'c',
-          quadrule = @quadr.clencurt;
-         case 'g',
-          quadrule = @quadr.gauss;  % note via eig returns increasing x order
-         otherwise,
-          error(sprintf('segment: unknown quadrature type %s!', qtype));
-        end
-        [z s.w] = quadrule(M);  % NB must give monotonic increasing x in [-1,1]
-        s.t = (1+z)/2;            % t in [0,1], increasing
-        s.x = s.Z(s.t);
-        dZdt = s.Zp(s.t);         % Z' eval at t
-        s.w = s.w/2 .* abs(dZdt).';  % quadr weights wrt arclength on segment
-        s.nx = -1i*dZdt./abs(dZdt);
+        s.qtype = qtype;             % keep for later reference
+        s.requadrature(M, qtype);    % set up quadrature pts, w, nx, etc...
         s.Zn = @(t) -1i*s.Zp(t)./abs(s.Zp(t)); % new; supercedes normal method
         s.eloc = s.Z([0;1]);
         eZp = s.Zp([0;1]);                     % derivs at the 2 ends
@@ -87,12 +84,48 @@ classdef segment < handle & pointset
         s.bcside = NaN;              % no BCs or matching conditions
       end
       
-      function n = normal(s, t) % ................. returns normal at t in [0,1]
-      % NORMAL - compute unit normal as C-# given segment parameter t in [0,1]
+      function requadrature(segs, M, qtype)
+      % REQUADRATURE - change a segment's quadrature scheme or number of points
       %
-      %  Note: this is duplicated by the property Zn in segment object
-        dZdt = s.Zp(t);
-        n = -1i*dZdt./abs(dZdt);
+      %  REQUADRATURE(seg, M) changes the number of points to M (or M+1
+      %   depending on the type, see below), without changing the quadrature
+      %   type. If seg is a list of segments, it does it for each.
+      %
+      %  REQUADRATURE(seg, M, qtype) chooses new M and new quadrature type
+      %   qtype = 'p': periodic trapezoid (appropriate for periodic segments, M pts)
+      %           't': trapezoid rule (ie, half each endpoint, M+1 pts)
+      %           'c': Clenshaw-Curtis (includes endpoints, M+1 pts)
+      %           'g': Gauss (takes O(M^3) to compute, M pts)
+      %
+      %  If M is empty, a default value of 20 is used.
+      %
+      % See also: SEGMENT
+        if isempty(M), M = 20; end              % default M
+        for s=segs
+          if nargin<3, qtype=s.qtype; end         % preserve quadrature type
+          switch qtype % choose a quadrature rule function on [-1,1]...
+           case 'p',
+            quadrule = @quadr.peritrap;
+           case 't',
+            quadrule = @quadr.traprule;
+           case 'c',
+            quadrule = @quadr.clencurt;
+           case 'g',
+            quadrule = @quadr.gauss;  % note via eig returns increasing x order
+           otherwise,
+            error(sprintf('requadrature: unknown quadrature type %s!', qtype));
+          end
+          [z s.w] = quadrule(M); % NB must give monotonic increasing x in [-1,1]
+          s.t = (1+z)/2;               % t in [0,1], increasing
+          s.x = s.Z(s.t);
+          dZdt = s.Zp(s.t);            % Z' eval at t
+          s.speed = abs(dZdt);
+          s.w = s.w/2 .* s.speed.';  % quadr weights wrt arclength on segment
+          s.nx = -1i*dZdt./s.speed;
+          if ~isempty(s.Zpp)         % d^2Z/dt^2 available...
+            s.kappa = -real(conj(-1i*dZdt).*s.Zpp(s.t)) ./ s.speed.^3;%curvature
+          end
+        end
       end
       
       function setbc(s, pm, a, b, f) % .......................... setBC
@@ -195,10 +228,16 @@ classdef segment < handle & pointset
         for s=newseg
           s.x = fac * s.x;
           s.w = fac * s.w;
+          s.speed = fac * s.speed;
+          s.kappa = s.kappa / fac;
           Z = s.Z; Zp = s.Zp;
           s.Z = @(t) fac * Z(t);
           s.Zp = @(t) fac * Zp(t);
-          s.eloc = fac * s.eloc;
+          if ~isempty(s.Zpp)
+            Zpp = s.Zpp;
+            s.Zpp = @(t) fac * Zpp(t);
+          end
+           s.eloc = fac * s.eloc;
           s.approxv = fac * s.approxv;
         end
       end % func
@@ -245,6 +284,10 @@ classdef segment < handle & pointset
           s.x = a * s.x; s.nx = a * s.nx;
           Z = s.Z; Zp = s.Zp; Zn = s.Zn;
           s.Z = @(t) a * Z(t); s.Zp = @(t) a * Zp(t); s.Zn = @(t) a * Zn(t);
+          if ~isempty(s.Zpp)
+            Zpp = s.Zpp;
+            s.Zpp = @(t) a * Zpp(t);
+          end
           s.eloc = a * s.eloc; s.eang = a * s.eang;
           s.approxv = a * s.approxv;
         end
@@ -264,6 +307,7 @@ classdef segment < handle & pointset
     % --------------------------------------------------------------------
     methods(Static)    % these don't need segment obj to exist to call them...
       s = polyseglist(M, p, qtype)
+      s = radialfunc(M, fs)
       s = smoothstar(M, a, w)
       [a b] = dielectriccoeffs(pol, np, nm)
     end % methods

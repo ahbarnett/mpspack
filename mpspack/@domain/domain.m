@@ -98,7 +98,7 @@ classdef domain < handle
         t = 1/2;              % where to test along seg; so Napprox must be even
         p = zeros(size(d.seg));
         for j = 1:numel(d.seg)
-           p(j) = d.seg(j).Z(t) + eps * d.pm(j) * d.seg(j).normal(t);
+           p(j) = d.seg(j).Z(t) + eps * d.pm(j) * d.seg(j).Zn(t);
         end
         norout = ~d.inside(p);                 % true if points away from domain
       end
@@ -218,7 +218,8 @@ classdef domain < handle
       addnufbbasis(d,origin,nu,offset,branch,N,k,opts) % add irreg. FB basis
       addrpwbasis(d, N, k, opts)           % add real PW basis
       addmfsbasis(d, Z, tau, N, k, opts)   % add MFS basis
-      [A A1 A2] = evalbases(d, p)     % evaluate all basis funcs in domain
+      addlayerpotbasis(d, a, k, segs, opts) % add layer-potential basis
+      [A A1 A2] = evalbases(d, p, opts)    % evaluate all basis funcs in domain
       setrefractiveindex(doms, n)
       
       % ****** not yet implemented ***** ( low priority, mostly)
