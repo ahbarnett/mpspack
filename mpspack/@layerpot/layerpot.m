@@ -31,12 +31,15 @@ classdef layerpot < handle & basis
       b.real = opts.real;
       if ~isa(seg, 'segment'), error('seg must be a segment object!'); end
       b.seg = seg;
-      switch a
-        case {'single', 'S', 's', 'SLP'}
-         a = [1 0];
-        case {'double', 'D', 'd', 'DLP'}
-         a = [0 1];
+      if ~isnumeric(a)
+        switch a
+         case {'single', 'S', 's', 'SLP'}
+          a = [1 0];
+         case {'double', 'D', 'd', 'DLP'}
+          a = [0 1];
+        end
       end
+      if size(a)~=[1 2], error('a argument is not size 1-by-2!'); end
       b.a = a;
     end % func
     
@@ -50,6 +53,7 @@ classdef layerpot < handle & basis
     %   The optional argument opts may contain the following fields:
     %    opts.layerpotside = +1 or -1: determines from which side of a segment
     %     the limit is approached, for jump relation. +1 is the normal side.
+      if nargin<3, o = []; end
       self = (p==b.seg); % if true, local eval on segment carrying density
       if self & o.layerpotside~=1 & o.layerpotside~=-1
         error('opts.layerpotside must be +1 or -1 for self-interaction');
@@ -57,9 +61,11 @@ classdef layerpot < handle & basis
       if self, p = []; end              % tell S, D, etc to use self-interaction
       if nargout==1 %------------------------------- values only
         if b.a(2)==0             % only SLP
-          A = b.a(1) * layerpot.S(b.k, b.seg, p, o);
+          A = layerpot.S(b.k, b.seg, p, o);
+          if b.a(1)~=1, A = A * b.a(1); end 
         elseif b.a(1)==0         % only DLP
-          A = b.a(2) * layerpot.D(b.k, b.seg, p, o);
+          A = layerpot.D(b.k, b.seg, p, o);
+          if b.a(2)~=1, A = A * b.a(2); end 
         else                     % mixture of SLP + DLP
           A = b.a(1) * layerpot.S(b.k, b.seg, p, o) + ...
               b.a(2) * layerpot.D(b.k, b.seg, p, o);
@@ -69,197 +75,75 @@ classdef layerpot < handle & basis
         end
         
       elseif nargout==2 %------------------------------- values + normal derivs
+        if b.a(2)==0             % only SLP
+          A = layerpot.S(b.k, b.seg, p, o);
+          o.derivSLP = 1;
+          Ax = layerpot.D(b.k, b.seg, p, o);
+          if b.a(1)~=1, A = A * b.a(1); Ax = Ax * b.a(1); end 
+        elseif b.a(1)==0         % only DLP
+          A = layerpot.D(b.k, b.seg, p, o);
+          Ax = layerpot.T(b.k, b.seg, p, o);
+          if b.a(2)~=1, A = A * b.a(2); Ax = Ax * b.a(2); end 
+        else                     % mixture of SLP + DLP
+          [A o.Sker] = layerpot.S(b.k, b.seg, p, o);
+          [AD o.Dker_noang] = layerpot.D(b.k, b.seg, p, o);
+          A = b.a(1) * A + b.a(2) * AD;
+          clear AD
+          o.derivSLP = 1;
+          [Ax o.Dker_noang] = layerpot.D(b.k, b.seg, p, o);
+          Dn = layerpot.T(b.k, b.seg, p, o);
+          Ax = b.a(1) * Ax + b.a(2) * Dn;
+        end
+        if self & b.a(2)~=0
+          A = A + o.layerpotside * b.a(2) * eye(size(A)) / 2;   % DLP val jump
+        end
+        if self & b.a(1)~=0
+          An = An - o.layerpotside * b.a(1) * eye(size(A)) / 2; % SLP deriv jump
+        end
         
-        
-        
-      else
-        
+      else % ------------------------------------- values, x- and y-derivs
+        if b.a(2)==0             % only SLP
+          A = layerpot.S(b.k, b.seg, p, o);
+          o.derivSLP = 1;
+          nx_copy = p.nx; p.nx = ones(size(p.nx)); % overwrite pointset normals
+          [Ax o.Dker_noang] = layerpot.D(b.k, b.seg, p, o);
+          p.nx = 1i*ones(size(p.nx));
+          Ay = layerpot.D(b.k, b.seg, p, o); % reuses H1 (Dker) mat
+          p.nx = nx_copy;                          % restore pointset normals
+          if b.a(1)~=1, A = A * b.a(1); Ax = Ax * b.a(1); Ay = Ay * b.a(1); end 
+       elseif b.a(1)==0         % only DLP
+          [A o.Dker_noang] = layerpot.D(b.k, b.seg, p, o);
+          nx_copy = p.nx; p.nx = ones(size(p.nx)); % overwrite pointset normals
+          [Ax o.Sker] = layerpot.T(b.k, b.seg, p, o);
+          p.nx = 1i*ones(size(p.nx));
+          Ay = layerpot.T(b.k, b.seg, p, o);
+          p.nx = nx_copy;                          % restore pointset normals
+          if b.a(2)~=1, A = A * b.a(2); Ax = Ax * b.a(2); Ay = Ay * b.a(2); end
+        else                    % mixture of SLP + DLP
+          [A o.Sker] = layerpot.S(b.k, b.seg, p, o);
+          [AD o.Dker_noang] = layerpot.D(b.k, b.seg, p, o);
+          A = b.a(1) * A + b.a(2) * AD;
+          clear AD
+          o.derivSLP = 1;
+          nx_copy = p.nx; p.nx = ones(size(p.nx)); % overwrite pointset normals
+          Ax = layerpot.D(b.k, b.seg, p, o);
+          Ax = b.a(1) * Ax + b.a(2) * layerpot.T(b.k, b.seg, p, o);
+          p.nx = 1i*ones(size(p.nx));
+          Ay= layerpot.D(b.k, b.seg, p, o);
+          Ay = b.a(1) * Ay + b.a(2) * layerpot.T(b.k, b.seg, p, o);
+          p.nx = nx_copy;                          % restore pointset normals
+        end
+        if self
+          error('LP self jump rels not yet implemented for Ax Ay grad vec!')
+        end
         
       end
     end % func
   end % methods
   
-  methods (Static)  
-    function A = S(k, s, t, o)
-    % S - double layer potential discretization matrix for density on a segment
-    %
-    %  S = S(k, s) where s is a segment returns the matrix discretization of
-    %   the SLP integral operator with density on the segment,
-    %      u(x) = int_s Phi(x,y) sigma(y) ds(y)
-    %   where Phi is the fundamental solution
-    %      Phi(x,y) = (i/4) H_0^{(1)}(k|x-y|)    for k>0
-    %                 (1/2pi) log(1/|x-y|)       for k=0
-    %   for x each of the points on the self-same segment s. No jump relations
-    %   are included. If the segment is closed then periodic spectral
-    %   quadrature may be used (see options below). 
-    %
-    %  S = S(k, s, t) where t is a pointset (any object with fields t.x)
-    %   uses s as the source segment as above, but target points in t.
-    %   It is assumed t is not s.
-    %
-    %  S = S(k, s, [], opts) or S = S(k, s, t, opts) does the above two choices
-    %   but with options struct opts including the following:
-    %    opts.quad = 'k' (Kapur-Rokhlin), 'm' (Martensen-Kussmaul spectral)
-    %                periodic quadrature rules, used only if s.qtype is 'p'
-    %    opts.ord = 2,6,10. controls order of Kapur-Rokhlin rule.
-    %    opts.Aval = quad-unweighted value matrix of fund-sols (prevents
-    %                recomputation of r or fundsol values). Non-self case only!
-    %
-    %  Adapted from leslie/pc2d/slp_matrix.m, barnett 7/31/08
-    %  Tested by routine: testlpquad.m
-      if isempty(k) | isnan(k), error('SLP: k must be a number'); end
-      if nargin<4, o = []; end
-      if nargin<3, t = []; end
-      if ~isfield(o, 'quad'), o.quad='m'; end; % default self periodic quadr
-      self = isempty(t);               % self-interact: potentially sing kernel
-      N = numel(s.x);                  % # src pts
-      if self, t = s; end              % use source as target pts (handle copy)
-      M = numel(t.x);                  % # target pts
-      sp = s.speed/2/pi; % note: 2pi converts to speed wrt s in [0,2pi] @ src pt
-      needAval = self | ~isfield(o, 'Aval'); % true if must compute kernel vals
-      if needAval
-        d = repmat(t.x, [1 N]) - repmat(s.x.', [M 1]); % C-# displacements mat
-        r = abs(d);                                    % dist matrix R^{MxN}
-      end
-      if self, r(diagind(r)) = 999; end   % dummy nonzero diag values
-
-      if self % ........... source curve = target curve; can be singular kernel
-  
-        if s.qtype=='p' & o.quad=='k'  % Kapur-Rokhlin (kills diagonal values)
-          A = utils.fundsol(r, k);              % Phi
-          [s w] = quadr.kapurtrap(N+1, o.ord);  % Zydrunas-supplied K-R weights
-          w = 2*pi * w;                 % change interval from [0,1) to [0,2pi)
-          A = circulant(w(1:end-1)) .* A .* repmat(sp.', [M 1]); % speed
-    
-        elseif s.qtype=='p' & o.quad=='m' % Martensen-Kussmaul (Kress MCM 1991)
-          if isempty(s.kappa)
-            error('cant do Martensen-Kussmaul quadr without s.kappa available!')
-          end
-          A = utils.fundsol(r, k);                % Phi
-          if k==0                         % Laplace SLP has ln sing
-            S1 = -1/4/pi;                 % const M_1/2 of Kress w/out speed fac
-            A = A - S1.*circulant(log(4*sin(pi*(0:N-1)/N).^2)); % A=D2=M_2/2 "
-            A(diagind(A)) = -log(sp)/2/pi;        % diag vals propto curvature
-          else
-            S1 = triu(besselj(0,k*triu(r,1)),1);  % use symmetry (arg=0 is fast)
-            S1 = -(1/4/pi)*(S1.'+S1);     % next fix it as if diag(r) were 0
-            S1(diagind(S1)) = -(1/4/pi);  % S1=M_1/2 of Kress w/out speed fac
-            A = A - S1.*circulant(log(4*sin(pi*(0:N-1)/N).^2)); % A=D2=M_2/2 "
-            eulergamma = -psi(1);         % now set diag vals Kress M_2(t,t)/2
-            A(diagind(A)) = 1i/4 - eulergamma/2/pi - log((k*sp).^2/4)/4/pi;
-          end
-          %if N==450, figure; imagesc(real(A)); colorbar; end % diag matches?
-          A = (circulant(quadr.kress_Rjn(N/2)).*S1 + A*(2*pi/N)) .* ...
-              repmat(sp.', [M 1]);  
-
-        else       % ------ self-interacts, but no special quadr, just use seg's
-          % Use the crude approximation of kappa for diag, usual s.w off-diag...
-          A = utils.fundsol(r, k);
-          A = A .* repmat(s.w, [M 1]);  % use segment usual quadrature weights
-          fprintf('warning: SLP crude self-quadr will be awful, no diag!\n')
-          A(diagind(A)) = 0;
-        end
-      
-      else % ............................ distant target curve, so smooth kernel
-
-        if needAval
-          A = utils.fundsol(r, k);                      
-          Aval = A;
-        else
-          A = o.Aval;
-        end
-        A = A .* repmat(s.w, [M 1]);       % use segment quadrature weights
-      end
-    end % func
-
-    function A = D(k, s, t, o)
-    % D - double layer potential discretization matrix for density on a segment
-    %
-    %  D = D(k, s) where s is a segment returns the matrix discretization of
-    %   the DLP integral operator with density on the segment,
-    %      u(x) = int_s partial_n(y) Phi(x,y) tau(y) ds(y)
-    %   where Phi is the fundamental solution
-    %      Phi(x,y) = (i/4) H_0^{(1)}(k|x-y|)    for k>0
-    %                 (1/2pi) log(1/|x-y|)       for k=0
-    %   for x each of the points on the self-same segment s. No jump relations
-    %   are included. If the segment is closed then periodic spectral
-    %   quadrature may be used (see options below). 
-    %
-    %  D = D(k, s, t) where t is a pointset (any object with fields t.x)
-    %   uses s as the source segment as above, but target points in t.
-    %   It is assumed t is not s.
-    %
-    %  D = D(k, s, [], opts) or D = D(k, s, t, opts) does the above two choices
-    %   but with options struct opts including the following:
-    %    opts.quad = 'k' (Kapur-Rokhlin), 'm' (Martensen-Kussmaul spectral)
-    %                periodic quadrature rules, used only if s.qtype is 'p'
-    %    opts.ord = 2,6,10. controls order of Kapur-Rokhlin rule.
-    %
-    %  Adapted from leslie/pc2d/dlp_matrix.m, barnett 7/31/08
-    %  Tested by routine: testlpquad.m
-    %
-    %  To Do: * put option in to return D^T instead, switching s.nx to t.nx
-    %         * make it bypass hankel computation if pass in opts.Hval matrix!
-      if isempty(k) | isnan(k), error('DLP: k must be a number'); end
-      if nargin<4, o = []; end
-      if nargin<3, t = []; end
-      if ~isfield(o, 'quad'), o.quad='m'; end; % default self periodic quadr
-      self = isempty(t);               % self-interact: potentially sing kernel
-      N = numel(s.x);                  % # src pts
-      if self, t = s; end              % use source as target pts (handle copy)
-      M = numel(t.x);                  % # target pts
-      sp = s.speed/2/pi; % note: 2pi converts to speed wrt s in [0,2pi] @ src pt
-      d = repmat(t.x, [1 N]) - repmat(s.x.', [M 1]); % C-# displacements matrix
-      nx = repmat(s.nx.', [M 1]);         % identical rows given by src normals
-      r = abs(d);                         % dist matrix R^{MxN}
-      if self, r(diagind(r)) = 999; end   % dummy nonzero diag values
-      cosphi = real(conj(nx).*d) ./ r;    % dot prod <normal, displacement>
-
-      if self % ........... source curve = target curve; can be singular kernel
-  
-        if s.qtype=='p' & o.quad=='k' % Kapur-Rokhlin (kills diagonal values)
-          A = utils.fundsol_deriv(r, cosphi, k);      % (src)normal-deriv of Phi
-          [s w] = quadr.kapurtrap(N+1, o.ord);  % Zydrunas-supplied K-R weights
-          w = 2*pi * w;                 % change interval from [0,1) to [0,2pi)
-          A = circulant(w(1:end-1)) .* A .* repmat(sp.', [M 1]); % speed
-    
-        elseif s.qtype=='p' & o.quad=='m' % Martensen-Kussmaul (Kress MCM 1991)
-          if isempty(s.kappa)
-            error('cant do Martensen-Kussmaul quadr without s.kappa available!')
-          end
-          if k==0                   % for k=0 DLP analytic on analytic curve
-            A = utils.fundsol_deriv(r, cosphi, k);  % (src)normal-deriv of Phi
-            A(diagind(A)) = -s.kappa/(4*pi);        % diag vals propto curvature
-            A = (2*pi/N) * A .* repmat(sp.', [M 1]);   % speed quad weights
-          else                      % for k>0 has x^2 ln x sing, Kress handles
-            A = utils.fundsol_deriv(r, cosphi, k);     % diag is garbage
-            D1 = triu(besselj(1,k*triu(r,1)),1); % use symmetry (arg=0 is fast)
-            D1 = -(k/4/pi)*cosphi.*(D1.'+D1);  % L_1/2 of Kress w/out speed fac
-            A = A - D1.*circulant(log(4*sin(pi*(0:N-1)/N).^2)); % A=D2=L_2/2 "
-            A(diagind(A)) = -s.kappa/(4*pi);   % L_2(t,t)/2, same as for k=0
-            % speed factors: diag matrix mult from right...
-            A = (circulant(quadr.kress_Rjn(N/2)).*D1 + (2*pi/N)*A) .* ...
-                repmat(sp.', [M 1]);
-          end
-
-        else       % ------ self-interacts, but no special quadr, just use seg's
-          % Use the crude approximation of kappa for diag, usual s.w off-diag...
-          A = utils.fundsol_deriv(r, cosphi, k); % src-normal-deriv of fund soln
-          A = A .* repmat(s.w, [M 1]);  % use segment usual quadrature weights
-          if isempty(s.kappa)
-            fprintf('warning: DLP crude self-quadr has no s.kappa so will be awful!\n')
-            A(diagind(A)) = 0;
-          else
-            fprintf('warning: DLP crude self-quadr, using s.kappa for diag\n')
-            A(diagind(A)) = -s.kappa/(4*pi);       % diag vals propto curvature
-          end
-        end
-      
-      else % ............................ distant target curve, so smooth kernel
-
-        A = utils.fundsol_deriv(r, cosphi, k);   % src-normal-deriv of fund soln
-        A = A .* repmat(s.w, [M 1]);       % use segment quadrature weights
-      end
-    end % func
+  methods (Static)
+    [A Sker] = S(k, s, t, o)                      % Phi kernel matrix
+    [A Dker_noang cosker] = D(k, s, t, o)         % dPhi/dny or dPhi/dny matrix
+    [A Sker Dker_noang] = T(k, s, t, o)           % d^2Phi/dnxdny matrix
   end % methods
 end
