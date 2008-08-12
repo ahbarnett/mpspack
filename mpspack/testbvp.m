@@ -1,20 +1,25 @@
 % BVP class test routine
 % barnett 7/18/08, included exterior domain and Neumann 7/19/08
 % added MFS and transmission 7/20/08, added DLP 7/31/08
+% To Do: debug why prob9 doesn't not match bdry vals in GRF (testlayerpot works)
 
 clear all classes
 verb = 1;          % verbosity: 0 for no figures, 1 for figures
 passdata = 0;      % 0 passes func handles, 1 passes data vectors
 k = 10;            % overall wavenumber
 
-for prob=1:8 % ===== loop over test problems ======
+for prob=1:9 % ===== loop over test problems ======
   
   switch prob      % choose segments, domains, basis sets, and exact solutions
-   case {1,2,3} %    .................... interior polygon D & N
+   case {1,2,3,9} %    ...... interior polygon D & N (3: DLP, 9: test Greens th)
     dname = 'interior';
     if prob==3                            % choose a basis set for domain
       s = segment.smoothstar(70, 0.3, 3); pm = 1; d = domain(s, pm);
       d.addlayerpotbasis([], 'd', k); dname = [dname ' DLP'];
+    elseif prob==9
+      s = segment.smoothstar(70, 0.3, 3); pm = 1; d = domain(s, pm);
+      d.addlayerpotbasis([], 's', k); d.addlayerpotbasis([], 'd', k);
+      dname = [dname ' Green Rep Thm'];
     else
       p = [1 1i exp(4i*pi/3)];            % triangle from Alex's inclusion paper
       M = 40;
@@ -72,7 +77,7 @@ for prob=1:8 % ===== loop over test problems ======
   end
   
   switch prob      % choose BCs
-   case {1,3,4,6} % ................... Dirichlet
+   case {1,3,4,6,9} % ................... Dirichlet
     bname = 'Dirichlet';
     for j=1:numel(s)                    % same func on all segments
       f = @(t) u(s(j).Z(t));            % compose u(Z(t))
@@ -95,7 +100,9 @@ for prob=1:8 % ===== loop over test problems ======
   end
 
   pr = bvp(d); % ......... set up then solve BVP, plot soln and err
-  tic; pr.solvecoeffs;
+  tic; if prob==9, un = real(conj(du(s.x)).*s.nx); pr.co = [un; -u(s.x)];
+      pr.fillquadwei; pr.fillbcmatrix; pr.rhs = u(s.x); % GRF test, no lin solve
+     else pr.solvecoeffs; end
   name = sprintf('BVP #%d, %s %s', prob, dname, bname);
   fprintf('%s: done in %.2g sec; cond(A)=%2.g\n', name, toc, cond(pr.A))
   fprintf('\tL2 bdry error norm = %g, coeff norm = %g\n', pr.bcresidualnorm, ...

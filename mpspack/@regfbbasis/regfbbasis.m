@@ -14,6 +14,7 @@ classdef regfbbasis < handle & basis
         realflag % Decide whether the basis is evaluated using real
                                    % sine/cos or complex exponentials
         usegsl   % Use GSL Bessel function if true
+        rescale_arg  % argument (kR) to use to rescale the J bessels.
     end
 
     methods
@@ -22,6 +23,7 @@ classdef regfbbasis < handle & basis
             if nargin<4, opts = []; end
             if ~isfield(opts,'real'), opts.real = 1; end   % default
             if ~isfield(opts,'usegsl'), opts.usegsl=0; end
+            if ~isfield(opts,'rescale_rad'), opts.rescale_rad=0; end
             if nargin<2, N=20; end; % Default degree of FB fct.
             if nargin<1, origin=0; end; % Default origin is zero
 
@@ -31,10 +33,13 @@ classdef regfbbasis < handle & basis
             regfb.N=N;
             regfb.origin=origin;
             regfb.Nf = 2*N+1;           % there are 2N+1 functions
+            regfb.rescale_arg = k * opts.rescale_rad;
         end
-        function [A, A1, A2] = eval(regfb,pts,opts)
+        
+        function [A, A1, A2] = eval(regfb,pts,opts) % ........... evaluator
 
-            % Evaluates the basis at a given set of points
+        % Evaluates the basis at a given set of points
+            resc = (regfb.rescale_arg>0);
             N=regfb.N; k=regfb.k;
             np=length(pts.x); % Number of points
             R=abs(pts.x-regfb.origin);
@@ -46,6 +51,10 @@ classdef regfbbasis < handle & basis
             c=cos(ang*(1:N));
             s=sin(ang*(1:N));
             A=[bes(:,1), bes(:,2:end-1).*c, bes(:,2:end-1).*s];
+            if resc              % rescale by orders
+              scfac = 1./besselj(0:N, min(0:N, regfb.rescale_arg));
+              A = A .* repmat([scfac scfac(2:end)], [numel(ang) 1]);
+            end
             if nargout>1, % derivs wanted
                 if numel(find(R==0))>0,
                     warning('Computing x/y or normal derivatives of regular Bessel functions at origin not implemented');
@@ -64,9 +73,16 @@ classdef regfbbasis < handle & basis
                 if nargout==2,
                     nx=repmat(real(pts.nx),1,2*N+1); ny=repmat(imag(pts.nx),1,2*N+1);
                     A1=Ar.*(nx.*cc+ny.*ss)+At.*(ny.*cc-nx.*ss)./RR;
+                    if resc              % rescale by orders
+                      A1 = A1 .* repmat([scfac scfac(2:end)], [numel(ang) 1]);
+                    end
                 end
                 if nargout==3,
                     A1=cc.*Ar-ss.*At./RR; A2=ss.*Ar+cc.*At./RR;
+                    if resc              % rescale by orders
+                      A1 = A1 .* repmat([scfac scfac(2:end)], [numel(ang) 1]);
+                      A2 = A2 .* repmat([scfac scfac(2:end)], [numel(ang) 1]);
+                    end
                 end
             end
             if ~regfb.realflag,

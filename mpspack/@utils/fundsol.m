@@ -7,6 +7,7 @@ function A = fundsol(r, k)
 %
 % barnett 2/6/08, debugged the test for self-int 2/26/08, dummy diag now 999.
 
+%fprintf('min r = %g\n', min(r(:)))
 if k==0
   A = -(1/2/pi) * log(r);                                % laplace 
 else

@@ -18,7 +18,8 @@ function [A Sker] = S(k, s, t, o)
 %  S = S(k, s, [], opts) or S = S(k, s, t, opts) does the above two choices
 %   but with options struct opts including the following:
 %    opts.quad = 'k' (Kapur-Rokhlin), 'm' (Martensen-Kussmaul spectral)
-%                periodic quadrature rules, used only if s.qtype is 'p'
+%                periodic quadrature rules, used only if s.qtype is 'p';
+%                any other does low-order non-periodic quad using segment's own.
 %    opts.ord = 2,6,10. controls order of Kapur-Rokhlin rule.
 %    opts.Sker = quad-unweighted kernel matrix of fund-sols (prevents
 %                recomputation of r or fundsol values).
@@ -74,13 +75,19 @@ if self % ........... source curve = target curve; can be singular kernel
     end
     %if N==450, figure; imagesc(real(A)); colorbar; end % diag matches?
     A = (circulant(quadr.kress_Rjn(N/2)).*S1 + A*(2*pi/N)) .* ...
-        repmat(sp.', [M 1]);  
+        repmat(sp.', [M 1]);
     
   else  % ------ self-interacts, but no special quadr, just use seg's
     % Use the crude approximation of kappa for diag, usual s.w off-diag...
     A = A .* repmat(s.w, [M 1]);  % use segment usual quadrature weights
-    fprintf('warning: SLP crude self-quadr will be awful, no diag!\n')
-    A(diagind(A)) = 0;
+    fprintf('warning: SLP crude self-quadr will be awful, low order\n')
+    if k==0
+      % ...
+      A(diagind(A)) = 0;
+    else
+      eulergamma = -psi(1);
+      A(diagind(A)) = s.w.*(1i/4-(eulergamma-1+log(k*s.w/4))/2/pi);
+    end
   end
   
 else % ............................ distant target curve, so smooth kernel

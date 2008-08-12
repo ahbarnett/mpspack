@@ -31,8 +31,9 @@ classdef mfsbasis < handle & basis
       b.realflag = opts.real;
       if ~isempty(k), b.k = k; end
       if isnumeric(Z)                         % Z contains y list of MFS pts
+        N = numel(Z);
         b.y = reshape(Z, [1 N]);
-        b.N = numel(b.y); b.Nf = b.N;
+        b.N = N; b.Nf = N;
       elseif ~isempty(Z)                      % Z is a function handle
         b.N = N; b.Nf = N;
         b.Z = Z; b.tau = tau;

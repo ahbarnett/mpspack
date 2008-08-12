@@ -12,12 +12,14 @@ nh = floor(sqrt(1.8*n)); nv = ceil(n/nh); % how many across and down, subplot
 if re, figure('name', name); else, figure('name', sprintf('%s, Re', name)); end
 for j=1:n, subplot(nv, nh, j); imagesc(g, h, real(squeeze(u(:,:,j))));
   caxis(c*[-1 1]); set(gca, 'ydir', 'normal'); axis equal tight;
+  colormap(jet(256));
 end
 subplotspace('vertical', -10); subplotspace('horizontal', -15);
 if ~re
   figure('name', sprintf('%s, Im', name));
   for j=1:n, subplot(nv, nh, j); imagesc(g, h, imag(squeeze(u(:,:,j))));
     caxis(c*[-1 1]); set(gca, 'ydir', 'normal'); axis equal tight;
+    colormap(jet(256));
   end
   subplotspace('vertical', -10); subplotspace('horizontal', -15);
 end

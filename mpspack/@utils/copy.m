@@ -6,6 +6,9 @@
 %  http://www.mathworks.com/matlabcentral/newsreader/view_thread/171019#438411
 % Also see
 %  http://www.mathworks.com/matlabcentral/newsreader/view_thread/172147
+%
+% Note: this is quite slow (the copy properties loop), eg takes 3 ms to copy
+% a segment object, even when N is tiny.
 
 function new = copy(this)
 
