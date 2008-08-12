@@ -1,6 +1,4 @@
 % PROBLEM - abstract class defining interfaces for Helmholtz/Laplace BVP or EVP
-%
-% To do: fillbcmatrix should use a special evaluate_on_segment routine
 
 classdef problem < handle
   properties

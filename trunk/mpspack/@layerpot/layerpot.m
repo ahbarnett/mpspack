@@ -19,6 +19,7 @@ classdef layerpot < handle & basis
     real                            % true if fund sol is Y_0, false for H_0^1
     seg                             % handle of segment on which density sits
     a                               % 1-by-2, mixture weights of SLP and DLP
+    quad                            % quadrature option (opts.quad in S,D,T)
   end
 
   methods
@@ -29,6 +30,7 @@ classdef layerpot < handle & basis
       b.Nf = b.N;
       if ~isfield(opts, 'real'), opts.real = 0; end
       b.real = opts.real;
+      if isfield(opts, 'quad'), b.quad = opts.quad; end  % quad=[] is default
       if ~isa(seg, 'segment'), error('seg must be a segment object!'); end
       b.seg = seg;
       if ~isnumeric(a)
@@ -54,9 +56,10 @@ classdef layerpot < handle & basis
     %    opts.layerpotside = +1 or -1: determines from which side of a segment
     %     the limit is approached, for jump relation. +1 is the normal side.
       if nargin<3, o = []; end
+      if ~isempty(b.quad), o.quad = b.quad; end % pass quadr type to S,D,T eval
       self = (p==b.seg); % if true, local eval on segment carrying density
       if self & o.layerpotside~=1 & o.layerpotside~=-1
-        error('opts.layerpotside must be +1 or -1 for self-interaction');
+        error('opts.layerpotside must be +1 or -1 for local eval w/ jump rel!');
       end
       if self, p = []; end              % tell S, D, etc to use self-interaction
       if nargout==1 %------------------------------- values only
@@ -98,7 +101,7 @@ classdef layerpot < handle & basis
           A = A + o.layerpotside * b.a(2) * eye(size(A)) / 2;   % DLP val jump
         end
         if self & b.a(1)~=0
-          An = An - o.layerpotside * b.a(1) * eye(size(A)) / 2; % SLP deriv jump
+          Ax = Ax - o.layerpotside * b.a(1) * eye(size(A)) / 2; % SLP deriv jump
         end
         
       else % ------------------------------------- values, x- and y-derivs

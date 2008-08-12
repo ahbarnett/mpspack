@@ -19,11 +19,11 @@ for type = 1:10
   switch type
    case {1,2,3}             % ................. Reg FB: slow real/cmplx, fast
     N = 10;               
-    opts.real = (type==1); opts.fast = (type==3);
+    opts.real = (type~=2); opts.rescale_rad = 1.0*(type==3);
     b = regfbbasis(0, N, k, opts);
     c = 0.5;                 % set caxis scale for this basis type
     js = 1:b.Nf;             % indices to plot, here all of them
-    fprintf('evaluating Reg FB basis... real=%d, fast=%d\n', opts.real, opts.fast)
+    fprintf('evaluating Reg FB basis... real=%d, resc=%d\n', opts.real, opts.rescale_rad)
    case {4,5}              % ................. real plane waves: real/cmplx
     N = 10;
     opts.real = (type==4);

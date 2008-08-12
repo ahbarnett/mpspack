@@ -18,7 +18,8 @@ function [A Dker_noang cosker] = D(k, s, t, o)
 %  D = D(k, s, [], opts) or D = D(k, s, t, opts) does the above two choices
 %   but with options struct opts including the following:
 %    opts.quad = 'k' (Kapur-Rokhlin), 'm' (Martensen-Kussmaul spectral)
-%                periodic quadrature rules, used only if s.qtype is 'p'
+%                periodic quadrature rules, used only if s.qtype is 'p';
+%                any other does low-order non-periodic quad using segment's own.
 %    opts.ord = 2,6,10. controls order of Kapur-Rokhlin rule.
 %    opts.Dker_noang = quad-unweighted kernel matrix of fund-sols derivs
 %                      without the cosphi factors (prevents recomputation
@@ -57,7 +58,7 @@ else
 end                               % A is now the kernel value matrix
 
 if self % ........... source curve = target curve; can be singular kernel
-  
+
   if s.qtype=='p' & o.quad=='k' % Kapur-Rokhlin (kills diagonal values)
     [s w] = quadr.kapurtrap(N+1, o.ord);  % Zydrunas-supplied K-R weights
     w = 2*pi * w;                 % change interval from [0,1) to [0,2pi)

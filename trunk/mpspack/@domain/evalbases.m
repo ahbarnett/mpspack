@@ -18,15 +18,13 @@ function [A Ax Ay] = evalbases(d, p)
 A = []; Ax = []; Ay = [];   % matrices will be stacked as columns
 
 opts = [];
-for b=d.bas                          % loop over basis set objects in domain
-  bas = b{1};                        % ugly, extracts object from cell
-  if isa(bas, 'layerpot') & isa(p, 'segment') & p==bas.seg % is a jump relation
-    %disp('jump')
-    segind = find(d.seg==p);
-    if numel(segind)>1
-      fprintf('warning: weirdness, p segment matches >1 domain segments!\n');
-    end
+for b=d.bas                    % loop over basis set objects in domain
+  bas = b{1};                  % ugly, extracts object from cell
+  segind = find(d.seg==p);     % if p is part of domain bdry, tell which side
+  if numel(segind)==1
     opts.layerpotside = -d.pm(segind);  % tell eval to take limit on inside
+  elseif numel(segind)>1
+    fprintf('warning: weirdness, p segment matches >1 domain segments!\n');
   end
   if nargout==1
     [bA] = bas.eval(p, opts); A = [A bA]; % stack as blocks of columns
