@@ -6,7 +6,7 @@
 % * reg FB: - fix |x|=0 NaN problem
 %           - include GSL test cases (need to compile on Alex's machine)
 
-clear all classes
+clear classes
 verb = 2;                            % use verb=0, N=50, for more of a test
 err = 1;                             % false, show vals / true, show errors
 dx = 0.01; g = -1:dx:1;              % plotting region

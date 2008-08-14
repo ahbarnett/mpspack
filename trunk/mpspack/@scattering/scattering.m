@@ -43,7 +43,7 @@ classdef scattering < bvp & handle
     %
     %  Careful: calling this routine overwrites all inhomogeneity functions or
     %   data f, g stored on any of the problem's segments. However it preserves
-    %   existing a, b BC or matching coeffs (& these must be set up on entry).
+    %   existing a, b BC or matching coeffs (which must be set up on entry).
       if nargin==2
         if isempty(pr.k), error('scattering problem must have wavenumber set'); end
         kvec = pr.k*exp(1i*t);                % set up a plane-wave field
@@ -69,8 +69,7 @@ classdef scattering < bvp & handle
         end
         elseif s.bcside==1 | s.bcside==-1    % BC
           ind = (1-s.bcside)/2+1; % index 1 or 2 for which side the BC on
-          d = s.dom(ind);         % handle of domain on the revelant side
-          d = d{1};               % ugly, extracts domain handle from cell
+          d = s.dom{ind};         % handle of domain on the revelant side
           if d.isair              % air-to-metallic boundary
             if s.b==0             % Dirichlet only. Minus sign: u_s cancels u_i
               s.f = @(t) -s.a * ui(s.Z(t));  % NB keeping f a func not an array
@@ -137,20 +136,20 @@ classdef scattering < bvp & handle
       if nargin<2, o = []; end
       if ~isfield(o, 'imag'), o.imag = 0; end
       if ~isfield(o, 'bdry'), o.bdry = 0; end
-      subplot(1,3,1);
+      tsubplot(1,3,1);
       [ui gx gy di] = pr.gridincidentwave(o);
       if o.imag, imagesc(gx, gy, imag(ui)); title('Im[u_i]');
       else, imagesc(gx, gy, real(ui)); title('Re[u_i]'); end
       c = caxis; caxis([-1 1]*max(c));           % make colorscale symmetric
       axis equal tight;colorbar; set(gca,'ydir','normal'); hold on;
       if o.bdry, pr.showbdry; end
-      subplot(1,3,2); [us gx gy di] = pr.gridsolution(o);
+      tsubplot(1,3,2); [us gx gy di] = pr.gridsolution(o);
       if o.imag, imagesc(gx, gy, imag(us)); title('Im[u_s]');
       else, imagesc(gx, gy, real(us)); title('Re[u_s]'); end
       c = caxis; caxis([-1 1]*max(c));
       axis equal tight;colorbar; set(gca,'ydir','normal'); hold on;
       if o.bdry, pr.showbdry; end
-      subplot(1,3,3);
+      tsubplot(1,3,3);
       if isfield(o,'testtransparent') & o.testtransparent
         [xx yy] = meshgrid(gx, gy); zz = xx + 1i*yy;
         uiR = pr.ui(zz);                  % u_i eval over whole R^2
@@ -168,7 +167,6 @@ classdef scattering < bvp & handle
       c = caxis; caxis([-1 1]*max(c));
       axis equal tight;colorbar; set(gca,'ydir','normal'); hold on;
       if o.bdry, pr.showbdry; end
-      subplotspace('h', -15);            % squeeze the plots together
     end % func
     
   end % methods

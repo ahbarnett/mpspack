@@ -39,7 +39,6 @@ classdef segment < handle & pointset
         Zn                     % unit normal function handle on [0,1]
         approxv                % vertex list for polygonal approximation
         dom                    % domain handles bordered on + & - sides (2-cell)
-        domseg                 % which segment # in bordering domains (1-by-2)
         bcside                 % side +1/-1 BC is on, 0 for matching, or NaN
         a                      % BC value coeff (1-by-1), or +/- sides (1-by-2)
         b                      % BC n-deriv coeff (1-by-1), or +/- (1-by-2)
@@ -80,7 +79,6 @@ classdef segment < handle & pointset
         s.eang = eZp./abs(eZp);
         s.approxv = s.Z((0:Napprox)'/Napprox); % start, endpt (drop one later)
         s.dom = {[] []};             % not bordering any domains
-        s.domseg = [0 0];            % dummy segment #s in bordering domains
         s.bcside = NaN;              % no BCs or matching conditions
       end
       
@@ -128,14 +126,16 @@ classdef segment < handle & pointset
         end
       end
       
-      function setbc(s, pm, a, b, f) % .......................... setBC
-      % SETBC - set a (in)homogeneous boundary condition for a segment
+      function setbc(seg, pm, a, b, f) % .......................... setBC
+      % SETBC - set a (in)homogeneous boundary condition on a segment
       %
       %  setbc(seg, pm, type) creates a homogeneous BC on the side given by pm
-      %   (+1 is inside, ie opposite from normal; -1 is other side), of type 'd'
-      %   or 'n' for Dirichlet or Neumann. Normal sense for pm=-1 is same as
-      %   the segment natural sense. Checks if a domain is attached on the
-      %   requested side, reports error if not.
+      %   (+1 is the postive normal side, -1 is the `interior domain' or back
+      %   side; the sign of pm is opposite for domain constructor), of type 'd'
+      %   or 'n' for Dirichlet or Neumann. Checks if a domain is attached on the
+      %   requested side, reports error if not. seg and pm may also be arrays of
+      %   segment handles and signs (if pm is length 1 it will be applied to
+      %   each segment).
       %
       %  setbc(seg, pm, a, b) imposes the BC au + bu_n = 0 on the side pm, using
       %   normal sense as above. a, b are constants (may be functions in future)
@@ -152,34 +152,39 @@ classdef segment < handle & pointset
       %   which interpret and calculate using the BC/matching include
       %   problem.fillbcmatrix, bvp.fillrighthandside, and
       %   scattering.setincidentwave. 
-        ind = (1-pm)/2+1;            % index
-        if isempty(s.dom(ind))
-          error(sprintf('side %d of seg not connected to a domain!', pm));
-        end
-        s.bcside = pm;               % should be +-1
-        if nargin<5, f = @(t) zeros(size(s.t)); end   % covers homogeneous case
-        s.f = f;           % may be func handle (not eval'd until need) or array
-        if isempty(b)
-          switch a
-           case {'D', 'd'}
-            s.a = 1; s.b = 0;
-           case {'N', 'n'}
-            s.a = 0; s.b = 1;
-           otherwise
-            error(sprintf('unknown BC type: %s', a))
+        if numel(pm)==1, pm = pm*ones(size(seg)); end
+        for i=1:numel(seg)
+          s = seg(i);
+          ind = (1-pm(i))/2+1;            % index 1 (+) or 2 (-)
+          if isempty(s.dom(ind))
+            error(sprintf('side %d of seg not connected to a domain!', pm(i)));
           end
-        else
-          s.a = a; s.b = b;
+          s.bcside = pm(i);               % same natural segment side convention
+          if nargin<5, f = @(t) zeros(size(s.t)); end % covers homogeneous case
+          s.f = f;         % may be func handle (not eval'd until need) or array
+          if isempty(b)
+            switch a
+             case {'D', 'd'}
+              s.a = 1; s.b = 0;
+             case {'N', 'n'}
+              s.a = 0; s.b = 1;
+             otherwise
+              error(sprintf('unknown BC type: %s', a))
+            end
+          else
+            s.a = a; s.b = b;
+          end
         end
       end % func
       
-      function setmatch(s, a, b, f, g) % ....................... setmatch
+      function setmatch(seg, a, b, f, g) % ....................... setmatch
       % SETMATCH - set (in)homogeneous matching conditions across a segment
       %
       %  setmatch(seg, a, b) creates a homogeneous matching condition
       %   relating values and normal derivatives on the two sides of a segment.
       %   a, b are 1-by-2 arrays [a^+ a^-] and [b^+ b^-].
-      %   (+ is inside, ie opposite from normal; - is other side)
+      %   (+ is natural positive normal of segment; - is 'interior' back side).
+      %   If seg is an array of segments the same matching is applied to each.
       %   The two conditions imposed are
       %                                   a^+ u^+ + a^- u^-     = 0
       %                                   b^+ u_n^+ + b^- u_n^- = 0
@@ -196,18 +201,22 @@ classdef segment < handle & pointset
       % Notes: see Notes for SETBC
       %
       % Also see: DIELECTRICCOEFFS
-        if isempty(s.dom{1}) | isempty(s.dom{2})
-          error('both sides of seg must be connected to a domain!');
-        end
-        s.bcside = 0;
-        if nargin<4, f = @(t) zeros(size(s.t)); end    % covers homog f case
-        if nargin<5, g = @(t) zeros(size(s.t)); end    % covers homog g case
-        s.f = f; s.g = g;
-        if strcmp(a,'diel')                                   % use dielectric match
-          [s.a s.b] = segment.dielectriccoeffs(b, s.dom{1}.refr_ind, s.dom{2}.refr_ind);
-        else                                         % use a,b passed in
-          if numel(a)~=2 | numel(b)~=2, error('a and b must be 1-by-2!'); end
-          s.a = a; s.b = b;
+        for i=1:numel(seg)
+          s = seg(i);
+          if isempty(s.dom{1}) | isempty(s.dom{2})
+            error('both sides of seg must be connected to a domain!');
+          end
+          s.bcside = 0;
+          if nargin<4, f = @(t) zeros(size(s.t)); end    % covers homog f case
+          if nargin<5, g = @(t) zeros(size(s.t)); end    % covers homog g case
+          s.f = f; s.g = g;
+          if strcmp(a,'diel')                 % use dielectrics to set matching
+            [s.a s.b] = segment.dielectriccoeffs(b, s.dom{1}.refr_ind, ...
+                                                 s.dom{2}.refr_ind);
+          else                                % use a,b passed in, override diel
+            if numel(a)~=2 | numel(b)~=2, error('a and b must be 1-by-2!'); end
+            s.a = a; s.b = b;
+          end
         end
       end % func
       
@@ -297,7 +306,6 @@ classdef segment < handle & pointset
      % DISCONNECT - disconnect a segment or segment list from any domains
         for s=segs
           s.dom = {[] []};             % not bordering any domains
-          s.domseg = [0 0];            % dummy segment #s in bordering domains
         end
       end
 

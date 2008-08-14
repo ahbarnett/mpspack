@@ -24,4 +24,6 @@ for i=1:n
   lp = layerpot(s(i), 's', 10);
 end
 fprintf('layerpot create: %.2g ms\n', toc*1000/n);
-
+c = cell(1, n); for i=1:n, c{i} = s(i); end
+tic; utils.isin(s(floor(n/2)), c);
+fprintf('utils.isin (isequal): %.2g ms\n', toc*1000/n);

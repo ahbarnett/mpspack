@@ -1,13 +1,16 @@
-% PROBLEM - abstract class defining interfaces for Helmholtz/Laplace BVP or EVP
+% PROBLEM - abstract class defining interfaces for Helmholtz/Laplace BVPs/EVPs
 
 classdef problem < handle
   properties
-    segs                    % handles of segments in BVP
-    doms                    % handles of domains in BVP
+    segs                    % array of handles of segments in problem
+    doms                    % array of handles of domains in problem
     k                       % overall wavenumber
     A                       % BC inhomogeneity matrix (incl sqrt(w) quad wei)
     sqrtwei                 % row vec of sqrt of quadrature weights w
-    co                      % basis coefficients
+    bas                     % cell array of handles of basis sets in problem
+    basnoff                 % dof index offsets for basis objs referred by bas
+    N                       % total number of dofs in a problem
+    co                      % basis coefficient (length N column vector)
   end
   
   methods % ------------------------------ methods common to problem classes
@@ -25,40 +28,84 @@ classdef problem < handle
       end
     end % func
     
+    function [N noff] = setupbasisdofs(pr)
+    % SETUPBASISDOFS - set up indices of all basis degrees of freedom in problem
+    %
+    %   [N noff] = SETUPBASISDOFS(pr) sets problem basis set handle list pr.bas,
+    %     overall # dofs pr.N, and problem basis object dof offsets pr.basnoff.
+    %     It returns the last two. This is a helper routine for problem classes.
+    %
+    %    See also PROBLEM
+      pr.bas = {};
+      for d=pr.doms                  % loop over domains gathering basis sets
+        pr.bas = {pr.bas{:} d.bas{:}};
+      end
+      pr.bas = utils.unique(pr.bas); % keep only unique basis handle objects
+      noff = zeros(1, numel(pr.bas));
+      N = 0;                         % N will be total # dofs (cols of A)
+      for i=1:numel(pr.bas)
+        noff(i) = N; N = N + pr.bas{i}.Nf; % set up dof offsets of bases
+      end
+      pr.N = N; pr.basnoff = noff;   % store stuff as problem properties
+    end
+    
     function A = fillbcmatrix(pr)   % ........... make bdry discrepancy matrix
     % FILLBCMATRIX - computes matrix mapping basis coeffs to bdry discrepancy
+    %
+    %    Notes: faster version, & based on basis dofs rather than domain dofs
       if isempty(pr.sqrtwei), error('must fill quadrature weights first'); end
-      N = 0;                        % N will be total # dofs (cols of A)
-      for d=pr.doms, d.noff = N; N = N+d.Nf; end    % setup noff's in d's
-      A = [];            % get ready to stack block rows, dof order matches rhs
-      for s=pr.segs
+      N = pr.setupbasisdofs;
+      A = zeros(numel(pr.sqrtwei), N);       % A is zero when no basis influence
+      m = 0;                                 % colloc index counter
+      o = [];                                % opts to pass into basis.eval
+      for s=pr.segs % ======== loop over segs
         if s.bcside==0            % matching condition (2M segment dofs needed)
+          ms = m + (1:2*size(s.x,1));     % 2M colloc indices for block row
           dp = s.dom{1}; dm = s.dom{2};   % domain handles on the + and - side
-          [Ap Apn] = dp.evalbases(s); [Am Amn] = dm.evalbases(s); 
-          Arow = zeros(size(s.x, 1), N);     % start with empty block-row
-          Arow(:,dp.noff+(1:dp.Nf)) = s.a(1) * Ap;
-          Arow(:,dm.noff+(1:dm.Nf)) = s.a(2) * Am;  % won't clash since diff dom
-          A = [A; Arow];                     % stack block rows
-          Arow = zeros(size(s.x, 1), N);
-          Arow(:,dp.noff+(1:dp.Nf)) = s.b(1) * Apn;
-          Arow(:,dm.noff+(1:dm.Nf)) = s.b(2) * Amn;
-          A = [A; Arow];
-        elseif s.bcside==1 | s.bcside==-1  % BC (M segment dofs, natural order)
-          ind = (1-s.bcside)/2+1; % index 1 or 2 for which side the BC on
-          d = s.dom(ind);         % handle of domain on the revelant side
-          d = d{1};               % ugly, extracts domain handle from cell
-          if s.b==0               % only values needed, ie Dirichlet
-            Ablock = s.a * d.evalbases(s);
-          else;                   % Robin (includes Neumann)
-            [Ablock Anblock] = d.evalbases(s);
-            Ablock = s.a*Ablock + s.b*Anblock;
+          for i=1:numel(pr.bas)           % all bases in problem
+            b = pr.bas{i};
+            ns = pr.basnoff(i)+(1:b.Nf);     % dof indices for this bas
+            talkp = utils.isin(b, dp.bas);   % true if this bas talks to + side
+            talkm = utils.isin(b, dm.bas);   %                           - side
+            if talkp ~= talkm                % talks to either one not both
+              o.dom = dp; ind = 1;
+              if talkm, o.dom = dm; ind = 2; end   % tell b.eval & a which side
+              [Ab Abn] = b.eval(s, o);
+              A(ms, ns) = repmat(pr.sqrtwei(ms).', [1 b.Nf]) .* [s.a(ind)*Ab; s.b(ind)*Abn]; % overwrite block, g stacked below f
+            elseif talkp & talkm             % bas talks to both (eg transm LP)
+              o.dom = dp; [Ab Abn] = b.eval(s, o);  % + side contrib
+              A(ms, ns) = repmat(pr.sqrtwei(ms).', [1 b.Nf]) .* [s.a(1)*Ab; s.b(1)*Abn]; % overwrite block, g stacked below f
+              o.dom = dm; [Ab Abn] = b.eval(s, o);  % - side contrib
+              A(ms, ns) = A(ms, ns) + repmat(pr.sqrtwei(ms).', [1 b.Nf]) .* [s.a(2)*Ab; s.b(2)*Abn]; % add block
+            end
           end
-          Arow = zeros(size(s.x, 1), N);     % start with empty block-row
-          Arow(:,d.noff+(1:d.Nf)) = Ablock;  % copy in nonzero block
-          A = [A; Arow];                     % stack block rows
+            
+        elseif s.bcside==1 | s.bcside==-1  % BC (M segment dofs, natural order)
+          ind = (1-s.bcside)/2+1; % index 1,2 for which side the BC on (+,-)
+          d = s.dom{ind};         % handle of domain on the revelant side
+          o = []; o.dom = d;      % b.eval may need to know in which domain
+          ms = m+(1:size(s.x,1)); % colloc indices for this block row
+          for i=1:numel(pr.bas)   % all bases in problem, not just in domain
+            b = pr.bas{i};        % (that's needed so i index reflects pr.bas)
+            if utils.isin(b, d.bas)   % true if this bas talks to BC side
+              if s.b==0               % only values needed, ie Dirichlet
+                Ablock = b.eval(s, o);
+                if s.a~=1.0, Ablock = s.a * Ablock; end
+              else                    % Robin (includes Neumann)
+                [Ablock Anblock] = b.eval(s, o);
+                if s.a==0 & s.b==1.0  % Neumann
+                  Ablock = Anblock;
+                else                  % Robin
+                  Ablock = s.a*Ablock + s.b*Anblock;
+                end
+              end
+              A(ms,pr.basnoff(i)+(1:b.Nf)) = ...
+                  repmat(pr.sqrtwei(ms).', [1 b.Nf]) .* Ablock; % overwrite blk
+            end
+          end
         end
-      end
-      A = A .* repmat(pr.sqrtwei.', [1 N]); % quad wei: better do this in bits?
+        m = ms(end);                    % update counter in either case
+      end % ================ loop over segs
       if nargout==0, pr.A = A; end     % this only stores internally if no outp
     end % func
     
@@ -67,9 +114,12 @@ classdef problem < handle
     %
     %  [u di] = pointsolution(pr, pts) returns array of values u, and
     %   optionally, domain index list di (integer array of same shape as u).
-    %   A separate routine should be used for evaluation of u, u_n on boundary.
     %   Decisions about which domain a gridpoint is in are done using
     %   domain.inside, which may be approximate.
+    %
+    %   Notes: 1) changed to reference dofs via bases rather than domains.
+    %   2) A separate routine should be written for evaluation of u, u_n on
+    %   boundary.
     %
     % See also GRIDSOLUTION.
       di = NaN*zeros(size(p.x));                    % NaN indicates in no domain
@@ -78,9 +128,16 @@ classdef problem < handle
         d = pr.doms(n);
         ii = d.inside(p.x);
         di(ii) = n;
-        Ad = d.evalbases(pointset(p.x(ii))); % bases eval matrix for pts in dom
-        co = pr.co(d.noff+(1:d.Nf));         % extract coeff vector for domain d
-        u(ii) = Ad * co;                     % set only values inside
+        u(ii) = 0;                           % accumulate contribs to u in dom
+        opts.dom = d;                        % b.eval might need know which dom
+        for i=1:numel(pr.bas)                % loop over all bases...
+          b = pr.bas{i};
+          if utils.isin(b, d.bas)            % this bas talks to current dom?
+            Ad = b.eval(pointset(p.x(ii)), opts);
+            co = pr.co(pr.basnoff(i)+(1:b.Nf)); % extract coeff vector for basis
+            u(ii) = u(ii) + Ad * co;           % add contrib from this basis obj
+          end
+        end
       end
     end % func
     
@@ -127,8 +184,9 @@ classdef problem < handle
     end
     
     function h = showbasesgeom(pr)   % ................ crude plot bases geom
-      for d=pr.doms
-        d.showbasesgeom;
+      for i=1:numel(pr.bas)
+        opts.label = sprintf('%d', i);              % label by problem's bas #
+        pr.bas{i}.showgeom(opts);
       end
     end
     

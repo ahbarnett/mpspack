@@ -69,8 +69,13 @@ classdef mfsbasis < handle & basis
       if b.realflag, A = real(A); end           % keeps only the Y-0 part    
     end
     
-    function showgeom(bas) % ....................... crude show MFS pts, etc
+    function showgeom(bas, opts) % .................. crude show MFS pts, etc
+      if nargin<2, opts = []; end
       plot(real(bas.y), imag(bas.y), 'r+');
+      if isfield(opts, 'label')
+        n = ceil(numel(bas.y)/2);
+        text(real(bas.y(n)), imag(bas.y(n)), opts.label);
+      end
     end % func
         
   end % methods

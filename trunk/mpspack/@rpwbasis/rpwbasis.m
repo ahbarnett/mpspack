@@ -57,6 +57,17 @@ classdef rpwbasis < handle & basis
           Ay = [Ay conj(Ay)];
         end
       end
-    end
-  end
+    end % func
+    
+    function showgeom(bas, opts) % .................. crude show directions
+      if nargin<2, opts = []; end
+      ze = zeros(size(bas.dirs));
+      plot([ze; real(bas.dirs)], [ze; imag(bas.dirs)], 'r-');
+      if isfield(opts, 'label')
+        n = ceil(numel(bas.dirs)/2);
+        text(real(bas.dirs(n)), imag(bas.dirs(n)), opts.label);
+      end
+    end % func
+    
+  end % methods
 end

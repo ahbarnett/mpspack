@@ -1,7 +1,7 @@
 % test segment-domain bordering
 % 7/10/08
 
-clear all classes
+clear classes
 verb = 1;
 % one analytic segment, periodic radial function
 a = 0.3; w = 3;
@@ -20,4 +20,4 @@ s = [sa sq sc];
 disp('There should have been no errors, and the following should show two domain objects in each cell array:')
 s.dom               % list each segment - how identify/distinguish domains ?
                     % by name? give symbol to each?
-disp('The plot should show 3 interior and 1 exterior domain, of different colors. There should be one color of normal vector showing with each sense on eac boundary')
+disp('The plot should show 3 interior and 1 exterior domain, of different colors. There should be one color of normal vector showing with each sense on each boundary')

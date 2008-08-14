@@ -104,9 +104,12 @@ classdef nufbbasis < handle & basis
         end  % func
 
 
-        function showgeom(b)              % plotting of nufb basis geom
-          plot(real(b.origin), imag(b.origin), 'o');
-          text(real(b.origin), imag(b.origin), sprintf('%.2g', b.nu));
+        function showgeom(b, opts) % .............. plotting of nufb basis geom
+          if nargin<2, opts = []; end
+          plot(real(regfb.origin), imag(regfb.origin), 'ro');
+          str = sprintf('(nu=%.2g) ', b.nu);
+          if isfield(opts, 'label'), str = [str opts.label]; end
+          text(real(regfb.origin), imag(regfb.origin), str);
         end % func
         
  

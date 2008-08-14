@@ -1,19 +1,20 @@
 % scattering class test routine, including dielectrics, metallic bdry, etc
 % barnett 7/27/08
 
-clear all classes
+clear classes
 opts = []; verb = 1;  % verbosity: 0 for no figures, 1 for figures (slower)
 k = 8;                % note M,N do not yet adapt to different k
 M = 100; s = segment.smoothstar(M, 0.2, 3);  % a recurring closed segment
 
 for prob=1:7  % ======= scenarios
+  s.disconnect;              % lets us reuse segment s afresh
   opts.testtransparent = 0;
   switch prob
     
    case {1,2},                     name = 'single metallic'; % ..............
     de = domain([], [], s, -1);
     if prob==1, bc='D'; else bc='N'; end; name = [name ' ' bc];
-    s.setbc(-1, bc, []);
+    s.setbc(1, bc, []);
     pr = scattering(de, []);  % note basis sets can be added after problem set
     N = 70; bopts.real = 0;   % complex (radiative) MFS basis
     de.addmfsbasis([], 0.4, N, [], bopts);  % no k needed
@@ -39,7 +40,7 @@ for prob=1:7  % ======= scenarios
     de = domain([], [], sd, -1); da = domain(sa, 1); % exterior, air pocket
     d = domain(sd, 1, {sm sa}, {-1 -1}); d.setrefractiveindex(1.2);
     if prob==6, pol='TM'; else pol='TE'; end; name = [name ' ' pol];
-    sd.setmatch('diel', pol); sa.setmatch('diel', pol); sm.setbc(-1, 'D', []);
+    setmatch([sd sa], 'diel', pol); sm.setbc(1, 'D', []);
     pr = scattering([de da], d);          % incl the middle bit (air) in u_inc
     de.addmfsbasis([], 0.2, 110, []);
     da.addmfsbasis([], -0.6, 40, []); %da.addregfbbasis(.8, 30); %for air pocket
@@ -58,7 +59,6 @@ for prob=1:7  % ======= scenarios
       figure('name', sprintf('prob #%d: %s', prob, name), 'position', [400 400 900 300]);
       pr.showthreefields(opts); fprintf('\tgrid eval in %.2g sec\n', toc);
   end
-  s.disconnect;              % lets us reuse segment s afresh
 end % =========
 
 figure; pr.showbdry; pr.showbasesgeom; axis equal; title('bdry & MFS pts');

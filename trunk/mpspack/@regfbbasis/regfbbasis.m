@@ -98,9 +98,12 @@ classdef regfbbasis < handle & basis
             end
         end   % ....................... end function eval
         
-        function showgeom(regfb)
-          % dummy for now...
-          % NOP
+        function showgeom(regfb, opts) % ...................... show basis geom
+          if nargin<2, opts = []; end
+          plot(real(regfb.origin), imag(regfb.origin), 'ro');
+          if isfield(opts, 'label')
+            text(real(regfb.origin), imag(regfb.origin), opts.label);
+          end
         end % func
         
     end % ... end methods
