@@ -1,6 +1,6 @@
 % test Kapur-Rokhlin, Kress, quadrature on single & double layer potentials
 % barnett 2/5/08 adapted to MPSpack 7/31/08
-clear all classes
+clear classes
 verb = 0;            % verbosity
 
 % ================== test SLP/DLP vals, and in Laplace case const DLP Greens

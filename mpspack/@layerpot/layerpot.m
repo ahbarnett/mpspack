@@ -48,48 +48,61 @@ classdef layerpot < handle & basis
     function [A Ax Ay] = eval(b, p, o) % .........basis evaluator at points p
     % EVAL - evaluate layer potential on pointset or on a segment, with jump rel
     %
-    %  A = EVAL(bas, p, opts)           p is the target pointset or segment
-    %  [A An] = EVAL(bas, p, opts)
-    %  [A Ax Ay] = EVAL(bas, p, opts)
+    %  A = EVAL(bas, p, opts) returns a matrix mapping degrees of freedom in the
+    %   discretization of the layer density to the values on p the target
+    %   pointset or segment.
+    %
+    %  [A An] = EVAL(bas, p, opts) also returns normal derivatives using normals
+    %   in p.
+    %
+    %  [A Ax Ay] = EVAL(bas, p, opts) instead returns x- and y-derivatives,
+    %   ignoring the normals in p.
     %
     %   The optional argument opts may contain the following fields:
-    %    opts.layerpotside = +1 or -1: determines from which side of a segment
-    %     the limit is approached, for jump relation. +1 is the normal side.
+    %    opts.dom: domain in which evaluation is performed. In the case of
+    %    p being the segment on which the LP density sits, opts.dom must be
+    %    defined, since it resolves which sign the jump relation has.
       if nargin<3, o = []; end
       if ~isempty(b.quad), o.quad = b.quad; end % pass quadr type to S,D,T eval
-      self = (p==b.seg); % if true, local eval on segment carrying density
-      if self & o.layerpotside~=1 & o.layerpotside~=-1
-        error('opts.layerpotside must be +1 or -1 for local eval w/ jump rel!');
+      self = (p==b.seg); % if true, local eval on segment which carries density
+      if self
+        if isempty(o) | ~isfield(o, 'dom') | (o.dom~=p.dom{1} & o.dom~=p.dom{2})
+          error('opts.dom must be a domain connected to segment p, since self eval with jump relation!');
+        end
+        % tell the jump relation from which side we're taking the limit...
+        approachside = -1;           % - sign since normals point away from dom
+        if o.dom==p.dom{1}, approachside = +1; end  % instead dom on + normal
+        p = [];              % tell S, D, etc to use self-interaction
       end
-      if self, p = []; end              % tell S, D, etc to use self-interaction
+      k = b.k;                          % could look up from b.doms someday...
       if nargout==1 %------------------------------- values only
         if b.a(2)==0             % only SLP
-          A = layerpot.S(b.k, b.seg, p, o);
+          A = layerpot.S(k, b.seg, p, o);
           if b.a(1)~=1, A = A * b.a(1); end 
         elseif b.a(1)==0         % only DLP
-          A = layerpot.D(b.k, b.seg, p, o);
+          A = layerpot.D(k, b.seg, p, o);
           if b.a(2)~=1, A = A * b.a(2); end 
         else                     % mixture of SLP + DLP
-          A = b.a(1) * layerpot.S(b.k, b.seg, p, o) + ...
-              b.a(2) * layerpot.D(b.k, b.seg, p, o);
+          A = b.a(1) * layerpot.S(k, b.seg, p, o) + ...
+              b.a(2) * layerpot.D(k, b.seg, p, o);
         end
         if self & b.a(2)~=0
-          A = A + o.layerpotside * b.a(2) * eye(size(A)) / 2;  % DLP val jump
+          A = A + approachside * b.a(2) * eye(size(A)) / 2;  % DLP val jump
         end
         
       elseif nargout==2 %------------------------------- values + normal derivs
         if b.a(2)==0             % only SLP
-          A = layerpot.S(b.k, b.seg, p, o);
+          A = layerpot.S(k, b.seg, p, o);
           o.derivSLP = 1;
-          Ax = layerpot.D(b.k, b.seg, p, o);
+          Ax = layerpot.D(k, b.seg, p, o);
           if b.a(1)~=1, A = A * b.a(1); Ax = Ax * b.a(1); end 
         elseif b.a(1)==0         % only DLP
-          A = layerpot.D(b.k, b.seg, p, o);
-          Ax = layerpot.T(b.k, b.seg, p, o);
+          A = layerpot.D(k, b.seg, p, o);
+          Ax = layerpot.T(k, b.seg, p, o);
           if b.a(2)~=1, A = A * b.a(2); Ax = Ax * b.a(2); end 
         else                     % mixture of SLP + DLP
-          [A o.Sker] = layerpot.S(b.k, b.seg, p, o);
-          [AD o.Dker_noang] = layerpot.D(b.k, b.seg, p, o);
+          [A o.Sker] = layerpot.S(k, b.seg, p, o);
+          [AD o.Dker_noang] = layerpot.D(k, b.seg, p, o);
           A = b.a(1) * A + b.a(2) * AD;
           clear AD
           o.derivSLP = 1;
@@ -98,28 +111,28 @@ classdef layerpot < handle & basis
           Ax = b.a(1) * Ax + b.a(2) * Dn;
         end
         if self & b.a(2)~=0
-          A = A + o.layerpotside * b.a(2) * eye(size(A)) / 2;   % DLP val jump
+          A = A + approachside * b.a(2) * eye(size(A)) / 2;   % DLP val jump
         end
         if self & b.a(1)~=0
-          Ax = Ax - o.layerpotside * b.a(1) * eye(size(A)) / 2; % SLP deriv jump
+          Ax = Ax - approachside * b.a(1) * eye(size(A)) / 2; % SLP deriv jump
         end
         
       else % ------------------------------------- values, x- and y-derivs
         if b.a(2)==0             % only SLP
-          A = layerpot.S(b.k, b.seg, p, o);
+          A = layerpot.S(k, b.seg, p, o);
           o.derivSLP = 1;
           nx_copy = p.nx; p.nx = ones(size(p.nx)); % overwrite pointset normals
-          [Ax o.Dker_noang] = layerpot.D(b.k, b.seg, p, o);
+          [Ax o.Dker_noang] = layerpot.D(k, b.seg, p, o);
           p.nx = 1i*ones(size(p.nx));
-          Ay = layerpot.D(b.k, b.seg, p, o); % reuses H1 (Dker) mat
+          Ay = layerpot.D(k, b.seg, p, o); % reuses H1 (Dker) mat
           p.nx = nx_copy;                          % restore pointset normals
           if b.a(1)~=1, A = A * b.a(1); Ax = Ax * b.a(1); Ay = Ay * b.a(1); end 
        elseif b.a(1)==0         % only DLP
-          [A o.Dker_noang] = layerpot.D(b.k, b.seg, p, o);
+          [A o.Dker_noang] = layerpot.D(k, b.seg, p, o);
           nx_copy = p.nx; p.nx = ones(size(p.nx)); % overwrite pointset normals
-          [Ax o.Sker] = layerpot.T(b.k, b.seg, p, o);
+          [Ax o.Sker] = layerpot.T(k, b.seg, p, o);
           p.nx = 1i*ones(size(p.nx));
-          Ay = layerpot.T(b.k, b.seg, p, o);
+          Ay = layerpot.T(k, b.seg, p, o);
           p.nx = nx_copy;                          % restore pointset normals
           if b.a(2)~=1, A = A * b.a(2); Ax = Ax * b.a(2); Ay = Ay * b.a(2); end
         else                    % mixture of SLP + DLP
@@ -129,11 +142,11 @@ classdef layerpot < handle & basis
           clear AD
           o.derivSLP = 1;
           nx_copy = p.nx; p.nx = ones(size(p.nx)); % overwrite pointset normals
-          Ax = layerpot.D(b.k, b.seg, p, o);
-          Ax = b.a(1) * Ax + b.a(2) * layerpot.T(b.k, b.seg, p, o);
+          Ax = layerpot.D(k, b.seg, p, o);
+          Ax = b.a(1) * Ax + b.a(2) * layerpot.T(k, b.seg, p, o);
           p.nx = 1i*ones(size(p.nx));
-          Ay= layerpot.D(b.k, b.seg, p, o);
-          Ay = b.a(1) * Ay + b.a(2) * layerpot.T(b.k, b.seg, p, o);
+          Ay= layerpot.D(k, b.seg, p, o);
+          Ay = b.a(1) * Ay + b.a(2) * layerpot.T(k, b.seg, p, o);
           p.nx = nx_copy;                          % restore pointset normals
         end
         if self

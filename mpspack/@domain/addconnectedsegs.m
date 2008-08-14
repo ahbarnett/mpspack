@@ -3,6 +3,7 @@
 %  This is a helper routine for domain constructor. Doc to be written.
 %
 %  If pm has length 1 it will be expanded to a vector of the correct length.
+%  Note: changed 8/14/08 so seg.dom cell order is +,- to match seg.a, etc.
 
 function d = addconnectedsegs(d, s, pm, o)
 
@@ -37,7 +38,7 @@ end
 % create corners...
 % indices (1 or 2) of which end starts the segment ahead of each corner...
 i = (1-pm)/2+1;
-% now make versions of the above 3 lists, for the previous segment...
+% now make shifted versions of the above 3 lists, for the previous segment...
 prevs = circshift(s, [0 1]); prevpm = circshift(pm, [0 1]);
 previ = (1+prevpm)/2+1; % ind (1 or 2) for segment behind each corner
 eps = 1e-15;                     % max allowed corner position error
@@ -52,8 +53,7 @@ for j=1:length(s)                          % loop over possible corners in list
   % now need to take the log with branch cut along +ve real axis...
   d.cang = [d.cang, pi + imag(log(-cang))]; % this is angle in (0,2pi)
                                  % note nothing changes here if hole domain
-  ind = i(j);                    % 1 or 2, depending on if pm(j) = + or -
+  ind = 3-i(j);                  % 1,2 corresp to domain on seg's +,- side
   if ~isempty(s(j).dom{ind}), fprintf('domain warning: segment %d side %d already bordering a domain!\n', j, ind), end
   s(j).dom{ind} = d;             % link the segment side to current domain
-  s(j).domseg(ind) = j;
 end

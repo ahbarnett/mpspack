@@ -17,6 +17,10 @@
 \newcommand{\eea}{\end{eqnarray}}
 \newcommand{\bc}{\begin{center}}
 \newcommand{\ec}{\end{center}}
+\newcommand{\bfi}{\begin{figure}}
+\newcommand{\efi}{\end{figure}}
+\newcommand{\ca}[2]{\caption{#1 \label{#2}}}
+\newcommand{\ig}[2]{\includegraphics[#1]{#2}}
 \newcommand{\spl}[2]{\left\{\begin{array}{ll}#1\\#2\end{array}\right.}
 \newcommand{\ie}{{\it i.e.\ }}
 \newcommand{\eg}{{\it e.g.\ }}
@@ -65,7 +69,7 @@ ght.$}
 and Timo Betcke\footnote{School
 of Mathematics, The University of Manchester,
   Manchester, M13 9PL, UK}}
-\date{code revision 16: \today}
+\date{code revision 28: \today}
 
 \maketitle
 \begin{abstract}
@@ -73,6 +77,36 @@ of Mathematics, The University of Manchester,
 It is designed to be simple to use, and to enable highly-accurate solutions.
 This is the user manual.
 \end{abstract}
+
+\section{Overview}
+
+{\tt MPSpack} is a MATLAB toolbox to solve Helmholtz boundary-value
+problems (BVP) and
+eigenvalue problems (EVP) with particular and fundamental solution methods.
+
+Give example commands, eg eigenmodes of disc.
+
+Define BVP, EVP
+
+
+
+Fig.~\ref{f:relat} shows how a geometry is built up from objects, and the
+relationships between them.
+
+
+
+\bfi % fffffffffffffffffffffffffff
+\ig{width=\textwidth}{relat.eps}
+\ca{Relationship of {\tt MPSpack}
+objects used to solve a typical BVP or EVP.
+The physical geometry is shown on the left, and the code structures on the
+right.
+Each segment has a normal direction. Each domain is built from
+segments with a list of signs ($+$ or $-$) which define the sense in which
+the segments are used to form the boundary.
+Basis sets affect the function values inside each domain in which they
+are referenced. A basis set may influence more than one domain.}{f:relat}
+\efi
 
 \section{Installation}
 
@@ -88,26 +122,29 @@ unfortunately means the toolbox cannot work with versions earlier than 7.6.
 The project is hosted at
 {\tt http://code.google.com/p/mpspack}
 
+To download it you need to first install the {\tt subversion} (SVN) version
+control software from {\tt http://subversion.tigris.org}
 
-Anonymous check out of the package is via the subversion command:
+Anonymous check out of {\tt MPSpack} is then via the subversion command:
 
 {\tt svn checkout http://mpspack.googlecode.com/svn/trunk/ mpspack-read-only}
 
 This creates a directory {\tt mpspack-read-only} in which you will find
 the {\tt mpspack} subdirectory.
 
+Alternatively you might prefer a more user-friendly graphical
+subversion client such as those listed at 
+{\tt http://subversion.tigris.org/links.html\#clients}
 
+You should now add the {\tt mpspack}
+subdirectory to your MATLAB path, for instance by adding the line
 
-Setting up MATLAB path\ldots
+{\tt addpath 'path/to/mpspack-read-only/mpspack';}
 
+to your MATLAB {\tt startup.m} file
 
-\section{Overview}
+You are now ready to use {\tt MPSpack}
 
-{\tt MPSpack} is a MATLAB toolbox to solve Helmholtz boundary-value
-problems (BVP) and
-eigenvalue problems (EVP) with particular and fundamental solution methods.
-
-Define BVP, EVP
 
 \subsection{Boundary-value problems}
 
@@ -157,11 +194,16 @@ linear system to get the basis coefficient vector
 When domains are built from segments, each segment stores information about
 which domain, if any, it is connected to on each side.
 If segments are to be reused to construct new domains, while erasing any
-old domains, the current way to do this is via the {\tt segment.disconnect(s)}
-command, where {\tt s} is an array of segment handles. This clears
+old domains, the current way to do this is via the {\tt s.disconnect}
+command, where {\tt s} is a segment handle or array of such. This clears
 these segments of any connections with domains.
 
-\ldots
+The segment object field responsible for
+this is {\tt s.dom}, which is a 1-by-2 cell array
+of handles to the domain on the segment's natural normal side and
+back side respectively. If there is no domain on a particular side, the
+cell element is empty.
+
 
 \subsection{Boundary conditions}
 
@@ -176,11 +218,32 @@ or, alternatively matching conditions of the form
 a^+ u^+(s) + a^- u^-(s) &=& f(s)\\
 b^+ u_n^+(s) + b^- u_n^-(s) &=& g(s)
 \eea
-where $a^+,a^-,b^+,b^- \in \mathbb{C}$.
+where $a^+,a^-,b^+,b^- \in \mathbb{C}$, and where $u^+$ is the
+limiting value approaching the segment from its positive normal side.
 In the above $f$ and $g$ are functions on the boundary.
 In our implementation the user
 may supply these as handles to functions of segment parameter
 $t\in[0,1]$, or as a data column vector on the segment quadrature points.
+
+The segment fields {\tt a} and {\tt b} store
+$a$ and $b$ for a boundary condition, or
+$[a^+, a^-]$ and $[b^+, b^-]$
+respectively for a matching condition.
+
+\subsection{Basis sets}
+
+Basis sets exist independently of domains or segments
+\footnote{apart from layer potentials which require a segment on which
+their source density is placed}.
+However, for a basis set to influence a domain {\tt d}, its handle must appear
+in the cell array field {\tt d.bas}
+This is set up automatically when you perform {\tt d.addregfbbasis()}
+or any of the other 
+
+There will be more elaborate basis set types which naturally affect two domains,
+such as dielectric corner and transmission layer potential objects;
+their handles will appear in the {\tt bas} cell array of more than one domain.
+
 
 \section{In-depth examples}
 

@@ -82,19 +82,19 @@ for prob=1:9 % ===== loop over test problems ======
     for j=1:numel(s)                    % same func on all segments
       f = @(t) u(s(j).Z(t));            % compose u(Z(t))
       if passdata, f = f(s(j).t); end   % pass data vec via f instead of func?
-      s(j).setbc(pm(j), 'd', [], f);    % note pm is needed: which side BC is on
+      s(j).setbc(-pm(j), 'd', [], f);   % note -pm: which side domain BC is on
     end
    case {2,5,7} % ..................... Neumann
     bname = 'Neumann';
     for j=1:numel(s)                    % g will be normal deriv as func of t
       g = @(t) ux(s(j).Z(t)).*real(s(j).Zn(t)) + uy(s(j).Z(t)).*imag(s(j).Zn(t));
       if passdata, g = g(s(j).t); end   % pass data instead of func?
-      s(j).setbc(pm(j), 'n', [], g);
+      s(j).setbc(-pm(j), 'n', [], g);
     end
    case 8 % ............................ Matching condition
     bname = 'Matching';
-    f = @(t) ui(s.Z(t));             % jump in value is ui-0 (inside-outside)
-    g = @(t) uix(s.Z(t)).*real(s.Zn(t)) + uiy(s.Z(t)).*imag(s.Zn(t)); % jump un
+    f = @(t) -ui(s.Z(t));             % jump in value is 0-ui (outside-inside)
+    g = @(t) -uix(s.Z(t)).*real(s.Zn(t)) - uiy(s.Z(t)).*imag(s.Zn(t)); % jump un
     if passdata, f = f(s.t); g = g(s.t); end
     s.setmatch([1 -1], [1 -1], f, g);    % [u]=[un]=0 matching
   end

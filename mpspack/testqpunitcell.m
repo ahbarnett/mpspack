@@ -2,8 +2,8 @@
 % barnett 8/6/08
 
 clear all classes
-qpb = 'j';                         % basis for doing QP: j, pw, l, lc, ...
-verb = 0;                          % 0=no figs, 1=final fig; 2=also geom figs
+qpb = 'lc';                         % basis for doing QP: j, pw, l, lc, ...
+verb = 1;                          % 0=no figs, 1=final fig; 2=also geom figs
 uc = qpunitcell(1, .5+1i, [], 20);    % M controls # LP quad pts too     .5+1i
 if verb>1, uc.setbloch(1, .5); end                % should give warning
 uc.setbloch(-1, -1);               % furthest point from origin in Brillouin
@@ -44,8 +44,9 @@ iii = find(uc.inside(2*zz));           % points inside central 1/4 of domain
 fprintf('L2 interior domain norm u + us = %.2g\n', norm(u(iii)+us(iii))*o.dx)
 if verb
   figure; imagesc(log10(abs(Q))); caxis([-16 1]); colormap(jet(256)); colorbar;
+  title('Q matrix (log10 scale)');
 end
-if verb % compare against 'j' default case...
+if verb>1 % compare against 'j' default case...
   uc.clearbases; uc.addregfbbasis(0, 30, k);
   Qr = uc.evalbasesdiscrep; 
   co = -Qr\di; pr.co = co; [uref] = pr.gridsolution(o);

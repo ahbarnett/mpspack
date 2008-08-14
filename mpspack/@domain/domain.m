@@ -3,8 +3,7 @@
 % A domain is an ordered connected list of segments defining the exterior
 % boundary, with one or more ordered connected lists of segments defining the
 % boundaries of excluded regions. If the exterior boundary is empty it is
-% taken to be the whole plane, ie an exterior domain. We implement it as a
-% handle class.
+% taken to be the whole plane, ie an exterior domain.
 %
 %  d = DOMAIN(s, pm) creates an interior domain whose boundary is the list
 %   of handles of segment objects s, using the list of senses pm (each element
@@ -26,12 +25,10 @@
 %  d = DOMAIN(s, pm, si, pmi) combines the above features, creating a bounded
 %   domain with excluded region(s).
 %
-% *** Not yet implemented, or needed?
-%  d = DOMAIN(s, pm, si, pmi, k) makes a domain with wavenumber k.
-%
-% *** Issues:
-% * should diam, center, x, w, boundingbox, etc, be precomputed on construction,
-%   only recomputed if a segment changes? Currently not. Not a big deal.
+% Notes:
+%  1) should diam, center, x, w, boundingbox, etc, be precomputed on
+%     construction, only recomputed if a segment changes? Currently not.
+%     Not a big deal.
 %
 % See also: SEGMENT, domain/PLOT
 
@@ -45,13 +42,11 @@ classdef domain < handle
         cloc                      % corner locations (NaN if not a corner)
         perim                     % perimeter (via quadr pts; spectral acc)
         area                      % area (via quadr pts; only O(1/M^2) acc)
-        exterior                  % true if exterior domain (bnded complement) 
+        exterior                  % true if exterior domain (w bndd complement) 
         bas                       % pointer list to basis set objects (cell arr)
         k                         % wavevector for domain
-        noff                      % dof offset used as temp in bvp.fillbcmatrix
         refr_ind                  % refractive index of domain (default = 1)
         isair                     % 1 if gets an inc wave, 0 if not (scattering)
-%       cseg                      % numel(cloc)-by-2 corner-seg connectivity
     end
     methods % ---------------------------------------------------------------
 
@@ -197,17 +192,18 @@ classdef domain < handle
       function Nf = Nf(d) % ................. total # of basis funcs in domain
       % NF - total number of basis functions (dofs) associated with domain
         Nf = 0;
-        for b = d.bas, Nf = Nf + b{1}.Nf; end    % cell array {1} feels clumsy
+        for i=1:numel(d.bas); Nf = Nf + d.bas{i}.Nf; end
       end
       
       function clearbases(d) % .............. removes all basis sets from domain
-      % CLEARBASES - remove all basis sets from a domain
+      % CLEARBASES - remove all basis set associations from a domain
         d.bas = {};
       end
       
-      function showbasesgeom(d) % ................. crude show MFS pts, etc
+      function showbasesgeom(d) % ................. show geometry of basis objs
         for i=1:numel(d.bas)
-          d.bas{i}.showgeom;
+          opts.label = sprintf('%d', i);              % label by domain's bas #
+          d.bas{i}.showgeom(opts);
         end
       end
       

@@ -61,7 +61,7 @@ classdef qpunitcell < handle & domain
       end
     end % func
     
-    function plot(uc)   % ..................... overloads domain plot
+    function h = plot(uc)   % ..................... overloads domain plot
       h = domain.showsegments([uc.L uc.B uc.R uc.T], 1); % show 4 segments
     end
     
@@ -78,10 +78,10 @@ classdef qpunitcell < handle & domain
       hold on; plot(0, 0, 'k.', 'markersize', 20);
     end % func
     
-    function [Q data] = evalbasesdiscrep(uc, opts)
+    function Q = evalbasesdiscrep(uc, opts)
     % EVALBASESDISCREP - fill Q matrix mapping UC bases coeffs to discrepancy
     %
-    % * to do: save data as cell array for each basis obj, reuse if opts.data!
+    % * to do: save data as cell array for each basis obj, reuse if opts.data?
       uc.noff = 0;                % since only one domain
       Q = [];
       for b=uc.bas                % loop over basis set objects in unit cell
@@ -96,7 +96,6 @@ classdef qpunitcell < handle & domain
     %
     %  makes 4 instances of qpuclayerpot
       if nargin==1 | isempty(k), k = uc.k; end
-%      uc.bas = {qpuclayerpot(uc, 'L', 'd', k)};
       uc.bas = {qpuclayerpot(uc, 'L', 'd', k), qpuclayerpot(uc, 'L', 's', k), qpuclayerpot(uc, 'B', 'd', k), qpuclayerpot(uc, 'B', 's', k)};
     end
     

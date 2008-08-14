@@ -1,6 +1,6 @@
 % try basic interior BVP 'by hand' in order to see best way to do bvp class.
 % also see testbasisdomain.m
-% barnett 7/10/08
+% barnett 7/10/08. Now somewhat obsolete, since bases no longer inside domains.
 
 clear all classes
 verb = 1;

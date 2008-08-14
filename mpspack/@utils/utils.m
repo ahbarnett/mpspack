@@ -10,6 +10,8 @@ classdef utils
     % other helper routines...
     b = copy(a)
     monochrome(h, c)
+    u = unique(c)
+    i = isin(b, c)
   end
 
 end
