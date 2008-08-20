@@ -47,60 +47,92 @@ classdef problem < handle
         noff(i) = N; N = N + pr.bas{i}.Nf; % set up dof offsets of bases
       end
       pr.N = N; pr.basnoff = noff;   % store stuff as problem properties
+      if isempty(pr.bas), fprintf('warning: no basis sets in problem!\n'); end
     end
     
-    function A = fillbcmatrix(pr)   % ........... make bdry discrepancy matrix
-    % FILLBCMATRIX - computes matrix mapping basis coeffs to bdry discrepancy
+    function A = fillbcmatrix(pr, opts) %...........make bdry mismatch matrix
+    % FILLBCMATRIX - computes matrix mapping basis coeffs to bdry mismatch
     %
-    %    Notes: faster version, & based on basis dofs rather than domain dofs
-      if isempty(pr.sqrtwei), error('must fill quadrature weights first'); end
-      N = pr.setupbasisdofs;
+    %   A = FILLBCMATRIX(pr) returns the matrix mapping all basis degrees of
+    %   freedom in the problem to all segment boundary or matching condition
+    %   mismatch functions. With no output argument the answer is written to
+    %   the problem's property A.
+    %
+    %   A = FILLBCMATRIX(pr, opts) allows certain options including:
+    %   opts.doms: if present, restricts to contrib from only domain list doms.
+    %   opts.trans: if present, gives translation applied to all segments before
+    %    evaluation is done.
+    %   opts.basobj: if present, basis objects (bas, basnoff) are read from
+    %    problem or domain object basobj (which must have setupbasisdofs method)
+    %    Note that in order to affect the problem segments they must be listed
+    %    in some problem domain.
+    %    (The above three are needed by blochmodeproblem)
+    %
+    %    Notes: faster version, based on basis dofs rather than domain dofs
+      if nargin<2, opts=[]; end
+      if ~isfield(opts, 'doms'), opts.doms = []; end
+      if ~isfield(opts, 'trans'), trans = []; else trans = opts.trans; end
+      if isempty(pr.sqrtwei), pr.fillquadwei; end
+      if isfield(opts, 'basobj'), bob = opts.basobj; else bob = pr; end
+      N = bob.setupbasisdofs;
       A = zeros(numel(pr.sqrtwei), N);       % A is zero when no basis influence
       m = 0;                                 % colloc index counter
       o = [];                                % opts to pass into basis.eval
       for s=pr.segs % ======== loop over segs
+        % either use seg as target, or create a translated pointset (non-self):
+        if isempty(trans), c = s; else c = pointset(s.x + trans, s.nx); end
         if s.bcside==0            % matching condition (2M segment dofs needed)
           ms = m + (1:2*size(s.x,1));     % 2M colloc indices for block row
           dp = s.dom{1}; dm = s.dom{2};   % domain handles on the + and - side
-          for i=1:numel(pr.bas)           % all bases in problem
-            b = pr.bas{i};
-            ns = pr.basnoff(i)+(1:b.Nf);     % dof indices for this bas
+          for i=1:numel(bob.bas)           % all bases in problem or basis obj
+            b = bob.bas{i};
+            ns = bob.basnoff(i)+(1:b.Nf);     % dof indices for this bas
             talkp = utils.isin(b, dp.bas);   % true if this bas talks to + side
             talkm = utils.isin(b, dm.bas);   %                           - side
             if talkp ~= talkm                % talks to either one not both
               o.dom = dp; ind = 1;
               if talkm, o.dom = dm; ind = 2; end   % tell b.eval & a which side
-              [Ab Abn] = b.eval(s, o);
-              A(ms, ns) = repmat(pr.sqrtwei(ms).', [1 b.Nf]) .* [s.a(ind)*Ab; s.b(ind)*Abn]; % overwrite block, g stacked below f
+              if isempty(opts.doms) | utils.isin(o.dom, opts.doms) % restrict?
+                [Ab Abn] = b.eval(c, o);
+                A(ms, ns) = repmat(pr.sqrtwei(ms).', [1 b.Nf]) .* [s.a(ind)*Ab; s.b(ind)*Abn]; % overwrite block, g stacked below f
+              end
             elseif talkp & talkm             % bas talks to both (eg transm LP)
-              o.dom = dp; [Ab Abn] = b.eval(s, o);  % + side contrib
-              A(ms, ns) = repmat(pr.sqrtwei(ms).', [1 b.Nf]) .* [s.a(1)*Ab; s.b(1)*Abn]; % overwrite block, g stacked below f
-              o.dom = dm; [Ab Abn] = b.eval(s, o);  % - side contrib
-              A(ms, ns) = A(ms, ns) + repmat(pr.sqrtwei(ms).', [1 b.Nf]) .* [s.a(2)*Ab; s.b(2)*Abn]; % add block
+              o.dom = dp;
+              if isempty(opts.doms) | utils.isin(o.dom, opts.doms) % restrict?
+                [Ab Abn] = b.eval(c, o);  % + side contrib
+                A(ms, ns) = repmat(pr.sqrtwei(ms).', [1 b.Nf]) .* [s.a(1)*Ab; s.b(1)*Abn]; % overwrite block, g stacked below f
+              end
+              o.dom = dm;
+              if isempty(opts.doms) | utils.isin(o.dom, opts.doms) % restrict?
+                [Ab Abn] = b.eval(c, o);  % - side contrib
+                A(ms, ns) = A(ms, ns) + repmat(pr.sqrtwei(ms).', [1 b.Nf]) .* [s.a(2)*Ab; s.b(2)*Abn]; % add block
+              end
             end
           end
             
         elseif s.bcside==1 | s.bcside==-1  % BC (M segment dofs, natural order)
           ind = (1-s.bcside)/2+1; % index 1,2 for which side the BC on (+,-)
           d = s.dom{ind};         % handle of domain on the revelant side
-          o = []; o.dom = d;      % b.eval may need to know in which domain
           ms = m+(1:size(s.x,1)); % colloc indices for this block row
-          for i=1:numel(pr.bas)   % all bases in problem, not just in domain
-            b = pr.bas{i};        % (that's needed so i index reflects pr.bas)
-            if utils.isin(b, d.bas)   % true if this bas talks to BC side
-              if s.b==0               % only values needed, ie Dirichlet
-                Ablock = b.eval(s, o);
-                if s.a~=1.0, Ablock = s.a * Ablock; end
-              else                    % Robin (includes Neumann)
-                [Ablock Anblock] = b.eval(s, o);
-                if s.a==0 & s.b==1.0  % Neumann
-                  Ablock = Anblock;
-                else                  % Robin
-                  Ablock = s.a*Ablock + s.b*Anblock;
+          if isempty(opts.doms) | utils.isin(d, opts.doms) %restrict to domains?
+            o = []; o.dom = d;      % b.eval may need to know in which domain
+            for i=1:numel(bob.bas)   % all bases in problem or bas obj (not dom)
+              b = bob.bas{i};      % (that's needed so i index reflects bob.bas)
+              if utils.isin(b, d.bas)   % true if this bas talks to BC side
+                if s.b==0               % only values needed, ie Dirichlet
+                  Ablock = b.eval(c, o);
+                  if s.a~=1.0, Ablock = s.a * Ablock; end
+                else                    % Robin (includes Neumann)
+                  [Ablock Anblock] = b.eval(c, o);
+                  if s.a==0 & s.b==1.0  % Neumann
+                    Ablock = Anblock;
+                  else                  % Robin
+                    Ablock = s.a*Ablock + s.b*Anblock;
+                  end
                 end
+                A(ms,pr.basnoff(i)+(1:b.Nf)) = ...
+                    repmat(pr.sqrtwei(ms).', [1 b.Nf]) .* Ablock; % write blk
               end
-              A(ms,pr.basnoff(i)+(1:b.Nf)) = ...
-                  repmat(pr.sqrtwei(ms).', [1 b.Nf]) .* Ablock; % overwrite blk
             end
           end
         end
@@ -184,6 +216,7 @@ classdef problem < handle
     end
     
     function h = showbasesgeom(pr)   % ................ crude plot bases geom
+      pr.setupbasisdofs;
       for i=1:numel(pr.bas)
         opts.label = sprintf('%d', i);              % label by problem's bas #
         pr.bas{i}.showgeom(opts);

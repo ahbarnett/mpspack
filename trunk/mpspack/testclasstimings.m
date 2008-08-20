@@ -1,7 +1,13 @@
 % test constructors, how slow, eg for segments
 % barnett 8/11/08
 
-N = 10; n = 300;
+clear classes; N = 10; n = 300;
+x = rand(100,1); nx = rand(100,1);
+tic;
+for i=1:n
+  p(i) = pointset(x, nx);
+end
+fprintf('pointset create: %.2g ms\n', toc*1000/n);
 tic;
 for i=1:n
   s(i) = segment(N, [0 1+1i]);

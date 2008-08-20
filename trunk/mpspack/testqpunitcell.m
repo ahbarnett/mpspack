@@ -32,7 +32,7 @@ b = mfsbasis(1+0.1i, [], [], k);       % make ext source as a single MFS charge
 di = b.evalunitcelldiscrep(uc);        % discrep col vec
 tic; co = -Q\di; toc                   % uc basis coeffs to cancel discrep
 %tic; co = gmres(Q,di,[],[],30); toc    % GMRES w/ maxit
-pr = bvp(uc); pr.co = co;              % set up dummy bvp, pass in co, to plot
+pr = bvp(uc); pr.setupbasisdofs; pr.co = co;   % dummy bvp, pass in co, to plot
 fprintf('coeff nrm = %.2g, residual l2 error = %.2g\n',norm(co),norm(Q*co + di))
 o.dx = .02; [u gx gy dii] = pr.gridsolution(o);
 [xx yy] = meshgrid(gx, gy); zz = xx+1i*yy;

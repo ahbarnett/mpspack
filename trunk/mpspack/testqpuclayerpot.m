@@ -25,13 +25,13 @@ if test=='b'     % ................. basis objects basic test
   end
   tic; Q = uc.evalbasesdiscrep; fprintf('eval discrep in %.2g s\n', toc)
   uc.setbloch(0);
-  tic; Q = uc.evalbasesdiscrep; fprintf('eval discrep (prestored) %.2g s\n', toc) % should be much faster (using stored)
+  tic; Q = uc.evalbasesdiscrep; fprintf('eval discrep (pre-stored) %.2g s\n', toc) % should be much faster (using stored)
   
 elseif test=='c'       % .............. convergence test
 
   b = mfsbasis(1.0+0.1i, [], [], k);     % make a source as a single far charge
   uc.addqpuclayerpots(k);
-  pr = bvp(uc);                      % set up dummy problem w/ interior grid
+  pr = bvp(uc);                       % set up dummy problem w/ interior grid
   o.dx = .02; o = pr.gridboundingbox;
   gx = o.bb(1):o.dx:o.bb(2); gy = o.bb(3):o.dx:o.bb(4);
   [xx yy] = meshgrid(gx, gy); zz = xx + 1i*yy; ii = find(uc.inside(2*zz));
@@ -49,7 +49,7 @@ elseif test=='c'       % .............. convergence test
     tic; co = -Q\di; ts(i) = toc;
     rs(i) = norm(Q*co + di);
     fprintf('\tcoeff nrm = %.2g, resid l2 error = %.2g\n',norm(co),rs(i))
-    pr.co = co;                            % pass in co to dummy bvp
+    pr.co = co; pr.setupbasisdofs;         % pass in co to dummy bvp
     [u di] = pr.pointsolution(p);          % only eval u at interior pts p
     idns(i) = norm(u+us(ii))*o.dx;
     fprintf('\tL2 int domain norm (u+us) = %.2g\n', idns(i))
