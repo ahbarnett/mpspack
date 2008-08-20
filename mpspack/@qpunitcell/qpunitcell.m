@@ -17,25 +17,47 @@ classdef qpunitcell < handle & domain
     r1, r2               % reciprocal lattice vectors (C-#s)
     recip                % 2x2 recip lattice matrix
     L, B, R, T           % L, B, R, T segments
+    N                    % total # degrees of freedom in QP basis sets
+    basnoff              % dof offsets for QP basis sets
   end
   
   methods
     function uc = qpunitcell(e1, e2, k, M, quad) % ................ constructor
       if nargin<4 | isempty(M), M = 20; end       % default M
       if nargin<5 | isempty(quad), quad='g'; end  % default quadrature type
-      
       L = segment(M, [0 e2] - (e1+e2)/2, quad);
       B = segment(M, [e1 0] - (e1+e2)/2, quad);
       R = translate(L, e1);
       T = translate(B, e2);
       uc = uc@domain([L B R T], [-1 -1 1 1]); % create uc as domain instance
       uc.L = L; uc.B = B; uc.R = R; uc.T = T; % note LBRT normals neq domain's!
-      uc.recip = 2*pi*inv([real(e1) real(e2); imag(e1) imag(e2)]);
+      uc.recip = 2*pi*inv([real(e1) real(e2); imag(e1) imag(e2)]'); % cols
       uc.e1 = e1; uc.e2 = e2;
       uc.r1 = uc.recip(1,1) + 1i*uc.recip(2,1);   % reciprocal lattice vecs
       uc.r2 = uc.recip(1,2) + 1i*uc.recip(2,2);
       uc.k = k; uc.setbloch;                      % default Bloch vector
     end % func
+    
+    function [N noff] = setupbasisdofs(uc)
+    % SETUPBASISDOFS - set up indices of basis degrees of freedom in unit cell
+    %
+    %  Similar to problem.setupbasisdofs except internal to unit cell bases
+      if isempty(uc.bas), fprintf('warning: no basis sets in unit cell!\n'); end
+      noff = zeros(1, numel(uc.bas));
+      N = 0;                         % N will be total # dofs (cols of B)
+      for i=1:numel(uc.bas)
+        uc.bas{i}.updateNf;
+        noff(i) = N; N = N + uc.bas{i}.Nf;    % set up dof offsets of bases
+      end
+      uc.N = N; uc.basnoff = noff;   % store stuff as unit cell properties
+    end
+    
+    function s = discrepsqrtwei(uc)
+    % DISCREPSQRTWEI - return sqrt of unit cell discrepancy quadrature weights
+    %    
+    % order matches eval.evalunitcelldiscrep...
+      s = sqrt([uc.L.w, uc.L.w, uc.B.w, uc.B.w]);     % row vec
+    end
     
     function setbloch(uc, a, b)
     % SETBLOCH - choose Bloch wavevector or alpha,beta phases
@@ -78,15 +100,14 @@ classdef qpunitcell < handle & domain
       hold on; plot(0, 0, 'k.', 'markersize', 20);
     end % func
     
-    function Q = evalbasesdiscrep(uc, opts)
+    function Q = evalbasesdiscrep(uc, opts) % .................... Q
     % EVALBASESDISCREP - fill Q matrix mapping UC bases coeffs to discrepancy
     %
-    % * to do: save data as cell array for each basis obj, reuse if opts.data?
-      uc.noff = 0;                % since only one domain
+    % This just stacks matrices from basis.evalunitcelldiscrep
       Q = [];
       for b=uc.bas                % loop over basis set objects in unit cell
         bas = b{1};               % ugly, extracts object from cell
-        Qb = bas.evalunitcelldiscrep(uc);
+        Qb = bas.evalunitcelldiscrep(uc);  % either generic, or special for QPLP
         Q = [Q Qb];               % stack as columns in basis' order
       end
     end % func
@@ -94,9 +115,9 @@ classdef qpunitcell < handle & domain
     function addqpuclayerpots(uc, k, opts) % ...................................
     % ADDQPUCLAYERPOT - adds a sticking-out layer potential basis to unit cell
     %
-    %  makes 4 instances of qpuclayerpot
+    %  makes 4 instances of qpuclayerpot and makes them influence the unit cell
       if nargin==1 | isempty(k), k = uc.k; end
-      uc.bas = {qpuclayerpot(uc, 'L', 'd', k), qpuclayerpot(uc, 'L', 's', k), qpuclayerpot(uc, 'B', 'd', k), qpuclayerpot(uc, 'B', 's', k)};
+      uc.bas = {uc.bas{:}, qpuclayerpot(uc, 'L', 'd', k), qpuclayerpot(uc, 'L', 's', k), qpuclayerpot(uc, 'B', 'd', k), qpuclayerpot(uc, 'B', 's', k)};
     end
     
   end % methods

@@ -162,7 +162,7 @@ classdef segment < handle & pointset
           s.bcside = pm(i);               % same natural segment side convention
           if nargin<5, f = @(t) zeros(size(s.t)); end % covers homogeneous case
           s.f = f;         % may be func handle (not eval'd until need) or array
-          if isempty(b)
+          if nargin<4 | isempty(b)
             switch a
              case {'D', 'd'}
               s.a = 1; s.b = 0;
@@ -200,7 +200,7 @@ classdef segment < handle & pointset
       %
       % Notes: see Notes for SETBC
       %
-      % Also see: DIELECTRICCOEFFS
+      % See also DIELECTRICCOEFFS.
         for i=1:numel(seg)
           s = seg(i);
           if isempty(s.dom{1}) | isempty(s.dom{2})
@@ -259,6 +259,8 @@ classdef segment < handle & pointset
       %
       %  newseg = translate(seg, a) instead returns a new segment (or list)
       %   obtained by translating the segment (or list) seg.
+      %
+      %  Note that multiple translations cause recursive depth in seg.Z, slow!
         if nargout>0                             % make a duplicate
           newseg = [];
           for s=seg; newseg = [newseg utils.copy(s)]; end
@@ -274,7 +276,7 @@ classdef segment < handle & pointset
         end
       end % func
       
-      function newseg = rotate(seg, t)  % ............. rotate a segment
+     function newseg = rotate(seg, t)  % ............. rotate a segment
       % ROTATE - rotate a segment (or list of segments) about the origin
       %
       %  rotate(seg, t) changes the segment (or array of segments) seg by

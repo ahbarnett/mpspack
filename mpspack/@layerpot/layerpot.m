@@ -26,13 +26,13 @@ classdef layerpot < handle & basis
     function b = layerpot(seg, a, k, opts) %........................ constructor
       if nargin<4, opts = []; end
       if nargin>2 & ~isempty(k), b.k = k; end
-      b.N = numel(seg.x);
-      b.Nf = b.N;
       if ~isfield(opts, 'real'), opts.real = 0; end
       b.real = opts.real;
       if isfield(opts, 'quad'), b.quad = opts.quad; end  % quad=[] is default
       if ~isa(seg, 'segment'), error('seg must be a segment object!'); end
       b.seg = seg;
+      b.updateNf;                 % count the # dofs, is # quadr pts on seg
+      b.N = b.Nf;
       if ~isnumeric(a)
         switch a
          case {'single', 'S', 's', 'SLP'}
@@ -44,6 +44,10 @@ classdef layerpot < handle & basis
       if size(a)~=[1 2], error('a argument is not size 1-by-2!'); end
       b.a = a;
     end % func
+    
+    function updateNf(b)  % ............... Nf property reads segment # quadr
+      b.Nf = numel(b.seg.x);
+    end
     
     function [A Ax Ay] = eval(b, p, o) % .........basis evaluator at points p
     % EVAL - evaluate layer potential on pointset or on a segment, with jump rel
@@ -63,6 +67,7 @@ classdef layerpot < handle & basis
     %    p being the segment on which the LP density sits, opts.dom must be
     %    defined, since it resolves which sign the jump relation has.
       if nargin<3, o = []; end
+      b.updateNf;
       if ~isempty(b.quad), o.quad = b.quad; end % pass quadr type to S,D,T eval
       self = (p==b.seg); % if true, local eval on segment which carries density
       if self
@@ -155,6 +160,11 @@ classdef layerpot < handle & basis
         
       end
     end % func
+    
+    function showgeom(b, opts) % .................. crude show discr pts of seg
+      b.seg.plot;
+    end
+    
   end % methods
   
   methods (Static)

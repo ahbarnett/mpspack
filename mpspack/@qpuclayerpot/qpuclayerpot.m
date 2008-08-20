@@ -40,8 +40,8 @@ classdef qpuclayerpot < handle & basis
       else
         error('invalid direc!');
       end
-      b.Nf = numel(s.x);      % # quadr points on 'parallel' segment
       b.pseg = s; b.facp = p; b.faco = o;
+      b.updateNf;
       % Note that the following segs and phases are for direct eval only...
       b.segf = @(ep,eo) [s translate(s, ep) translate(s, -ep) ...
                          translate(s, eo) translate(s, eo+ep) ...
@@ -58,7 +58,11 @@ classdef qpuclayerpot < handle & basis
       b.a = a; b.k = k;
     end % func
     
-    function showgeom(b) % ....................... crude show discr pts of seg
+    function updateNf(b)  % ............... Nf property reads segment # quadr
+      b.Nf = numel(b.pseg.x);      % # quadr points on 'parallel' segment
+    end
+    
+    function showgeom(b, opts) % .................. crude show discr pts of seg
       seg = b.segf(b.ep, b.eo);          % make temporary copy of segs for plot
       domain.showsegments(seg);
     end
@@ -68,7 +72,7 @@ classdef qpuclayerpot < handle & basis
     %
     %  Refers to current alpha, beta and segments in unit cell, but nice that
     %  automatically knows which L or B orientation
-      b.Nf = numel(b.pseg.x);                  % reset Nf
+      b.updateNf;
       seg = b.segf(b.ep, b.eo);                   % construct seg copies
       phase = b.phasef(b.uc);
       A = zeros(numel(p.x), b.Nf);
@@ -92,14 +96,16 @@ classdef qpuclayerpot < handle & basis
     function Q = evalunitcelldiscrep(b, uc, opts) % ...... overloads from basis
     % EVALUNITCELLDISCREP - return Q matrix mapping a QPUC basis to UC discrep
     %
+    %  Does include source quadr wei, ie dofs are (density value_j)
     %  Currently uses no symmetry relations. Stores Bloch-indep interaction
     %   matrices in b.P??, b.O??.
     %  Uses only distant interactions + Id, so has spectral convergence.
     %  See testqpuclayerpot.m for convergence plot
     %
     % Also see: QPUCLAYERPOT, LAYERPOT, QPUNITCELL
+    
       % static storage for interaction rep matrices... needs know about uc.bas
-      b.Nf = numel(b.pseg.x);                  % reset Nf
+      b.updateNf;
       k = b.k; a = b.a; p = b.pseg; o = b.oseg; % p,o: parallel & other segs
       if isempty(b.Pmp) | b.k~=b.k_storage | b.Nf~=size(b.Pmp, 2) % recompute?
         b.k_storage = b.k;         % remember for what k P?? O?? will be for
