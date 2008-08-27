@@ -1,4 +1,4 @@
-function addlayerpotbasis(d, seg, varargin)
+function bas = addlayerpotbasis(d, seg, varargin)
 % ADDLAYERPOTBASIS - create a layer-potential basis set object in a domain
 %
 %  ADDLAYERPOTBASIS(d, segs, a, k) adds a mixture of SLP + DLP (coeffs given
@@ -10,16 +10,21 @@ function addlayerpotbasis(d, seg, varargin)
 %
 %  ADDLAYERPOTBASIS(d, segs, a, k, opts) passes options, see opts in LAYERPOT.
 %
+%  bas = ADDLAYERPOTBASIS(...) returns cell array of handle(s) of created
+%   basis object(s).
+%
 % See also LAYERPOT
 %
 %  To do: change to add images, or multiple segs as one basis object?
 
 if isempty(seg), seg = d.seg; end
+bas = {};
 for s=seg
   b = layerpot(s, varargin{:});
-  d.bas  = {d.bas{:}, b};                     % append cell arr of basis handles
+  bas  = {bas{:}, b};                     % append cell arr of basis handles
 end
+d.bas = {d.bas{:}, bas{:}};               % append to domain's referred bases
 
 if numel(varargin)>1
-  d.k = varargin{2};                        % resets domain wavenumber
+  d.k = varargin{2};                      % resets domain wavenumber
 end
