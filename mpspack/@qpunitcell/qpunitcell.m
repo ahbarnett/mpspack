@@ -18,7 +18,8 @@ classdef qpunitcell < handle & domain
     recip                % 2x2 recip lattice matrix
     L, B, R, T           % L, B, R, T segments
     N                    % total # degrees of freedom in QP basis sets
-    basnoff              % dof offsets for QP basis sets
+    basnoff              % dof offsets for QP basis sets (numeric list)
+    Qpolydata            % matrix polynomial storage for each bas (*cell array)
   end
   
   methods
@@ -88,7 +89,7 @@ classdef qpunitcell < handle & domain
     end
     
     function showbrillouin(uc)
-    % SHOWBRILLOUIN - k-space plot with Brillouin zone and Bloch wavevector
+    % SHOWBRILLOUIN - k-space plot with UC Brillouin zone and Bloch wavevector
       g = gcf; figure(g); hold on;
       bz = uc.recip * ([0 0 1 1 0; 0 1 1 0 0] - .5); % transformed unit square
       plot(bz(1,:), bz(2,:), 'k-'); xlabel('k_x'); ylabel('k_y');
@@ -98,20 +99,81 @@ classdef qpunitcell < handle & domain
         plot(real(uc.kbloch), imag(uc.kbloch), 'r.', 'markersize', 30);
       end
       hold on; plot(0, 0, 'k.', 'markersize', 20);
+      % label the standard zone points...
+      text(0,0,'\Gamma', 'fontsize', 12, 'Fontweight', 'demi');
+      text(real(uc.r1)/2, imag(uc.r1)/2, 'X', 'fontsize', 12, 'Fontweight', 'demi');
+      text(real(uc.r1+uc.r2)/2, imag(uc.r1+uc.r2)/2, 'M', 'fontsize', 12, 'Fontweight', 'demi');
     end % func
     
     function Q = evalbasesdiscrep(uc, opts) % .................... Q
     % EVALBASESDISCREP - fill Q matrix mapping UC bases coeffs to discrepancy
     %
-    % This just stacks matrices from basis.evalunitcelldiscrep
-      Q = [];
-      for b=uc.bas                % loop over basis set objects in unit cell
-        bas = b{1};               % ugly, extracts object from cell
-        Qb = bas.evalunitcelldiscrep(uc);  % either generic, or special for QPLP
-        Q = [Q Qb];               % stack as columns in basis' order
+    %  This stacks matrices from basis.evalunitcelldiscrep, and handles poly
+    %   matrix data storage within the cell array uc.Qpolydata.
+    %
+    %  Q = EVALBASESDISCREP(uc) returns matrix of basis function evaluations
+    %   given basis set dofs as stored in unit cell.
+    %
+    %  Q = EVALBASESDISCREP(uc, opts) passes in options including:
+    %   opts.poly: if true, returns 3d-array Q(:,:,1:5) of polynomial coeff
+    %    matrices for alpha^{-2}, alpha^{-1}, ... , alpha^2.
+    %
+    % To do: change block stacking to preallocation for speed, as in func below
+    Q = [];
+      opts.nei = 0;
+      % inititialize struct cell array to be used to store unphased Q data...
+      if isempty(uc.Qpolydata), uc.Qpolydata = cell(1, numel(uc.bas)); end
+      for i=1:numel(uc.bas)           % loop over basis set objects in unit cell
+        opts.data = uc.Qpolydata{i};  % its allotted poly storage struct
+        % call generic discrep routine (which is overloaded for QP LP bases):
+        [Qb uc.Qpolydata{i}] = uc.bas{i}.evalunitcelldiscrep(uc, opts);
+        Q = [Q Qb];    % stack as cols in basis' order (also works for 3d poly)
       end
     end % func
 
+    function [B B1 B2 d] = evalbasestargetcopies(uc, p, opts) % ..B row from pts
+    % EVALBASESTARGETCOPIES - matrix mapping UC bases to val etc at a pointset
+    %
+    %  Br = EVALBASESTARGETCOPIES(uc, p, opts) evaluates values
+    %   opts.nei = 0,1: controls of 1x1 or 3x3 summation over pointset copies
+    %   opts.poly: if true, returns 3d array (:,:,1:5) of alpha polynomial mats
+    %
+    % See also basis/EVALTARGETCOPIES
+      if nargin<3, opts = []; end
+      if isfield(opts,'data') & numel(opts.data)==numel(uc.bas)
+        d = opts.data;
+      else
+        d = cell(1, numel(uc.bas));   % init storage cell array for this pts
+      end
+      na = max(1,nargout-1);          % how many matrix output args wanted?
+      o = opts;                       % pass through stuff via options
+      o.dom = uc;                     % will always be evaluating in unit cell
+      [N noff] = uc.setupbasisdofs;
+      M = numel(p.x);
+      wantpoly = 0; if isfield(opts, 'poly') & opts.poly, wantpoly = 1; end
+      if wantpoly, B = zeros(M,N,5); else B = zeros(M,N); end % preallocate
+      if na>1, B1 = B; end                                    % (much faster!)
+      if na>2, B2 = B; end
+      for i=1:numel(uc.bas)           % loop over basis set objects in unit cell
+        b = uc.bas{i}; ns = noff(i)+(1:b.Nf);
+        o.data = d{i};                % its allotted poly storage struct
+        if na==1;                     % get same # args out as requested
+          if wantpoly, [B(:,ns,:) d{i}] = b.evaltargetcopies(p, uc, o); 
+          else [B(:,ns) d{i}] = b.evaltargetcopies(p, uc, o); end
+        elseif na==2
+          if wantpoly, [B(:,ns,:) B1(:,ns,:) d{i}] = b.evaltargetcopies(p, uc, o);
+          else [B(:,ns) B1(:,ns) d{i}] = b.evaltargetcopies(p, uc, o); end
+        elseif na==3
+          if wantpoly
+            [B(:,ns,:) B1(:,ns,:) B2(:,ns,:) d{i}] = b.evaltargetcopies(p,uc,o);
+          else
+            [B(:,ns) B1(:,ns) B2(:,ns) d{i}] = b.evaltargetcopies(p, uc, o);
+          end
+        end
+      end
+      if na==1, B1 = d; elseif na==2, B2 = d; end % get output arg list correct 
+    end % func
+    
     function addqpuclayerpots(uc, k, opts) % ...................................
     % ADDQPUCLAYERPOT - adds a sticking-out layer potential basis to unit cell
     %

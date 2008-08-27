@@ -214,7 +214,7 @@ classdef domain < handle
       addnufbbasis(d,origin,nu,offset,branch,N,k,opts) % add irreg. FB basis
       addrpwbasis(d, N, k, opts)           % add real PW basis
       addmfsbasis(d, Z, tau, N, k, opts)   % add MFS basis
-      addlayerpotbasis(d, a, k, segs, opts) % add layer-potential basis
+      b = addlayerpotbasis(d, a, k, segs, opts) % add layer-potential basis
       [A A1 A2] = evalbases(d, p, opts)    % evaluate all basis funcs in domain
       setrefractiveindex(doms, n)
       

@@ -60,7 +60,7 @@ classdef blochmodeproblem < bvp & problem
         if utils.isin(b, pr.doms(1).bas)  % does this b bas affect conn. dom? 
           ns = pr.basnoff(i)+(1:b.Nf);    % dof indices for this bas
           opts.nei = nei;                 % tell eval how many neighbor copies
-          C(:,ns) = evalunitcelldiscrep(b, uc, opts);
+          C(:,ns) = b.evalunitcelldiscrep(uc, opts);
           %C = C .* repmat(pr.uc.discrepsqrtwei.', [1 pr.N]);% no L2 discrep wei
         end
       end
