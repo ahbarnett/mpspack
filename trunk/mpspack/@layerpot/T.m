@@ -31,6 +31,7 @@ if isempty(k) | isnan(k), error('T: k must be a number'); end
 if nargin<4, o = []; end
 if nargin<3, t = []; end
 if ~isfield(o, 'quad'), o.quad='m'; end; % default self periodic quadr
+if ~isfield(o, 'ord'), o.ord=10; end;    % default quadr order
 self = isempty(t);               % self-interact: potentially sing kernel
 N = numel(s.x);                  % # src pts
 if self, t = s; end              % use source as target pts (handle copy)
@@ -67,6 +68,7 @@ end
 if self % ........... source curve = target curve; can be singular kernel
   
   if s.qtype=='p' & o.quad=='k' % Kapur-Rokhlin (ignores diagonal value)
+    A(diagind(A)) = 0;
     [s w] = quadr.kapurtrap(N+1, o.ord);  % Zydrunas-supplied K-R weights
     w = 2*pi * w;                 % change interval from [0,1) to [0,2pi)
     A = circulant(w(1:end-1)) .* A .* repmat(sp.', [M 1]); % speed

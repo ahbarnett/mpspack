@@ -1,11 +1,13 @@
 function A = fundsol(r, k)
 % function A = fundsol(r, k)
 %
-% Returns matrix of fundamental soln given dist
-% matrix r and wavenumber k.
-% Uses symmetry (since zero argument is fast) if r appears symm (based on diag)
+% Returns matrix of fundamental soln given dist matrix r and wavenumber k.
+% Uses matlab built-in hankels, and
+%  uses symmetry (since zero argument is fast) if r appears symm (based on diag)
 %
 % barnett 2/6/08, debugged the test for self-int 2/26/08, dummy diag now 999.
+%
+% See also FUNDSOL_FASTANDDERIV
 
 %fprintf('min r = %g\n', min(r(:)))
 if k==0
@@ -18,8 +20,8 @@ else
     A = A.' + A;
     A(diagind(A)) = (1i/4) * besselh(0, 1, k*diag(r));
   else  % do the usual thing which works for distant nonsymm interactions...
-    %disp(sprintf('fundsol unsymm: r(1,1)=%g, M=%d, N=%d', r(1,1), size(r,1),...
-    %size(r,2)));
+        %disp(sprintf('fundsol unsymm: r(1,1)=%g, M=%d, N=%d', r(1,1), size(r,1),...
+        %size(r,2)));
     A = (1i/4) * besselh(0, 1, k*r);                     % helmholtz
   end
 end

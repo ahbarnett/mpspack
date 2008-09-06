@@ -94,7 +94,7 @@ classdef qpuclayerpot < handle & basis
     % EVALTARGETCOPIES - see basis/EVALTARGETCOPIES for interface
     %
     %  For this qpuclayerpot basis type, a special copy list is sent to generic
-    %   basis routine. Ie, it's a wrapper around the generic routine.
+    %   basis routine. Ie, it's a wrapper around the layerpot routine.
     %   Note that target-movement is used to achieve source move for nei=0
       if nargin<4, opts = []; end
       if isfield(opts, 'nei'), nei = opts.nei; else; nei = 0; end
