@@ -28,10 +28,11 @@ function [A Sker] = S(k, s, t, o)
 %
 %  Adapted from leslie/pc2d/slp_matrix.m, barnett 7/31/08
 %  Tested by routine: testlpquad.m
-if isempty(k) | isnan(k), error('SLP: k must be a number'); end
+if isempty(k) | isnan(k), error('SLP: k must be a number'); return; end
 if nargin<4, o = []; end
 if nargin<3, t = []; end
 if ~isfield(o, 'quad'), o.quad='m'; end; % default self periodic quadr
+if ~isfield(o, 'ord'), o.ord=10; end;    % default quadr order
 self = isempty(t);               % self-interact: potentially sing kernel
 N = numel(s.x);                  % # src pts
 if self, t = s; end              % use source as target pts (handle copy)
@@ -41,18 +42,19 @@ needA = ~isfield(o, 'Sker');     % true if must compute kernel vals
 if needA
   d = repmat(t.x, [1 N]) - repmat(s.x.', [M 1]); % C-# displacements mat
   r = abs(d);                                    % dist matrix R^{MxN}
+  if self, r(diagind(r)) = 999; end % dummy nonzero diag values
 end
-if self, r(diagind(r)) = 999; end % dummy nonzero diag values
 if needA
-  A = utils.fundsol(r, k);        % Phi
-  Sker = A;                       % make kernel available w/out quadr w
+  A = utils.fundsol(r, k);       % Phi
+  Sker = A;                      % make kernel available w/out quadr w
 else
-  A = o.Sker;
+  A = o.Sker; Sker = A;          % pass out Sker even if was passed in
 end
 
 if self % ........... source curve = target curve; can be singular kernel
   
   if s.qtype=='p' & o.quad=='k'  % Kapur-Rokhlin (kills diagonal values)
+    A(diagind(A)) = 0;
     [s w] = quadr.kapurtrap(N+1, o.ord);  % Zydrunas-supplied K-R weights
     w = 2*pi * w;                 % change interval from [0,1) to [0,2pi)
     A = circulant(w(1:end-1)) .* A .* repmat(sp.', [M 1]); % speed
@@ -66,6 +68,11 @@ if self % ........... source curve = target curve; can be singular kernel
       A = A - S1.*circulant(log(4*sin(pi*(0:N-1)/N).^2)); % A=D2=M_2/2 "
       A(diagind(A)) = -log(sp)/2/pi;        % diag vals propto curvature
     else
+      if ~exist('r')
+        d = repmat(t.x, [1 N]) - repmat(s.x.', [M 1]); % C-# displacements mat
+        r = abs(d);                                    % dist matrix R^{MxN}
+        r(diagind(r)) = 999; % dummy nonzero diag values
+      end
       S1 = triu(besselj(0,k*triu(r,1)),1);  % use symmetry (arg=0 is fast)
       S1 = -(1/4/pi)*(S1.'+S1);     % next fix it as if diag(r) were 0
       S1(diagind(S1)) = -(1/4/pi);  % S1=M_1/2 of Kress w/out speed fac

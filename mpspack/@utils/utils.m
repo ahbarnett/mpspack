@@ -7,6 +7,8 @@ classdef utils
     J=recursivebessel(M,x);
     A = fundsol(r, k)
     [B radderivs] = fundsol_deriv(r, cosphi, k, radderivs)
+    [H0 H1] = greengardrokhlinhank103(z);
+    [H0 H1] = greengardrokhlinhank106(z);
     % other helper routines...
     b = copy(a)
     monochrome(h, c)

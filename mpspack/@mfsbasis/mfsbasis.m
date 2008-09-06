@@ -21,6 +21,7 @@ classdef mfsbasis < handle & basis
     t                     % row vec of parameter values in [0,2pi]
     y                     % row vec of charge points (C-#s)
     realflag              % if true, use real part only, ie Y_0
+    fast                  % Hankel evaluation method (0 matlab, 1,2, faster)
     %locmeth              % charge point location method
   end
   
@@ -29,6 +30,11 @@ classdef mfsbasis < handle & basis
       if nargin<5, opts = []; end
       if ~isfield(opts, 'real'), opts.real = 0; end
       b.realflag = opts.real;
+      if ~isfield(opts, 'fast'), opts.fast = 2; end
+      if opts.fast==2 & exist('@utils/greengardrokhlinhank106.mexglx')~=3
+        opts.fast = 1;               % downgrade the speed if 106 not available
+      end
+      b.fast = opts.fast;
       if ~isempty(k), b.k = k; end
       if isnumeric(Z)                         % Z contains y list of MFS pts
         N = numel(Z);
@@ -50,6 +56,32 @@ classdef mfsbasis < handle & basis
       N = b.N; M = numel(p.x); k = b.k;
       d = repmat(p.x, [1 N]) - repmat(b.y, [M 1]); % displacement matrix, C#s
       r = abs(d);
+      if b.fast   % MEX code; bypass the split into fundsol & fundsol_deriv
+        if b.fast==1
+          [A radderivs] = utils.greengardrokhlinhank103(k*r); % get H0(kr), H1
+        elseif b.fast==2
+          [A radderivs] = utils.greengardrokhlinhank106(k*r); % get H0, H1
+        end
+        A = (1i/4) * A;
+        radderivs = (1i*k/4) * radderivs;
+        % now copy code from below b.fast=0, except reusing radderivs...
+        if derivs==1                     % want directional deriv
+          ny = repmat(p.nx, [1 N]);      % identical cols given by bdry normals
+          cosphi = real(conj(ny).*d) ./ r;    % dot prod <normal, displacement>
+          clear d ny
+          B = utils.fundsol_deriv(r, -cosphi, k, radderivs); % (target)-normal deriv, NB sign
+          clear cosphi
+          if b.realflag, B = real(B); end         % keeps only the Y-0 part
+        elseif derivs==2                          % want x,y-derivs
+          dor = d./r;                             % contains x as re, y as im
+          clear d
+          [B radderivs] = utils.fundsol_deriv(r, -real(dor), k, radderivs); % x deriv 
+          C = utils.fundsol_deriv(r, -imag(dor), k, radderivs); % y reuse rad part
+          clear radderivs dor
+          if b.realflag, B = real(B); C = real(C); end % keeps only the Y-0 part
+        end
+        
+      else         % original, use matlab hankels in fundsol & fundsol_deriv...
       if derivs==1                     % want directional deriv
         ny = repmat(p.nx, [1 N]);      % identical cols given by bdry normals
         cosphi = real(conj(ny).*d) ./ r;      % dot prod <normal, displacement>
@@ -66,6 +98,7 @@ classdef mfsbasis < handle & basis
         if b.realflag, B = real(B); C = real(C); end % keeps only the Y-0 part
       end
       A = utils.fundsol(r, k);
+      end
       if b.realflag, A = real(A); end           % keeps only the Y-0 part    
     end
     

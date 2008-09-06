@@ -5,7 +5,8 @@ classdef layerpot < handle & basis
 %  b = LAYERPOT(seg, a, k, opts) where a = 'single' or 'double' creates a layer
 %   potential basis object with density on segment seg, with wavenumber k
 %   (which may be [] in which k is not defined), and options:
-%   opts.real: if true, real valued (Y_0), otherwise complex (H_0 outgoing).
+%    opts.real: if true, real valued (Y_0), otherwise complex (H_0 outgoing).
+%    opts.fast: if 0 use matlab Hankel, 1 use fast fortran Hankel, 2 faster.
 %   If a is instead a 1-by-2 array, then a mixture of a(1) single plus a(2)
 %   double is created, useful for Brakhage, Werner, Leis & Panich type
 %   representations.
@@ -13,22 +14,30 @@ classdef layerpot < handle & basis
 %   Note that the discretization of the layerpot is given by that of the seg,
 %    apart from periodic segments where new quadrature weights may be used.
 %
-%  To do: real=1 case?
+%  To do: real=1 case? don't bother.
 
   properties
     real                            % true if fund sol is Y_0, false for H_0^1
     seg                             % handle of segment on which density sits
     a                               % 1-by-2, mixture weights of SLP and DLP
     quad                            % quadrature option (opts.quad in S,D,T)
+    ord                             % quadrature order (opts.ord in S,D,T)
+    fast                            % Hankel evaluation method (0,1,2)
   end
 
   methods
     function b = layerpot(seg, a, k, opts) %........................ constructor
       if nargin<4, opts = []; end
       if nargin>2 & ~isempty(k), b.k = k; end
+      if ~isfield(opts, 'fast'), opts.fast = 0; end
+      if opts.fast==2 & exist('@utils/greengardrokhlinhank106.mexglx')~=3
+        opts.fast = 1;               % downgrade the speed if 106 not available
+      end
+      b.fast = opts.fast;
       if ~isfield(opts, 'real'), opts.real = 0; end
       b.real = opts.real;
       if isfield(opts, 'quad'), b.quad = opts.quad; end  % quad=[] is default
+      if isfield(opts, 'ord'), b.ord = opts.ord; end  % ord=[] is default
       if ~isa(seg, 'segment'), error('seg must be a segment object!'); end
       b.seg = seg;
       b.updateNf;                 % count the # dofs, is # quadr pts on seg
@@ -50,25 +59,28 @@ classdef layerpot < handle & basis
     end
     
     function [A Ax Ay] = eval(b, p, o) % .........basis evaluator at points p
-    % EVAL - evaluate layer potential on pointset or on a segment, with jump rel
-    %
-    %  A = EVAL(bas, p, opts) returns a matrix mapping degrees of freedom in the
-    %   discretization of the layer density to the values on p the target
-    %   pointset or segment.
-    %
-    %  [A An] = EVAL(bas, p, opts) also returns normal derivatives using normals
-    %   in p.
-    %
-    %  [A Ax Ay] = EVAL(bas, p, opts) instead returns x- and y-derivatives,
-    %   ignoring the normals in p.
-    %
-    %   The optional argument opts may contain the following fields:
-    %    opts.dom: domain in which evaluation is performed. In the case of
-    %    p being the segment on which the LP density sits, opts.dom must be
-    %    defined, since it resolves which sign the jump relation has.
+% EVAL - evaluate layer potential on pointset or on a segment, with jump rel
+%
+%  A = EVAL(bas, p, opts) returns a matrix mapping degrees of freedom in the
+%   discretization of the layer density to the values on p the target
+%   pointset or segment.
+%
+%  [A An] = EVAL(bas, p, opts) also returns normal derivatives using normals
+%   in p.
+%
+%  [A Ax Ay] = EVAL(bas, p, opts) instead returns x- and y-derivatives,
+%   ignoring the normals in p.
+%
+%   The optional argument opts may contain the following fields:
+%    opts.dom: domain in which evaluation is performed. In the case of
+%     p being the segment on which the LP density sits, opts.dom must be
+%     defined, since it resolves which sign the jump relation has.
+%    opts.fast: if 0 use matlab Hankel, 1 use fast fortran Hankel, 2 faster
       if nargin<3, o = []; end
+      if ~isfield(o, 'fast'), o.fast = b.fast; end    % default given in b obj
       b.updateNf;
       if ~isempty(b.quad), o.quad = b.quad; end % pass quadr type to S,D,T eval
+      if ~isempty(b.ord), o.ord = b.ord; end % pass quadr order to S,D,T eval
       self = (p==b.seg); % if true, local eval on segment which carries density
       if self
         if isempty(o) | ~isfield(o, 'dom') | (o.dom~=p.dom{1} & o.dom~=p.dom{2})
@@ -80,6 +92,21 @@ classdef layerpot < handle & basis
         p = [];              % tell S, D, etc to use self-interaction
       end
       k = b.k;                          % could look up from b.doms someday...
+      
+      if k>0 & o.fast % --- precompute the Hankel values in Sker and Dker_noang
+        N = numel(b.seg.x);                                % # src pts
+        t = p; if self, t = b.seg; end                     % use src if self
+        M = numel(t.x);                                    % # target pts
+        d = repmat(t.x, [1 N]) - repmat(b.seg.x.', [M 1]); % C-# displ mat
+        if o.fast==1
+          [o.Sker o.Dker_noang] = utils.greengardrokhlinhank103(k*abs(d));%H0,H1
+        elseif o.fast==2
+          [o.Sker o.Dker_noang] = utils.greengardrokhlinhank106(k*abs(d));%H0,H1
+        end
+        o.Sker = (1i/4) * o.Sker;
+        o.Dker_noang = (1i*k/4) * o.Dker_noang;
+      end
+
       if nargout==1 %------------------------------- values only
         if b.a(2)==0             % only SLP
           A = layerpot.S(k, b.seg, p, o);
@@ -91,7 +118,7 @@ classdef layerpot < handle & basis
           A = b.a(1) * layerpot.S(k, b.seg, p, o) + ...
               b.a(2) * layerpot.D(k, b.seg, p, o);
         end
-        if self & b.a(2)~=0
+        if self & b.a(2)~=0   % NOTE should speed up by writing diag vals only:
           A = A + approachside * b.a(2) * eye(size(A)) / 2;  % DLP val jump
         end
         
@@ -141,8 +168,8 @@ classdef layerpot < handle & basis
           p.nx = nx_copy;                          % restore pointset normals
           if b.a(2)~=1, A = A * b.a(2); Ax = Ax * b.a(2); Ay = Ay * b.a(2); end
         else                    % mixture of SLP + DLP
-          [A o.Sker] = layerpot.S(b.k, b.seg, p, o);
-          [AD o.Dker_noang] = layerpot.D(b.k, b.seg, p, o);
+          [A o.Sker] = layerpot.S(k, b.seg, p, o);
+          [AD o.Dker_noang] = layerpot.D(k, b.seg, p, o);
           A = b.a(1) * A + b.a(2) * AD;
           clear AD
           o.derivSLP = 1;

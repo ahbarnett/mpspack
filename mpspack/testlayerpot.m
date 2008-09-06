@@ -10,8 +10,9 @@ if sh=='s', s = segment.smoothstar([], 0.3, 3); Ms = 50:50:150; % periodic anal
 elseif sh=='t', s = segment.polyseglist([], [1 1i exp(4i*pi/3)], 'g');  % tri
   Ms = 20:20:100;
 end
-k = 0;                     % allows tau=1 test to work
 d = domain(s, 1);                    % interior domain
+if 0
+k = 0;                     % allows tau=1 test to work
 [g.x g.ii g.gx g.gy] = d.grid(0.05);                     % some interior points
 for m = 1:numel(Ms)
   M = Ms(m); s.requadrature(ceil(M/numel(s))); % can also try 'g', better
@@ -23,14 +24,16 @@ for m = 1:numel(Ms)
   imagesc(g.gx, g.gy, log10(abs(u+1))); colorbar; caxis([-16 0]);
   title('DLP interior error at k=0 (log10 scale)');
 end
+end
 
 % interior Helmholtz GRF via SLP&DLP............................................
-k = 10;
-o = []; if sh=='t', o.quad = 'a'; end     % not default Kress, rather, crude.
+k = 20;  M = 220;  % k & size for Kress to get 4e-15
+o = []; o.fast = 2; % M = 1000; o.quad = 'k'; o.ord = 10; % test Kapur-Rokhlin
+if sh=='t', o.quad = 'a'; end % not default Kress, rather, crude.
 d.clearbases;
 d.addlayerpotbasis([], 's', k, o); d.addlayerpotbasis([], 'd', k, o);
-s.requadrature(100);                   % note you can requad after defining LPs
-xsing = 1 + 1i;                        % location of singularity in a Helm soln
+s.requadrature(M);                   % note you can requad after defining LPs
+xsing = 2 + 1i;                        % location of singularity in a Helm soln
 u = @(x) bessely(0, k*abs(x - xsing)); % an exact Helmholtz soln in domain
 R = @(x) abs(x - xsing);
 du = @(x) -k*(x-xsing)./R(x).*bessely(1, k*R(x)); % grad u as C# (why? u=Re)
