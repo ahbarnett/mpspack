@@ -15,11 +15,12 @@ classdef qpunitcell < handle & domain
     kbloch               % Bloch wavevector (as C-#)
     e1, e2               % lattice displacement vectors (C-#s)
     r1, r2               % reciprocal lattice vectors (C-#s)
-    recip                % 2x2 recip lattice matrix
+    recip                % 2x2 matrix with columns the reciprocal lattice vecs
     L, B, R, T           % L, B, R, T segments
     N                    % total # degrees of freedom in QP basis sets
     basnoff              % dof offsets for QP basis sets (numeric list)
-    Qpolydata            % matrix polynomial storage for each bas (*cell array)
+    Qpolydata            % matrix polynomial storage for each bas (cell array)
+    buffer               % 0,1: simple discrepancy, or 3x3 unit cell discrepancy
   end
   
   methods
@@ -31,17 +32,19 @@ classdef qpunitcell < handle & domain
       R = translate(L, e1);
       T = translate(B, e2);
       uc = uc@domain([L B R T], [-1 -1 1 1]); % create uc as domain instance
-      uc.L = L; uc.B = B; uc.R = R; uc.T = T; % note LBRT normals neq domain's!
+      uc.L = L; uc.B = B;                     % note LBRT normals neq domain's!
       uc.recip = 2*pi*inv([real(e1) real(e2); imag(e1) imag(e2)]'); % cols
       uc.e1 = e1; uc.e2 = e2;
       uc.r1 = uc.recip(1,1) + 1i*uc.recip(2,1);   % reciprocal lattice vecs
       uc.r2 = uc.recip(1,2) + 1i*uc.recip(2,2);
       uc.k = k; uc.setbloch;                      % default Bloch vector
+      uc.buffer = 0;                              % default discrep UC size
     end % func
     
     function [N noff] = setupbasisdofs(uc)
     % SETUPBASISDOFS - set up indices of basis degrees of freedom in unit cell
     %
+    %  Warning: slow, taking 0.3 ms even if only one basis set!
     %  Similar to problem.setupbasisdofs except internal to unit cell bases
       if isempty(uc.bas), fprintf('warning: no basis sets in unit cell!\n'); end
       noff = zeros(1, numel(uc.bas));
@@ -85,7 +88,7 @@ classdef qpunitcell < handle & domain
     end % func
     
     function h = plot(uc)   % ..................... overloads domain plot
-      h = domain.showsegments([uc.L uc.B uc.R uc.T], 1); % show 4 segments
+      h = domain.showsegments(uc.seg, 1);          % show 4 segments
     end
     
     function showbrillouin(uc)
@@ -101,8 +104,60 @@ classdef qpunitcell < handle & domain
       hold on; plot(0, 0, 'k.', 'markersize', 20);
       % label the standard zone points...
       text(0,0,'\Gamma', 'fontsize', 12, 'Fontweight', 'demi');
-      text(real(uc.r1)/2, imag(uc.r1)/2, 'X', 'fontsize', 12, 'Fontweight', 'demi');
-      text(real(uc.r1+uc.r2)/2, imag(uc.r1+uc.r2)/2, 'M', 'fontsize', 12, 'Fontweight', 'demi');
+      text(real(uc.r1)/2, imag(uc.r1)/2, 'X', ...
+           'fontsize', 12, 'Fontweight', 'demi');
+      text(real(uc.r1+uc.r2)/2, imag(uc.r1+uc.r2)/2, ...
+           'M', 'fontsize', 12, 'Fontweight', 'demi');
+    end % func
+    
+    function [B B1 B2 d] = evalbaseswithdata(uc, p, opts) % evalbases w/ data IO
+    % EVALBASESWITHDATA - like basis/EVALBASES except gathers prestored data I/O
+    %
+    % B = EVALBASESWITHDATA(uc, pts) evaluates matrix mapping basis coeffs in
+    %   the unit cell uc to their values on the pointset pts. This is identical
+    %   to a generic uc.evalbases(pts) call, so there's not much point in that.
+    %
+    % B = EVALBASESWITHDATA(uc, pts, opts) allows options including:
+    %   opts.data: cell array of data structs, one for each basis in UC, allows
+    %    rapid resummation of prestored submatrices for basis eval with phases
+    %    given in uc.
+    %
+    % [B d] = EVALBASESWITHDATA(...) also returns d a cell array of data struct
+    %   of the same form as opts.data may have passed in.
+    % [B Bn d] = etc
+    % [B Bx By d] = etc
+    %
+    % See also domain/EVALBASES
+      if nargin<3, opts = []; end
+      if ~isfield(opts, 'poly'), opts.poly = 0; end
+      o = opts;          % opts copy to pass through, but with data overwritten
+      if ~isfield(opts, 'data') | isempty(opts.data)
+        opts.data = cell(1, numel(uc.bas)); end         % initialize empty data
+      o.dom=uc; o.nei=0;              % always eval in the uc domain, no nei blk
+      M = numel(p.x);                 % height of each block column
+      N = uc.N; noff = uc.basnoff;    % since uc.setupbasisdofs takes 0.3ms
+      B = zeros(M,N,opts.poly+1);                          % preallocate
+      if nargout>2, B1 = zeros(M,N,opts.poly+1); end
+      if nargout>3, B2 = zeros(M,N,opts.poly+1); end
+      for i=1:numel(uc.bas) %-----------loop over basis set objects in unit cell
+        b = uc.bas{i}; ns = noff(i)+(1:b.Nf);  % column indices for this basis
+        o.data = opts.data{i};              % its allotted poly storage struct
+        if nargout==1                       % handle each # outp args separately
+          Bb = b.evalunitcellcopies(p, b.uc, o);  % block-column of B
+          B(:,ns,:) = Bb;
+        elseif nargout==2
+          [Bb db] = b.evalunitcellcopies(p, b.uc, o);
+          B(:,ns,:) = Bb; d{i} = db;          % create d cell array of structs
+        elseif nargout==3
+          [Bb B1b db] = b.evalunitcellcopies(p, b.uc, o);
+          B(:,ns,:) = Bb; B1(:,ns,:) = B1b; d{i} = db;
+        else
+          [Bb B1b B2b db] = b.evalunitcellcopies(p, b.uc, o);
+          B(:,ns,:) = Bb; B1(:,ns,:) = B1b; B2(:,ns,:) = B2b; d{i} = db;
+        end
+      end                  %------------
+      % get output args correct when neither 1 nor all 4 args wanted...
+      if nargout==2, B1 = d; elseif nargout==3, B2 = d; end
     end % func
     
     function Q = evalbasesdiscrep(uc, opts) % .................... Q
@@ -115,72 +170,85 @@ classdef qpunitcell < handle & domain
     %   given basis set dofs as stored in unit cell.
     %
     %  Q = EVALBASESDISCREP(uc, opts) passes in options including:
-    %   opts.poly: if true, returns 3d-array Q(:,:,1:5) of polynomial coeff
-    %    matrices for alpha^{-2}, alpha^{-1}, ... , alpha^2.
-    %
-    % To do: change block stacking to preallocation for speed, as in func below
-    Q = [];
-      opts.nei = 0;
+    %   opts.poly: if true, returns 3d-array Q(:,:,poly+1) of polynomial coeff
+    %    matrices of order determined in basis.evalunitcellcopies
+      if nargin<2, opts = []; end
+      if ~isfield(opts, 'poly'), opts.poly = 0; end
+      N = uc.N; noff = uc.basnoff;    % since uc.setupbasisdofs takes 0.3ms
+      M = (2 + 4*uc.buffer)*(numel(uc.L.x)+numel(uc.B.x)); % # discrep vals
+      Q = zeros(M,N,opts.poly+1);                          % preallocate
       % inititialize struct cell array to be used to store unphased Q data...
       if isempty(uc.Qpolydata), uc.Qpolydata = cell(1, numel(uc.bas)); end
       for i=1:numel(uc.bas)           % loop over basis set objects in unit cell
+        b = uc.bas{i}; ns = noff(i)+(1:b.Nf);
         opts.data = uc.Qpolydata{i};  % its allotted poly storage struct
         % call generic discrep routine (which is overloaded for QP LP bases):
-        [Qb uc.Qpolydata{i}] = uc.bas{i}.evalunitcelldiscrep(uc, opts);
-        Q = [Q Qb];    % stack as cols in basis' order (also works for 3d poly)
+        [Q(:,ns,:) uc.Qpolydata{i}] = b.evalunitcelldiscrep(uc, opts);
       end
     end % func
 
-    function [B B1 B2 d] = evalbasestargetcopies(uc, p, opts) % ..B row from pts
-    % EVALBASESTARGETCOPIES - matrix mapping UC bases to val etc at a pointset
-    %
-    %  Br = EVALBASESTARGETCOPIES(uc, p, opts) evaluates values
-    %   opts.nei = 0,1: controls of 1x1 or 3x3 summation over pointset copies
-    %   opts.poly: if true, returns 3d array (:,:,1:5) of alpha polynomial mats
-    %
-    % See also basis/EVALTARGETCOPIES
-      if nargin<3, opts = []; end
-      if isfield(opts,'data') & numel(opts.data)==numel(uc.bas)
-        d = opts.data;
-      else
-        d = cell(1, numel(uc.bas));   % init storage cell array for this pts
-      end
-      na = max(1,nargout-1);          % how many matrix output args wanted?
-      o = opts;                       % pass through stuff via options
-      o.dom = uc;                     % will always be evaluating in unit cell
-      [N noff] = uc.setupbasisdofs;
-      M = numel(p.x);
-      wantpoly = 0; if isfield(opts, 'poly') & opts.poly, wantpoly = 1; end
-      if wantpoly, B = zeros(M,N,5); else B = zeros(M,N); end % preallocate
-      if na>1, B1 = B; end                                    % (much faster!)
-      if na>2, B2 = B; end
-      for i=1:numel(uc.bas)           % loop over basis set objects in unit cell
-        b = uc.bas{i}; ns = noff(i)+(1:b.Nf);
-        o.data = d{i};                % its allotted poly storage struct
-        if na==1;                     % get same # args out as requested
-          if wantpoly, [B(:,ns,:) d{i}] = b.evaltargetcopies(p, uc, o); 
-          else [B(:,ns) d{i}] = b.evaltargetcopies(p, uc, o); end
-        elseif na==2
-          if wantpoly, [B(:,ns,:) B1(:,ns,:) d{i}] = b.evaltargetcopies(p, uc, o);
-          else [B(:,ns) B1(:,ns) d{i}] = b.evaltargetcopies(p, uc, o); end
-        elseif na==3
-          if wantpoly
-            [B(:,ns,:) B1(:,ns,:) B2(:,ns,:) d{i}] = b.evaltargetcopies(p,uc,o);
-          else
-            [B(:,ns) B1(:,ns) B2(:,ns) d{i}] = b.evaltargetcopies(p, uc, o);
-          end
-        end
-      end
-      if na==1, B1 = d; elseif na==2, B2 = d; end % get output arg list correct 
-    end % func
-    
     function addqpuclayerpots(uc, k, opts) % ...................................
     % ADDQPUCLAYERPOT - adds a sticking-out layer potential basis to unit cell
     %
     %  makes 4 instances of qpuclayerpot and makes them influence the unit cell
       if nargin==1 | isempty(k), k = uc.k; end
       uc.bas = {uc.bas{:}, qpuclayerpot(uc, 'L', 'd', k), qpuclayerpot(uc, 'L', 's', k), qpuclayerpot(uc, 'B', 'd', k), qpuclayerpot(uc, 'B', 's', k)};
+      uc.setupbasisdofs;
     end
+    
+    function c = discrepcopylist(uc, ppows, opows, direc, refl)
+    % DISCREPCOPYLIST - build segment copylist (rect block + mirror image) for C
+    %
+    %  This is for generic basis objects that do not know anything about the UC.
+    %  The lists returned here are product-grid blocks of copies, minus their
+    %   (integer) reflections about half-way across the unit cell. Such lists
+    %   are useful building blocks to build the C matrix for generic inclusion
+    %   basis sets via basis.evalunitcelldiscrep.
+    %
+    %  Eg, if ppows=[-1 2], opows=[1 3], refl=0, then 8 copies will result with
+    %   p-powers=[-1 -1 2 2 -1 -1 2 2] and o-powers=[1 3 1 3 -1 -3 -1 -3].
+    %   The last four of these will have a -1 phase (remph), the first four +1.
+    %   Finally, if direc='L' then p-powers is beta power, o-powers is alpha.
+    % 
+    %  copylist = DISCREPCOPYLIST(uc, ppows, opows, direc, refl) where
+    %   direc is 'L' or 'B' returns copylist struct as needed for
+    %   bas.evalunitcelldiscrep (refl=1), or qpuclayerpots.evalunitcelldiscrep
+    %   (refl=0,2). Other inputs are:
+    %   ppowrange = integer list of powers in parallel direction.
+    %   opowrange = integer list of powers in other direction.
+    %   refl controls what duplication of rect copy array is performed:
+    %    refl=0: reflection about line of principal segment
+    %            (ie negate the 'o' power)
+    %    refl=1: reflection about line parallel to principal segment through
+    %            UC center (ie negate the 'o' power and subtract 1)
+    %    refl=2: reflection about line of `other' segment
+    %            (ie negate the 'p' power)
+    %    refl=3: reflection about line parallel to `other' segment through
+    %            UC center (ie negate the 'p' power and subtract 1)
+    %    refl=4: reflection about line parallel to `other' segment through
+    %            UC top (ie negate the 'p' power and subtract 2)
+    %    refl<0: duplicate of block translated refl in the 'other' direction
+    %            (phase is still negated in the duplicate)
+      [ppow opow] = meshgrid(ppows, opows);  % make product grid
+      ppow = ppow(:); opow = opow(:);
+      if refl==0 | refl==1
+        opowr = [opow; -refl-opow]; ppowr = [ppow; ppow];
+      elseif refl>=2
+        opowr = [opow; opow]; ppowr = [ppow; -(refl-2)-ppow];  % cases refl=2-4
+      else                                                     % refl<0
+        opowr = [opow; opow+refl]; ppowr = [ppow; ppow];
+      end
+      if direc=='L' | direc=='l'
+        c.t = -uc.e1*opowr - uc.e2*ppowr;   % - signs since translate opp power
+        c.apow = opowr; c.bpow = ppowr;
+      elseif direc=='B' | direc=='b'
+        c.t = -uc.e2*opowr - uc.e1*ppowr;
+        c.apow = ppowr; c.bpow = opowr;
+      else
+        error('uc.discrepcopylist: bad direc');
+      end
+      c.remph = [ones(size(ppow)); -ones(size(ppow))]; % -ve in discrep form
+    end % func
     
   end % methods
 end

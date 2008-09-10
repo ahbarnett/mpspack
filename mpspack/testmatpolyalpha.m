@@ -1,14 +1,14 @@
 % build up and test alpha matrix polynomial for polyeig
-% barnett 8/20/08
+% barnett 8/20/08   -- TODO: fix up for new subroutine names!
 
 clear classes
-test = 'sl';    % first char: '1' one beta value, 's' beta sweep, 'd' a,b sweep
+test = '1j';    % first char: '1' one beta value, 's' beta sweep, 'd' a,b sweep
                 %   'p' for (a,b) sweep using alpha-polynomial
                 % 2nd char: QP basis: 'j' for J-exp, 'l' for LPs
 inv = 1;        % 0 compute whole BZ, 1 use inversion symm
-sys = 'd';      % system: 'e' for empty unit cell, 'd' for single dirichlet blob
+sys = 'e';      % system: 'e' for empty unit cell, 'd' for single dirichlet blob
 verb = 1;         % plot type (eg eigs for test 's')
-k = 12; trgnei = 0; srcnei = 0;
+k = 12; ucbuf = 0; nei = 0;
 Mu = 12;
 uc = qpunitcell(1, 0.5+1i, k, Mu);   % M=20 for uc quadr ('g' default type)
 ns = 100;                       % max # sing vals to keep

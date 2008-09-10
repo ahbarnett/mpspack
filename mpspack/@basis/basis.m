@@ -1,11 +1,11 @@
 classdef basis < handle
     
   % Class basis - Abstract class that defines the interfaces which are
-  % common for all basis objects. Also defines generic qpunitcell
-  % discrepancy evaluation routine.
+  % common for all basis objects. Also defines qpunitcell
+  % basis and discrepancy evaluation methods that apply to generic bases.
     
   properties
-    k                       % Wavevector
+    k                       % Wavevector. TODO: make this refer to a domain's k
     N                       % Number or degree of basis fct. Exact
                             % specification depends on type of basis
     Nf                      % Actual number of basis functions
@@ -21,211 +21,234 @@ classdef basis < handle
                              % x and y derivatives.
   end
   
-  methods % ....................................... actual methods
+  methods % ....................................... actual methods ...........
   
-    function updateNf(b) % ....................... dummy for all but LP bases
+    function updateNf(b) % ................ dummy for all but layerpot bases
     end
   
-    function [Q d] = evalunitcelldiscrep(b, uc, opts)
-    % EVALUNITCELLDISCREP - matrix which maps basis coeffs to discrepancy on UC
+    function d = copiesdata(b, p, transl, nargs, opts) %.......eval copies data
+    % COPIESDATA - data struct of basis func evals on many copies of pointset
     %
-    %  Default routine for bases which don't know anything special about the UC.
+    % data = COPIESDATA(bas, pts, transl, nargs)
+    %   Computes data struct containing raw (unphased) basis evaluation matrices
+    %   over copies. From this data, basis.evalunitcellcopies can rapidly
+    %   sum and phase the matrices.
+    %   transl is list of translations t (as C-#s).
+    %   nargs = 1,2,3: controls whether data struct stores vals, or vals+normal
+    %    derivs, or vals+x,y-derivs
     %
-    %  Q = EVALUNITCELLDISCREP(bas, uc, opts) uses options in opts including:
+    % data = COPIESDATA(bas, pts, transl, nargs, opts) allows options to
+    %   be passed to basis.eval, such as:
+    %    opts.dom: domain for basis evaluation.
+    %          
+      if nargin<5, opts = []; end
+      nc = numel(transl);
+      N = b.Nf;
+      M = numel(p.x);
+      d.k = b.k; % records stored k for d.B etc; uses k from basis not UC
+      d.p = p;   % record identity of pointset used (recomputes if changes)
+      d.B = zeros(M,N,nc); if nargs>1, d.B1 = zeros(M,N,nc); end % alloc storage
+      if nargs>2, d.B2 = zeros(M,N,nc); end
+      for i=1:nc % could write this loop inside each na choice, faster...
+        if transl(i)==0
+          pt = p;                             % preserve identity (jump rels)
+        else
+          pt = pointset(p.x + transl(i), p.nx); % make moved target copy, as pts
+        end
+        if nargs==1                % call eval w/ appropriate # args
+          d.B(:,:,i) = b.eval(pt, opts);
+        elseif nargs==2
+          [d.B(:,:,i) d.B1(:,:,i)] = b.eval(pt, opts);
+        else
+          [d.B(:,:,i) d.B1(:,:,i) d.B2(:,:,i)] = b.eval(pt, opts);
+        end
+      end
+    end %func
+    
+    function [B B1 B2 d] = evalunitcellcopies(b, p, uc, opts) % sum over targets
+    % EVALUNITCELLCOPIES - sum basis funcs over neighboring copies of pointset
+    %
+    %  B = evalunitcellcopies(bas, pts, uc, opts) returns in B a MxNx1 3d array
+    %   which when squeezed down to MxN is the matrix giving
+    %   the sum of each basis function value at each point in pointset pts.
+    %   Each column of squeezed B corresponds to one basis func, in basis set
+    %   object bas. uc is the unit cell object.
+    %   The type of summation is controlled by opts.nei, which gives the size
+    %   of a square block of copies (1x1, 3x3, etc), or if opts.copylist is
+    %   present this allows explicit control of copy locations in terms of
+    %   integer multiples of the unit cell vectors.
+    %
+    %  [B data] = evalunitcellcopies(bas, pts, uc, opts) also returns a data
+    %   structure which if passed back in via opts.data allows rapid
+    %   rephasing without recomputing any basis functions.
+    %    data has the following fields:
+    %     k (wavenumber), p (handle of pointset), B (& optionally B1, B2, data),
+    %     copylist (struct describing the locations and phases of matrix data
+    %     in B, B1, B2).
+    %
+    %  [B Bn data] = evalunitcellcopies(bas, pts, uc, opts) also returns normal
+    %   derivatives of the basis functions.
+    %
+    %  [B Bx By data] = evalunitcellcopies(bas, pts, uc, opts) instead returns
+    %   x- and y-derivatives of the basis functions.
+    %
+    %  opts.nei=0 this routine just calls eval. (Apart from it may return matrix
+    %   poly, and can store the matrix for later use)
+    %  opts.nei=1,2,.. sums over 3x3, or 5x5, etc, sources, using lattice
+    %   vectors and phases from UC. This is done using a target copylist.
+    %  opts.copylist overrides opts.nei and uses an arbitrary set of target copy
+    %   translations (copylist.t), alpha,beta-powers (copylist.apow, bpow)
+    %   and remaining phase factors (copylist.remph).
+    %  opts.poly>0 makes B (B1, B2 if requested) be alpha-poly matrix coeffs
+    %   of size MxNx(poly+1), as opposed to the usual MxNx1. See code for how
+    %   the alpha-powers are determined (there is an offset in indexing).
+    %  opts.data: if present, overrides opts.nei and opts.copylist, and reuses
+    %   precomputed basis eval copies data allowing rapid evaluation. 
+    %
+    %  opts.dom gets passed through to basis.eval
+    %
+    % See also EVAL, COPIESDATA
+      if ~isa(uc, 'qpunitcell'), error('uc must be a qpunitcell object!'); end
+      if nargin<4, opts = []; end
+      if ~isfield(opts, 'poly'), opts.poly = 0; end       % default no poly
+      na = max(1,nargout-1);            % how many args wanted out of bas.eval?
+      recompute = ~isfield(opts, 'data');
+      % insert more detailed test for if data is current... (quick for now)
+      %if ~recompute % make sensible guess as to if needs bas evals (slow test)
+      %  recompute = (b.k~=d.k | nc~=size(d.B,3) | numel(p.x)~=size(d.B,1) | p~=d.p | (na>1 & ~isfield(d,'B1')) | (na>2 & ~isfield(d,'B2'))); % TODO: speed up!
+      if ~recompute
+        d = opts.data; if isempty(opts.data) | (b.k~=d.k), recompute=1; end
+      end
+      if recompute
+        d = [];
+        if ~isfield(opts, 'copylist')    % make default square local copy grid
+          if isfield(opts, 'nei'), nei = opts.nei; else nei = 0; end
+          i = 1;
+          for n=-nei:nei, for m=-nei:nei            % loop over 3x3, etc, grid
+              c.t(i) = -n*uc.e1 - m*uc.e2;          % translate (-ve of src)
+              c.apow(i) = n; c.bpow(i) = m;         % alpha,beta-powers, and ...
+              c.remph(i) = 1;                       % any remaining phase fac
+              i = i+1;
+            end, end
+        else
+          c = opts.copylist;                        % use passed-in copylist
+        end
+        d = copiesdata(b, p, c.t, na, opts); % Do the intensive basis evals!
+        d.copylist = c;                      % since copiesdata doesn't write
+      else
+        c = d.copylist;                      % either way, c now has copylist
+      end
+      B = zeros(size(d.B,1), size(d.B,2), opts.poly+1); % alloc poly size + 1
+      if opts.poly>0                        % want poly coeffs
+        ind3 = ceil(opts.poly/2)+1+c.apow;  % third index to write to (NB shift)
+        if max(ind3)>opts.poly+1 | min(ind3)<1  % catch overflow in ind3
+          error('Not enough alpha matrix poly powers avail! (try increasing opts.poly)');
+        end
+        phase = uc.b.^c.bpow.*c.remph;      % phases, don't include a-powers
+       else
+        ind3 = ones(size(c.apow));          % if no poly, third index always 1
+        phase = uc.a.^c.apow.*uc.b.^c.bpow.*c.remph;       % include a,b powers
+      end
+      nc = numel(c.t);                      % # copy contribs
+      for i=1:nc   % ... loop over copy contributions, adding in (indep of poly)
+        B(:,:,ind3(i)) = B(:,:,ind3(i)) + phase(i)*d.B(:,:,i);
+      end
+      if na>1, B1 = zeros(size(B));
+        for i=1:nc
+          B1(:,:,ind3(i)) = B1(:,:,ind3(i)) + phase(i)*d.B1(:,:,i);
+        end
+      end
+      if na>2, B2 = zeros(size(B));
+        for i=1:nc
+          B2(:,:,ind3(i)) = B2(:,:,ind3(i)) + phase(i)*d.B2(:,:,i);
+        end
+      end
+      % get output args correct when neither 1 nor all 4 args wanted...
+      if na==1, B1 = d; elseif na==2, B2 = d; end
+    end %func
+    
+    function [C d] = evalunitcelldiscrep(b, uc, opts) % ........... discrepancy
+    % EVALUNITCELLDISCREP - matrix mapping basis coeffs to discrepancy on (3x)UC
+    %
+    %  Generic routine for bases which don't know anything special about the UC.
+    %
+    %  C = EVALUNITCELLDISCREP(bas, uc, opts) uses options in opts including:
     %   opts.dom: the domain in which the basis is evaluated (eg, conn. dom)
-    %   opts.nei = 0,1: 0 has no source nei copies, 1 has 3x3 (used to fill C).
-    %   opts.data: if present, treats as struct containing ab-poly matrix data
-    %   opts.poly: if true, returns 3d-array Q(:,:,1:5) of polynomial coeff
-    %    matrices for alpha^{-2}, alpha^{-1}, ... , alpha^2.
+    %   opts.nei = 0,1,2: 1x1, 3x3, or 5x5 source copies (used to fill C).
+    %   opts.data: if present, treats as cell array of copies data structs
+    %   opts.poly: if true, returns 3d-array Q(:,:,:) of alpha-polynomial coeff
+    %    matrices with size(Q,3)=poly+1 and powers given by evalunitcellcopies.
     %
-    %  [Q data] = EVALUNITCELLDISCREP(bas, uc, opts) passes out data struct
-    %   containing all matrix coeffs needed to recompute Q at a new (alpha,beta)
+    %  [C data] = EVALUNITCELLDISCREP(bas, uc, opts) passes out data struct
+    %   containing all matrix coeffs needed to recompute C at a new (alpha,beta)
     %   This struct may then be passed in as opts.data for future fast evals.
-    %
-    %  To Do: fix nei=1 to return Q-alpha-poly, for filling C !
     %
     % See also QPUNITCELL.
       if ~isa(uc, 'qpunitcell'), error('uc must be a qpunitcell object!'); end
       if nargin<3, opts = []; end
+      if ~isfield(opts, 'poly'), opts.poly = 0; end       % default no poly
       if isfield(opts, 'nei'), nei = opts.nei; else nei = 0; end
-      if nei~=0 & nei~=1, error('opts.nei must be 0 or 1!'); end
-      if ~isfield(opts, 'dom'), opts.dom = uc; end     % eval in uc by default
-      if isfield(opts, 'data'), d = opts.data; else d = []; end
-      recompute = isempty(d);
-      if ~recompute              % make sensible guess as to if needs bas evals
-        recompute = (opts.dom.k~=d.k | nei~=d.nei | numel(uc.L.x)~=size(d.L,1));
+      recompute = ~isfield(opts, 'data');
+      % TODO:insert more detailed test for if data is current... (quick for now)
+      % recompute = (opts.dom.k~=d.k | nei~=d.nei |ucbuf~=d.ucbuf); %| numel(uc.L.x)~=size(d.L,1));
+      if ~recompute
+        d = opts.data; if isempty(opts.data) | (b.k~=d{1}.k), recompute=1; end
       end
-      if recompute, d.k = uc.k; d.nei = nei; end
-      wantpoly = 0; if isfield(opts, 'poly') & opts.poly, wantpoly = 1; end
-      if nei==0                           % no neighboring local copies
-        if recompute
-          [d.L d.Ln] = b.eval(uc.L, opts);   % do expensive basis evaluations
-          [d.R d.Rn] = b.eval(uc.R, opts);
-          [d.B d.Bn] = b.eval(uc.B, opts);
-          [d.T d.Tn] = b.eval(uc.T, opts);
+      if recompute  % use nei and uc.buffer to build copylist then fill data...
+        d = {};
+        if isfield(opts,'data'), opts = rmfield(opts,'data'); end % ignore data
+        if ~isfield(opts, 'dom'), opts.dom = uc; end     % eval in uc by default
+        dc = 1;                     % counter over d data cells
+        for direc='LB' % ------- meas f then g, filling the data array d{:}
+          if direc=='L', seg = uc.L; else seg = uc.B; end  % set parallel seg
+          if uc.buffer==0 %............1x1 unit cell discrep (d has 2 cells)
+            if nei==0                           % 1x1 src, simplest discrep
+              c = uc.discrepcopylist(0, 0, direc, 1);
+            elseif nei==1                       % 3x3 source copies w/ cancel
+              c = uc.discrepcopylist(-1:1, 1, direc, 1);
+            else
+              error('recompute data: nei>1 not supported for uc.buffer=0');
+            end
+          elseif uc.buffer==1 %...........3x3 unit cell discrep (d has 6 cells)
+            if nei<2                           % use no source cancellation
+              
+            elseif nei==2                      % the full scheme, cancellation
+              
+            else
+              error('recompute data: only nei=2 supported for uc.buffer=1');
+            end
+          elseif uc.buffer==2 %...........3x rescaled unit cell walls
+            seg = seg.scale(3);                % new scaled, NOT shifted, seg
+            if nei<2                           % use no source cancel
+              c = uc.discrepcopylist(-nei:nei, -nei:nei, direc, -3);
+            elseif nei==2                      % cancellation leaving 3x5 blocks
+              c = uc.discrepcopylist(-nei:nei, 0:2, direc, -5);
+            else
+              error('recompute data: nei>2 not supported for uc.buffer=2');
+            end            
+          end
+          % calc basis evals A,An for seg target copy list, put in d{dc}...
+          d{dc} = b.copiesdata(seg, c.t, 2, opts);
+          d{dc}.copylist = c;
+          dc = dc+1;
         end
-        if wantpoly
-          ML = size(d.L,1); MB = size(d.B,1); % in case L,R diff # pts from B,T
-          Q = zeros(2*(ML+MB), size(d.L,2), 5);
-          Q(1:2*ML,:,2) = [-d.R; -d.Rn];           % alpha^{-1} part
-          Q(:,:,3) = [d.L; d.Ln; d.B - (1/uc.b)*d.T; d.Bn - (1/uc.b)*d.Tn];
-        else
-          Q = [d.L - (1/uc.a)*d.R; d.Ln - (1/uc.a)*d.Rn; ...
-               d.B - (1/uc.b)*d.T; d.Bn - (1/uc.b)*d.Tn]; % formula for discrep
-        end
+      end
+      % -------------now use the data in d{:} to fill subblocks of C matrix...
+      % Note this code is now agnostic as to whether poly is wanted or not...
+      ML = numel(uc.L.x); MB = numel(uc.B.x);   % in case L diff # pts from B
+      N = b.Nf;                                 % number of columns in C
+      if uc.buffer~=1 %............1x1 unit cell discrep (any nei); 3x scaled
+        C = zeros(2*(ML+MB), N, opts.poly+1);
+        opts.data = d{1};         % data (including copylist) for L parallel
+        [C(1:ML,:,:) C(ML+(1:ML),:,:) dummy] = ...
+            b.evalunitcellcopies(uc.L, uc, opts); % matrix for f, f'; uc.L dummy
+        opts.data = d{2};         % data (including copylist) for B parallel
+        [C(2*ML+(1:MB),:,:) C(2*ML+MB+(1:MB),:,:) dummy] = ...
+            b.evalunitcellcopies(uc.B, uc, opts); % matrix for g, g'; uc.B dummy
+      else %........................3x3 unit cell discrep full scheme
         
-      else           % ******** to fix to include wantpoly=1 (the translates could be replaced with pointset copies translated by hand, for speed too): ************                     % sum local neighbors w/ phases
-        nL = 2*numel(uc.L.x); nB = 2*numel(uc.B.x); % dofs in f,f', then g,g'
-        Q = zeros(nL+nB, b.Nf);                     % zero the Q matrix
-        c = uc.L.translate(2*nei*uc.e1 -(nei+1)*uc.e2); % init loc of seg copy
-        for i=-nei:nei
-          c.translate(-(2*nei+1)*uc.e1 + uc.e2); % move to left side & up one
-          [C Cn] = b.eval(c, opts);
-          Q(1:nL,:) = Q(1:nL,:) + (uc.a^nei)*(uc.b^(-i)) * [C; Cn];
-          c.translate((2*nei+1)*uc.e1); % move to right side, same row
-          [C Cn] = b.eval(c, opts);
-          Q(1:nL,:) = Q(1:nL,:) - (uc.a^(-1-nei))*(uc.b^(-i)) * [C; Cn];
-        end
-        c = uc.B.translate(2*nei*uc.e2 -(nei+1)*uc.e1); % init loc of seg copy
-        for i=-nei:nei
-          c.translate(-(2*nei+1)*uc.e2 + uc.e1); % do as above, flipped e1-e2
-          [C Cn] = b.eval(c, opts);
-          Q(nL+1:end,:) = Q(nL+1:end,:) + (uc.b^nei)*(uc.a^(-i)) * [C; Cn];
-          c.translate((2*nei+1)*uc.e2);
-          [C Cn] = b.eval(c, opts);
-          Q(nL+1:end,:) = Q(nL+1:end,:) - (uc.b^(-1-nei))*(uc.a^(-i)) * [C; Cn];
-        end
       end
     end % func
-    
-    function [B B1 B2 d] = evaltargetcopies(b, p, uc, opts) % .. sum over target
-    % EVALTARGETCOPIES - eval basis on (maybe sum neighbor copies of) pointset
-    %
-    %  B = evaltargetcopies(bas, pts, uc, opts)
-    %  [B data] = evaltargetcopies(bas, pts, uc, opts)
-    %  [B Bn data] = evaltargetcopies(bas, pts, uc, opts)
-    %  [B Bx By data] = evaltargetcopies(bas, pts, uc, opts)
-    %
-    %  opts.poly true makes B (B1, B2 if requested) be alpha-poly matrix coeffs
-    %   of size MxNx5, as opposed to the usual MxN.
-    %  opts.nei=0 this routine just calls eval. (Apart from it may return matrix
-    %   poly, and can store the matrix for later use)
-    %  opts.nei=1 it computes the weighted mismatch of eval (using lattice
-    %   vectors from uc).
-    %  opts.copylist overrides opts.nei and uses an arbitrary set of target copy
-    %   translations (copylist.t), alpha-powers (copylist.apow) and remaining
-    %   phase factors (copylist.remph), eg see qpuclayerpot/evaltargetcopies
-    %
-    %  opts.dom gets passed through to basis.eval
-    %
-    % See also EVAL.
-      if ~isa(uc, 'qpunitcell'), error('uc must be a qpunitcell object!'); end
-      if nargin<4, opts = []; end
-      if isfield(opts, 'nei'), nei = opts.nei; else nei = 0; end
-      if nei~=0 & nei~=1, error('opts.nei must be 0 or 1!'); end
-      if isfield(opts, 'data'), d = opts.data; else d = []; end       % d=data
-      wantpoly = 0; if isfield(opts, 'poly') & opts.poly, wantpoly = 1; end
-      na = max(1,nargout-1);          % how many args out of bas.eval 
-      N = b.Nf;
-      M = numel(p.x);
-      if isfield(opts, 'copylist')
-        c = opts.copylist;
-      else                       % build copy info list for default mismatch
-        i = 1;
-        for n=-nei:nei, for m=-nei:nei              % loop over 1x1 or 3x3 grid
-            c.t(i) = n*uc.e1 + m*uc.e2;             % translations
-            c.apow(i) = -n;                         % alpha-powers, and ...
-            c.remph(i) = (-1)^n * (-1/uc.b)^m;      % remaining phase fac (beta)
-            i = i+1;
-          end, end
-      end
-      nc = numel(c.t);
-      recompute = isempty(d);
-      %if ~recompute % make sensible guess as to if needs bas evals (slow test)
-      %  recompute = (b.k~=d.k | nc~=size(d.B,3) | numel(p.x)~=size(d.B,1) | p~=d.p | (na>1 & ~isfield(d,'B1')) | (na>2 & ~isfield(d,'B2')));
-      %end
-      if recompute
-        d.k = b.k; % records stored k for d.B etc; uses k from basis not uc
-        d.p = p;   % record identity of pointset used (recomputes if changes)
-        d.B = zeros(M,N,nc); if na>1, d.B1 = zeros(M,N,nc); end  % alloc storage
-        if na>2, d.B2 = zeros(M,N,nc); end
-        for i=1:nc % could write this loop inside each na choice, faster...
-          if c.t(i)==0
-            pt = p;                             % preserve identity (jump rels)
-          else
-            pt = pointset(p.x + c.t(i), p.nx);  % make moved target copy
-          end
-          if na==1                          % call eval w/ appropriate # args
-            d.B(:,:,i) = b.eval(pt, opts);
-          elseif na==2
-            [d.B(:,:,i) d.B1(:,:,i)] = b.eval(pt, opts);
-          else
-            [d.B(:,:,i) d.B1(:,:,i) d.B2(:,:,i)] = b.eval(pt, opts);
-          end
-        end
-      end
-      if wantpoly                       % ------ alpha matrix polynomials
-        B = zeros(size(d.B,1), size(d.B,2), 5);
-        for i=1:nc
-          B(:,:,3+c.apow(i)) = B(:,:,3+c.apow(i)) + c.remph(i)*d.B(:,:,i);
-        end
-        if na>1, B1 = zeros(size(B));
-          for i=1:nc
-            B1(:,:,3+c.apow(i)) = B1(:,:,3+c.apow(i)) + c.remph(i)*d.B1(:,:,i);
-          end
-        end
-        if na>2, B2 = zeros(size(B));
-          for i=1:nc
-            B2(:,:,3+c.apow(i)) = B2(:,:,3+c.apow(i)) + c.remph(i)*d.B2(:,:,i);
-          end
-        end
-      else                              % ------ just B block wanted, no poly
-        ph = uc.a.^c.apow .* c.remph;        % list of phases
-        B = ph(1) * d.B(:,:,1);              % sum basis eval mats with phases
-        for i=2:nc, B = B + ph(i) * d.B(:,:,i); end
-        if na>1, B1 = ph(1) * d.B1(:,:,1);
-          for i=2:nc, B1 = B1 + ph(i) * d.B1(:,:,i); end
-        end
-        if na>2, B2 = ph(2) * d.B2(:,:,1);
-          for i=2:nc, B2 = B2 + ph(i) * d.B2(:,:,i); end
-        end
-      end
-      % get output args correct when not 1 or all 4 wanted...
-      if na==1, B1 = d; elseif na==2, B2 = d; end
-    end %func
-    
-    function varargout = evalsourcecopiestargetcopies(b, p, uc, opts)
-    %
-    %
-    %  opts.sourcenei = 0,1: size of source copies neighborhood (1x1 or 3x3)
-    %  opts.targetnei = 0,1: size of target copies neighborhood (1x1 or 3x3)
-    %  opts.dom chooses domain handle that basis is to evaluate in.
-      if ~isa(uc, 'qpunitcell'), error('uc must be a qpunitcell object!'); end
-      if nargin<4, opts = []; end
-      if isfield(opts, 'sourcenei'), snei = opts.sourcenei; else snei = 0; end
-      if snei~=0 & snei~=1, error('opts.sourcenei must be 0 or 1!'); end
-      if isfield(opts, 'targetnei'), tnei = opts.targetnei; else tnei = 0; end
-      if tnei~=0 & tnei~=1, error('opts.targetnei must be 0 or 1!'); end
-      if isfield(opts, 'data'), d = opts.data; else d = []; end       % d=data
-      wantpoly = 0; if isfield(opts, 'poly') & opts.poly, wantpoly = 1; end
-      na = max(1,nargout-1);          % how many args out of bas.eval
-      N = b.Nf;
-      M = numel(p.x);
-      if snei==0
-        opts.nei = tnei;
-        [varargout{1:nargout}] = b.evaltargetcopies(p, uc, opts);
-      else                            % sourcenei = 1
-        if tnei==0
-          %set up a src set and pass to evaltargetcopies
-          
-          
-        else
-          % set up double-size targ set, ditto.
-          
-          
-        end
-      end
-    end
     
   end % methods
 end

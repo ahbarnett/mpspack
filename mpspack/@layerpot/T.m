@@ -20,8 +20,10 @@ function [A Sker Dker_noang] = T(k, s, t, o);
 %    opts.Dker_noang = quad-unweighted kernel matrix of fund-sols derivs
 %                      without the cosphi factors (prevents recomputation
 %                      of H1's), ie (ik/4)H_1
+%    opts.displ = matrix of source-target displacements, prevents recalculation.
+%    opts.rdist = matrix of source-target distances, prevents recalculation.
 %   Passing any of the above options stops it from being calculated internally.
-%   When k=0, the above options have no effect.
+%   When k=0, the options Sker and Dker_noang have no effect.
 %
 %  [T Sker Dker_noang] = T(...) also returns quad-unweighted
 %   kernel values matrices Sker, Dker_noang, when k>0 (empty for Laplace)
@@ -38,8 +40,10 @@ if self, t = s; end              % use source as target pts (handle copy)
 M = numel(t.x);                  % # target pts
 sp = s.speed/2/pi; % note: 2pi converts to speed wrt s in [0,2pi] @ src pt
 % compute all geometric parts of matrix...
-d = repmat(t.x, [1 N]) - repmat(s.x.', [M 1]); % C-# displacements mat
-r = abs(d);                                    % dist matrix R^{MxN}
+if isfield(o, 'displ'), d = o.displ; else
+  d = repmat(t.x, [1 N]) - repmat(s.x.', [M 1]); end % C-# displacements mat
+if isfield(o, 'rdist'), r = o.rdist; else
+  r = abs(d); end                                    % dist matrix R^{MxN}
 if self, r(diagind(r)) = 999; end % dummy nonzero diag values
 ny = repmat(s.nx.', [M 1]);      % identical rows given by src normals
 csry = conj(ny).*d;              % (cos phi + i sin phi).r

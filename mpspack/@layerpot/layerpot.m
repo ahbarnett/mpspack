@@ -22,14 +22,15 @@ classdef layerpot < handle & basis
     a                               % 1-by-2, mixture weights of SLP and DLP
     quad                            % quadrature option (opts.quad in S,D,T)
     ord                             % quadrature order (opts.ord in S,D,T)
-    fast                            % Hankel evaluation method (0,1,2)
+    fast                            % Hankel function evaluation method (0,1,2)
   end
 
   methods
     function b = layerpot(seg, a, k, opts) %........................ constructor
       if nargin<4, opts = []; end
       if nargin>2 & ~isempty(k), b.k = k; end
-      if ~isfield(opts, 'fast'), opts.fast = 0; end
+      if ~isfield(opts, 'fast'), opts.fast = 2; end
+      % TODO: speed up the following check which happens every time created...
       if opts.fast==2 & exist('@utils/greengardrokhlinhank106.mexglx')~=3
         opts.fast = 1;               % downgrade the speed if 106 not available
       end
@@ -37,7 +38,7 @@ classdef layerpot < handle & basis
       if ~isfield(opts, 'real'), opts.real = 0; end
       b.real = opts.real;
       if isfield(opts, 'quad'), b.quad = opts.quad; end  % quad=[] is default
-      if isfield(opts, 'ord'), b.ord = opts.ord; end  % ord=[] is default
+      if isfield(opts, 'ord'), b.ord = opts.ord; end     % ord=[] is default
       if ~isa(seg, 'segment'), error('seg must be a segment object!'); end
       b.seg = seg;
       b.updateNf;                 % count the # dofs, is # quadr pts on seg
@@ -48,6 +49,8 @@ classdef layerpot < handle & basis
           a = [1 0];
          case {'double', 'D', 'd', 'DLP'}
           a = [0 1];
+         otherwise
+          error('cannot interpret non-numeric input argument a!');
         end
       end
       if size(a)~=[1 2], error('a argument is not size 1-by-2!'); end
@@ -64,6 +67,7 @@ classdef layerpot < handle & basis
 %  A = EVAL(bas, p, opts) returns a matrix mapping degrees of freedom in the
 %   discretization of the layer density to the values on p the target
 %   pointset or segment.
+%  (Includes source quadr wei, ie dofs are density values, as always for LP)
 %
 %  [A An] = EVAL(bas, p, opts) also returns normal derivatives using normals
 %   in p.
@@ -75,7 +79,7 @@ classdef layerpot < handle & basis
 %    opts.dom: domain in which evaluation is performed. In the case of
 %     p being the segment on which the LP density sits, opts.dom must be
 %     defined, since it resolves which sign the jump relation has.
-%    opts.fast: if 0 use matlab Hankel, 1 use fast fortran Hankel, 2 faster
+%    opts.fast: if 0 use matlab Hankel, 1 use fast fortran Hankel, 2 even faster
       if nargin<3, o = []; end
       if ~isfield(o, 'fast'), o.fast = b.fast; end    % default given in b obj
       b.updateNf;
@@ -92,16 +96,17 @@ classdef layerpot < handle & basis
         p = [];              % tell S, D, etc to use self-interaction
       end
       k = b.k;                          % could look up from b.doms someday...
-      
-      if k>0 & o.fast % --- precompute the Hankel values in Sker and Dker_noang
-        N = numel(b.seg.x);                                % # src pts
-        t = p; if self, t = b.seg; end                     % use src if self
-        M = numel(t.x);                                    % # target pts
-        d = repmat(t.x, [1 N]) - repmat(b.seg.x.', [M 1]); % C-# displ mat
+      % precompute the displacement and distance matrices... used throughout
+      N = numel(b.seg.x);                                % # src pts
+      t = p; if self, t = b.seg; end                     % use src if self
+      M = numel(t.x);                                    % # target pts
+      o.displ = repmat(t.x, [1 N]) - repmat(b.seg.x.', [M 1]); % C-# displ mat
+      o.rdist = abs(o.displ);
+      if k>0 & o.fast % ...precompute Hankel H0,H1 vals in Sker and Dker_noang
         if o.fast==1
-          [o.Sker o.Dker_noang] = utils.greengardrokhlinhank103(k*abs(d));%H0,H1
+          [o.Sker o.Dker_noang] = utils.greengardrokhlinhank103(k*o.rdist);
         elseif o.fast==2
-          [o.Sker o.Dker_noang] = utils.greengardrokhlinhank106(k*abs(d));%H0,H1
+          [o.Sker o.Dker_noang] = utils.greengardrokhlinhank106(k*o.rdist);
         end
         o.Sker = (1i/4) * o.Sker;
         o.Dker_noang = (1i*k/4) * o.Dker_noang;
@@ -194,7 +199,7 @@ classdef layerpot < handle & basis
     
   end % methods
   
-  methods (Static)
+  methods (Static) %...................... the beef: kernel evaluation routines
     [A Sker] = S(k, s, t, o)                      % Phi kernel matrix
     [A Dker_noang cosker] = D(k, s, t, o)         % dPhi/dny or dPhi/dny matrix
     [A Sker Dker_noang] = T(k, s, t, o)           % d^2Phi/dnxdny matrix

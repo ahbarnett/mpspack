@@ -1,49 +1,63 @@
     % QPUCLAYERPOT - setup a sticking-out QP layer potential basis on unit cell
     %
-    %  bas = qpuclayerpot(uc, direc, a, k) creates a set of six copies of a
-    %   layer density on either L or B segment of the unit cell object uc,
+    %  bas = qpuclayerpot(uc, direc, a, k) creates a set of 6 or 10 copies of
+    %   layer densities on either L or B segment of the unit cell object uc,
     %   depending on if direc is
     %   'L' or 'B'. The argument a controls mix of SLP and DLP, as in layerpot.
+    %   uc.buffer = 0:  1xQPLP scheme on UC with 6 copies
+    %   uc.buffer = 1:  3xQPLP scheme on UC with 10 copies
+    %
     %  Note that in fact the LPs are not constructed until evaluation time, but
     %   the setup of locations and phases is done here. Similarly, the phases
     %   used for the copies depend on (alpha, beta) for the unit cell at the
     %   time of evaluation.
+    %  Barnett, 8/11/08, entirely rewritten to use copylists 9/8/08
     %
     % See also: LAYERPOT, QPUNITCELL
 
 classdef qpuclayerpot < handle & basis
   properties
     uc                              % unit cell that it's attached to
-    pseg                            % original source segment (will be L or B)
-    oseg                            % other (non-parallel) source segment (B/L)
     direc                           % 'L' or 'B'
-    ep, eo                          % lattice vectors in parallel & other direc
-    facp, faco                      % phase factors in parallel & other direc
-    segf                            % eval segment list func (first is L or B)
-    phasef                          % eval phase factor func @(parallel, other)
+    pseg                            % principal segment ('p', parallel), L or B
+    oseg                            % other ('o') segment, B or L
+    lp                              % layer-potential object on principal seg
+    copylist                        % cell array of target-transl & phase lists 
     a                               % 1-by-2, mixture weights of SLP and DLP
     quad                            % quadrature option (opts.quad in S,D,T)
   end
   
   methods
-    function b = qpuclayerpot(uc, direc, a, k) % ................ constructor
+    function b = qpuclayerpot(uc, direc, a, k, opts) % ............ constructor
+      if nargin<5, opts = []; end
+      if nargin>3 & ~isempty(k), b.k = k; end
       b.uc = uc;
-      if direc=='L' | direc=='l'
-        s = uc.L; b.oseg = uc.B; b.direc = 'L';
-        b.ep = uc.e2; b.eo = uc.e1; p = @(uc) uc.b; o = @(uc) uc.a; 
-      elseif direc=='B' | direc=='b'
-        s = uc.B; b.oseg = uc.L; b.direc = 'B';
-        b.ep = uc.e1; b.eo = uc.e2; p = @(uc) uc.a; o = @(uc) uc.b;
+      % set up copylist displacements (via a,b-powers) for standard bas eval...
+      if uc.buffer==0                   % 1xQPLP scheme: 6 segments per basis
+        c{1}.apow = [0 0 0 1 1 1];
+        c{1}.bpow = [-1 0 1 -1 0 1];
+      elseif uc.buffer==1               % 3xQPLP scheme: 10 segments per basis
+        % order of 3 cells is tau_{-1}, tau_0, tau_1 (for the DLP in L direc)
+        c{1}.apow = [-1 -1 2 2]; c{1}.bpow = [-1 2 -1 2];
+        c{2}.apow = [-1 2];      c{2}.bpow = [0 0];
+        c{3}.apow = [-1 -1 2 2]; c{3}.bpow = [-2 1 -2 1];
+      end
+      if direc=='L' | direc=='l'                     % 'L' direction (left)
+        b.pseg = uc.L; b.oseg = uc.B; b.direc = 'L';
+      elseif direc=='B' | direc=='b'                 % 'B' direction (bottom)
+        for j=1:numel(c)                             % swap a<->b powers
+          temp = c{j}.apow; c{j}.apow = c{j}.bpow; c{j}.bpow = temp;
+        end
+        b.pseg = uc.B; b.oseg = uc.L; b.direc = 'B';
       else
         error('invalid direc!');
       end
-      b.pseg = s; b.facp = p; b.faco = o;
+      for j=1:numel(c)    % set up (target) translations to match a,b-powers...
+        c{j}.t = -(uc.e1*c{j}.apow + uc.e2*c{j}.bpow); % key: e1=alpha, e2=beta
+        c{j}.remph = ones(size(c{j}.apow));        % phases all 1
+      end
+      b.copylist = c;
       b.updateNf;
-      % Note that the following segs and phases are for direct eval only...
-      b.segf = @(ep,eo) [s translate(s, ep) translate(s, -ep) ...
-                         translate(s, eo) translate(s, eo+ep) ...
-                         translate(s, eo-ep)]; % seg list func, 1+5 copies
-      b.phasef = @(uc) [1 p(uc) 1./p(uc) o(uc) o(uc).*p(uc) o(uc)./p(uc)];
       if ~isnumeric(a)
         switch a
          case {'single', 'S', 's', 'SLP'}
@@ -52,166 +66,222 @@ classdef qpuclayerpot < handle & basis
           a = [0 1];
         end
       end
-      b.a = a; b.k = k;
+      b.lp = layerpot(b.pseg, a, b.k, opts);  % create a LP basis on p segment
+      b.a = a;
     end % func
     
-    function updateNf(b)  % ............... Nf property reads segment # quadr
-      b.Nf = numel(b.pseg.x);      % # quadr points on 'parallel' segment
+    function Nf = updateNf(b)  %...............Nf property reads segment # quadr
+      Nf = numel(b.pseg.x);      % # quadr points on 'parallel' segment
+      b.lp.Nf = Nf;              % update principal layerpot basis obj
+      Nf = (1+2*b.uc.buffer) * Nf;    % basis size is 3x if 3x3 QPLP scheme
+      b.Nf = Nf;
     end
     
-    function showgeom(b, opts) % .................. crude show discr pts of seg
-      seg = b.segf(b.ep, b.eo);          % make temporary copy of segs for plot
-      domain.showsegments(seg);
-    end
-    
-    function [A Ax Ay] = eval(b, p, opts) % ...... standard distant evaluation
-    % EVAL - standard evaluation of QP unit-cell layer potential copies basis
-    %
-    %  Refers to current alpha, beta and segments in unit cell, but nice that
-    %  automatically knows which L or B orientation it was set up with.
-      b.updateNf;
-      seg = b.segf(b.ep, b.eo);                   % construct seg copies
-      phase = b.phasef(b.uc);
-      A = zeros(numel(p.x), b.Nf);
-      if nargout>=1, Ax = A; end
-      if nargout>=2, Ay = A; end
-      for j=1:numel(seg)
-        lp = layerpot(seg(j), b.a, b.k);
-        ph = phase(j);
-        if nargout==1
-          A = A + ph * lp.eval(p);      % could add jump rels if p=seg
-        elseif nargout==2
-          [As Asx] = lp.eval(p);
-          A = A + ph * As; Ax = Ax + ph * Asx;
-        else
-          [As Asx Asy] = lp.eval(p);
-          A = A + ph * As; Ax = Ax + ph * Asx; Ay = Ay + ph * Asy;
-        end
+    function showgeom(b, varargin) % ............. crude show discr pts of segs
+      t =  b.copylist.t;
+      for j=1:numel(t)
+        seg(j) = b.pseg.translate(-t(j));   % make temp segment copies for plot
       end
+      domain.showsegments(seg, varargin{:});  % pass opts if present onwards
     end
     
-    function [varargout] = evaltargetcopies(b, p, uc, opts) % ...overloads basis
-    % EVALTARGETCOPIES - see basis/EVALTARGETCOPIES for interface
+    function varargout = evalunitcellcopies(b, p, ucdummy, opts) % ...overloads
+    % EVALUNITCELLCOPIES - basis eval of QP UC layer potentials, w/ data output
     %
-    %  For this qpuclayerpot basis type, a special copy list is sent to generic
-    %   basis routine. Ie, it's a wrapper around the layerpot routine.
-    %   Note that target-movement is used to achieve source move for nei=0
+    %  See qpuclayerpots/EVALUNITCELLCOPIES for interface.
+    %
+    %  Refers to current alpha, beta and segments in unit cell, but all other
+    %  properties such as translations were frozen in at construction time.
+    %  This a wrapper around the evalunitcellcopies method, applied to layerpot.
+    %  Note that target-movement is used to achieve source move.
+    %  The 3rd input argument is ignored, since the basis already contains the
+    %  handle of unit cell.
+    %
+    %  See also qpuclayerpots/EVAL
       if nargin<4, opts = []; end
-      if isfield(opts, 'nei'), nei = opts.nei; else; nei = 0; end
-      if nei~=0 & nei~=1, error('opts.nei must be 0 or 1!'); end
-      if nei==0              % special copylist, six LP sources with phases...
-        x = uc.e1; y = uc.e2; be = uc.b;
-        if b.direc=='L'      % 'L' direction (left)
-          c.t = [y, 0, -y, -x+y, -x, -x-y];  % -ve since faking w/ targ move
-          c.apow = [0, 0, 0, 1, 1, 1];
-          c.remph = [be^-1, 1, be, be^-1, 1, be];
-        else                 % 'B' direction (bottom)
-          c.t = [x, 0, -x, -y+x, -y, -y-x]; % x<->y swapped
-          c.apow = [-1, 0, 1, -1, 0, 1];
-          c.remph = [1, 1, 1, be, be, be];
+      if ~isfield(opts, 'poly'), opts.poly = 0; end
+      N = b.updateNf;                             % cut for speed?
+      if b.uc.buffer==0
+        opts.copylist = b.copylist{1};   % pass QPUC's copylist to lp summing...
+        [varargout{1:nargout}] = b.lp.evalunitcellcopies(p, b.uc, opts);
+      else
+        M = numel(p.x);                           % height of each block column
+        Ns = N/3;                                 % basis size for each 3 LPs
+        B = zeros(M,N,opts.poly+1);               % preallocate
+        if nargout>2, B1 = zeros(M,N,opts.poly+1); end
+        if nargout>3, B2 = zeros(M,N,opts.poly+1); end
+        for j=1:3
+          ns = (j-1)*Ns + (1:Ns);
+          opts.copylist = b.copylist{j};
+          if nargout==1
+            B(:,ns,:) = b.lp.evalunitcellcopies(p, b.uc, opts);
+          elseif nargout==2
+            [B(:,ns,:) d] = b.lp.evalunitcellcopies(p, b.uc, opts);
+          elseif nargout==3
+            [B(:,ns,:) B1(:,ns,:) d] = b.lp.evalunitcellcopies(p, b.uc, opts);
+          else
+            [B(:,ns,:) B1(:,ns,:) B2(:,ns,:) d] = b.lp.evalunitcellcopies(p,...
+                                                              b.uc, opts);
+          end
         end
-        opts.copylist = c;
-        lp = layerpot(b.pseg, b.a, b.k, opts);
-        [varargout{1:nargout}] = lp.evaltargetcopies@basis(p, uc, opts);
-      else                   % nei=1, in which case special copies list needed
-        x = uc.e1; y = uc.e2; be = uc.b;
-        if b.direc=='L'      % 'L' direction (left)
-          c.t = [x+2*y, x, x-2*y, -2*x+2*y, -2*x, -2*x-2*y];
-          c.apow = [-1, -1, -1, 2, 2, 2];
-          c.remph = [be^-2, 1, be^2, be^-2, 1, be^2];
-        else                 % 'B' direction (bottom)
-          c.t = [y+2*x, y, y-2*x, -2*y+2*x, -2*y, -2*y-2*x]; % x<->y swapped
-          c.apow = [-2, -0, 2, -2, 0, 2];
-          c.remph = [be^-1, be^-1, be^-1, be^2, be^2, be^2];          
-        end
-        opts.copylist = c;
-        lp = layerpot(b.pseg, b.a, b.k, opts);
-        % NB to test `naive' sum, change lp to b here, & kill opts.copylist...
-        [varargout{1:nargout}] = lp.evaltargetcopies@basis(p, uc, opts);
+        varargout(1) = {B};                      % set up output argument list
+        if nargout==2, varargout(2) = {d};
+        elseif nargout==3, varargout(2:3) = {B1 d};
+        else varargout(2:4) = {B1 B2 d}; end
       end
-    end
+    end % func
     
-    function [Q d] = evalunitcelldiscrep(b, uc, opts) % ....overloads from basis
+    function varargout = eval(b, p, varargin) %....std eval (witout data out)
+    % EVAL - basis eval of quasi-periodizing unit-cell layer potential copies
+    %
+    %  See basis/EVAL for interface.
+    %
+    %  Refers to current alpha, beta and segments in unit cell, but all other
+    %  properties such as translations were frozen in at construction time.
+    %  This a wrapper around the evalunitcellcopies method, discarding output
+    %  data to match eval's output argument format. If there's input opts.data
+    %  it will be used for fast rephasing.
+    %
+    %  See also basis/EVAL, qpuclayerpots/EVALUNITCELLCOPIES
+      [varargout{1:nargout} datadummy] = b.evalunitcellcopies(p, b.uc, ...
+                                                        varargin{:});
+    end % note how the datadummy asks for one more output arg than passed out.
+    
+    function [Q d] = evalunitcelldiscrep(b, ucdummy, opts) % ....overloads basis
     % EVALUNITCELLDISCREP - return Q matrix mapping a QPUC basis to UC discrep
     %
     %  Same usage as basis/EVALUNITCELLDISCREP, which it overloads.
-    %  (Includes source quadr wei, ie dofs are density values, as always).
+    %
+    %  Includes source quadr wei, ie dofs are density values, as always for LP.
     %  Currently uses no symmetry relations. Stores Bloch-indep interaction
-    %   matrices in d.P??, d.O?? and their k in d.k (changed d from b 8/20/08)
+    %   matrices using evalunitcellcopies data cells in d.
+    %  The 2nd input argument is ignored, since the basis already contains the
+    %   handle of unit cell. Ignores opts.nei since not applies to QPUC lp's.
+    %
     %  Uses only distant interactions + Id, so has spectral convergence.
     %  See testqpuclayerpot.m for convergence plot
     %
     % See also QPUCLAYERPOT, LAYERPOT, QPUNITCELL, basis/EVALUNITCELLDISCREP.
-      uc = b.uc;                            % unit cell in bas takes priority
+      uc = b.uc;
       if nargin<3, opts = []; end
-      if isfield(opts, 'nei') & opts.nei~=0, error('opts.nei must be 0!'); end
-      if isfield(opts, 'data'), d = opts.data; else d = []; end
-      k = uc.k;                                   % wavenumber (UC beats bas)
-      b.updateNf;
-      recompute = isempty(d);
-      if ~recompute              % make sensible guess as to if needs bas evals
-        recompute = (k~=d.k | b.Nf~=size(d.Pmp,2));
+      if ~isfield(opts, 'poly'), opts.poly = 0; end       % default no poly
+      b.lp.k = uc.k; b.k = uc.k;  % UC wave# overwrites basis or principal lp
+      b.updateNf;                         % cut for speed?
+      recompute = ~isfield(opts, 'data');
+      % TODO:insert more detailed test for if data is current... (quick for now)
+      % recompute = (opts.dom.k~=d.k | nei~=d.nei |ucbuf~=d.ucbuf); %| numel(uc.L.x)~=size(d.L,1));
+      if ~recompute
+        d = opts.data; if isempty(d) | (b.k~=d{1}.k) | b.lp.Nf~=size(d{1}.B)
+          recompute=1; end
       end
-      wantpoly = 0; if isfield(opts, 'poly') & opts.poly, wantpoly = 1; end
-      a = b.a;                   % SLP, DLP mixture coeffs
-      if recompute
-        d.k = k;         % remember for what wavenumber data P?? O?? is for
-        p = b.pseg; o = b.oseg; % p,o: 'parallel' & 'other' segments
-        % compute matrices by creating source seg copy c & moving it around
-        % (note, utils.copy in new segment create is slow, only do once...)
-        c = p.translate(-b.ep+b.eo); l = layerpot(c, a, k); % parallel seg copy
-        [d.Pmp t] = l.eval(p); d.Pmp = [d.Pmp; t]; % stack n-derivs below vals
-        c.translate(b.ep); l = layerpot(c, a, k); % c = b.eo
-        [d.Pop t] = l.eval(p); d.Pop = [d.Pop; t];
-        c.translate(b.ep); l = layerpot(c, a, k); % c = b.ep + b.eo
-        [d.Ppp t] = l.eval(p); d.Ppp = [d.Ppp; t];
-        c.translate(-b.eo); l = layerpot(c, a, k); % c = b.ep
-        [d.Opo t] = l.eval(o); d.Opo = [d.Opo; t];
-        c.translate(b.eo); l = layerpot(c, a, k);  % c = b.ep + b.eo
-        [d.Opp t] = l.eval(o); d.Opp = [d.Opp; t];
-        % these should probably be replaced by transposes / reflections ...
-        c.translate(-2*(b.ep+b.eo)); l = layerpot(c, a, k); % c = -b.ep - b.eo
-        [d.Pmm t] = l.eval(p); d.Pmm = [d.Pmm; t];
-        c.translate(b.ep); l = layerpot(c, a, k); % c = -b.eo
-        [d.Pom t] = l.eval(p); d.Pom = [d.Pom; t];
-        c.translate(b.ep); l = layerpot(c, a, k); % c = b.ep -b.eo
-        [d.Ppm t] = l.eval(p); d.Ppm = [d.Ppm; t];
-        c.translate(-3*b.ep + b.eo); l = layerpot(c, a, k); % c = -2*b.ep
-        [d.Omo t] = l.eval(o); d.Omo = [d.Omo; t];
-        c.translate(b.eo); l = layerpot(c, a, k); % c = -2*b.ep + b.eo
-        [d.Omp t] = l.eval(o); d.Omp = [d.Omp; t];
+      if recompute %--------------use uc.buffer to build copylist then fill data
+        d = {};
+        if isfield(opts,'data'), opts = rmfield(opts,'data'); end % ignore data
+        if ~isfield(opts, 'dom'), opts.dom = uc; end     % eval in uc by default
+        if uc.buffer==0 %............1x1 unit cell discrep (d has 2 cells)
+          c = uc.discrepcopylist(-1:1, 1, b.direc, 0);
+          d{1} = b.lp.copiesdata(b.pseg, c.t, 2, opts); d{1}.copylist = c;
+          c = uc.discrepcopylist(1, 0:1, b.direc, 3);
+          d{2} = b.lp.copiesdata(b.oseg, c.t, 2, opts); d{2}.copylist = c;
+        elseif uc.buffer==1 %...........3x3 unit cell discrep (d has 16 cells)
+          for i=1:7
+            p = i-4;      % parallel seg targets: indices of 7 rows (-3:3) 
+            c = uc.discrepcopylist(p, 3, b.direc, 0);
+            d{i} = b.lp.copiesdata(b.pseg, c.t, 2, opts); d{i}.copylist = c;
+          end
+          dc = 8;         % other (non-parallel) seg targets, are cells 8-16
+          for i=1:3       % loop over eg g_{-1}, g_0, g_1 block rows
+            for j=1:3     % loop over eg tau_{-1}, tau_0, tau_1 block cols
+              hippow = mod(j+1,3)+1; % [3 1 2], highest parallel power vs j
+              c = uc.discrepcopylist(hippow, (4-i)+[0 -3], b.direc, 1+j);
+              d{dc} = b.lp.copiesdata(b.oseg, c.t, 2, opts); d{dc}.copylist = c;
+              dc = dc+1;
+            end
+          end
+        end
       end
-      if wantpoly % ....... separate matrix contribs by alpha powers
-        ML = numel(uc.L.x); MB = numel(uc.B.x); % if L,R diff # pts from B,T?
-        Q = zeros(2*(ML+MB), b.Nf, 5);
-        be = uc.b;                     % beta
-        if b.direc=='L'                % al is 'other', be is 'parallel'
-          Q(1:2*ML,:,2) = -(1/be)*d.Pmm - d.Pom - be*d.Ppm;            % al^{-1}
-          Q(:,:,3) = [a(2)*eye(b.Nf); -a(1)*eye(b.Nf); ...
-                      be*d.Opo - (1/be^2)*d.Omo];                      % al^0
-          Q(:,:,4) = [(1/be)*d.Pmp + d.Pop + be*d.Ppp; ...
-                      be*d.Opp - (1/be^2)*d.Omp];                      % al^1
-        else                           % al is 'parallel', be is 'other'
-          Q(1:2*ML,:,1) =  -d.Omo - be*d.Omp;                          % al^{-2}
-          Q(2*ML+1:end,:,2) =  be*d.Pmp -(1/be)*d.Pmm;                 % al^{-1}
-          Q(2*ML+1:end,:,3) =  be*d.Pop -(1/be)*d.Pom + ...
-              [a(2)*eye(b.Nf); -a(1)*eye(b.Nf)];                       % al^0
-          Q(:,:,4) = [d.Opo + be*d.Opp; be*d.Ppp - (1/be)*d.Ppm];      % al^1
+      % ------------------now use the data in d{:} to fill subblocks of Q matrix
+      ind3 = ceil(opts.poly/2)+1;  % index to write Id to, match b/evaluccopies
+      MP = numel(b.pseg.x); MO = numel(b.oseg.x); % in case L,B neq # quadr pts
+      
+      if uc.buffer==0 %............1x1 unit cell discrep (d has 2 cells)
+        opts.data = d{1};         % data (including copylist) for parallel seg
+        [Qp Qpn dummy] = ...
+            b.lp.evalunitcellcopies(b.pseg, uc, opts); % get matrices for f, f'
+        % discrepancy jump relations due to local layerpot (NB no factor 1/2)...
+        Qp(:,:,ind3)  = Qp(:,:,ind3)  + b.a(2)*eye(b.Nf); % (alpha power = 0)
+        Qpn(:,:,ind3) = Qpn(:,:,ind3) - b.a(1)*eye(b.Nf); % TODO: use diagind!
+        opts.data = d{2};         % data (including copylist) for other targ seg
+        [Qo Qon dummy] = ...
+            b.lp.evalunitcellcopies(b.oseg, uc, opts); % get matrices for f, f'
+      
+      elseif uc.buffer==1 %...........3x3 unit cell discrep (d has 16 cells)
+        % contribs to same-direction target (parallel 'p') seg: ======
+        Qp = zeros(3*MP, 3*MP, opts.poly+1); Qpn = Qp;
+        % r gives list of row indices stored in d{1:7} needed for each subblock
+        r = {[-3 0] -1 [-2 1]; [-2 1] 0 [-1 2]; [-1 2] 1 [0 3]};
+        for i=1:3       % loop over eg f_{-1}, f_0, f_1 block rows in Qp (& Qpn)
+          msi = (i-1)*MP + (1:MP); % row indices for subblock
+          for j=1:3     % loop over eg tau_{-1}, tau_0, tau_1 block cols
+            nsi = (j-1)*MP + (1:MP); % col indices for subblock
+            opts.data = d{r{i,j}(1)+4};   % get row data indexed by r{i,j}
+            [Qp(msi,nsi,:) Qpn(msi,nsi,:) dummy] = ...
+                b.lp.evalunitcellcopies(b.pseg, uc, opts);  % write subblock
+            if numel(r{i,j})>1          % if 2nd row contribs to subblock
+              opts.data = d{r{i,j}(2)+4};   % get row data indexed by r{i,j}
+              [Rij Rijn dummy] = b.lp.evalunitcellcopies(b.pseg, uc, opts);
+              Qp(msi,nsi,:) = Qp(msi,nsi,:) + Rij;  % add in row's contrib
+              Qpn(msi,nsi,:)= Qpn(msi,nsi,:) + Rijn;
+            end
+          end
         end
-      else     % ....... compute all al, be powers to get single Q matrix
-        % look up parallel & other, phase facs... (MUCH faster than b.facp(uc))
-        if b.direc=='L', p = uc.b; o = uc.a; else p = uc.a; o = uc.b; end 
-        %fprintf('p,o = %g,%g\n', p,o)
-        % Note we're stacking f, f' together here, stored hit by phase factors
-        Qp = (o/p)*d.Pmp + o*d.Pop + o*p*d.Ppp - (1/o/p)*d.Pmm - (1/o)*d.Pom - (p/o)*d.Ppm;
-        Qo = p*d.Opo + p*o*d.Opp - (1/p^2)*d.Omo - (o/p^2)*d.Omp;
-        Qp = Qp + [a(2)*eye(b.Nf); -a(1)*eye(b.Nf)];  % jump relations (not 1/2)
-        if b.direc=='L'          % make sure f & g are correct way round
-          Q = [Qp; Qo];          % f,f' hit by parallel contribs
-        else
-          Q = [Qo; Qp];          % g,g' hit by parallel contribs
+        % discrepancy jump relations due to local layerpot (NB no factor 1/2)...
+        Qp(:,:,ind3)  = Qp(:,:,ind3)  + b.a(2)*eye(3*MP); % TODO: use diagind!
+        Qpn(:,:,ind3) = Qpn(:,:,ind3) - b.a(1)*eye(3*MP);
+        % contribs to other-direction target ('o') seg: ============
+        Qo = zeros(3*MO, 3*MO, opts.poly+1); Qon = Qo;
+        dc = 8;         % start after the parallel data cells; other are 8-16
+        for i=1:3       % loop over eg g_{-1}, g_0, g_1 block rows in Qo (& Qon)
+          msi = (i-1)*MO + (1:MO); % row indices for subblock
+          for j=1:3     % loop over eg tau_{-1}, tau_0, tau_1 block cols
+            nsi = (j-1)*MO + (1:MO); % col indices for subblock
+            opts.data = d{dc};   % just dump rephased data from cell dc
+            [Qo(msi,nsi,:) Qon(msi,nsi,:) dummy] = ...
+                b.lp.evalunitcellcopies(b.oseg, uc, opts);  % write subblock
+            dc = dc+1;
+          end
         end
+      end
+      if b.direc=='L' % insure f & g are correct way round. TODO: preallocate Q!
+        Q = [Qp; Qpn; Qo; Qon];          % f,f' hit by parallel contribs
+      else
+        Q = [Qo; Qon; Qp; Qpn];          % or, g,g' hit by parallel contribs
       end
     end % func
+      
+    function showQdatasegs(b, d) % .................. debug show copylists
+    % SHOWQDATASEGS - plot all target segs in copylists in basis' data cells
+    %
+      np = 1 + 6*b.uc.buffer;  % how many parallel data cells
+      no = 1 + 8*b.uc.buffer;  % how many other data cells
+      if numel(d)~=np+no, error('unexpected number data cells!'); end
+      nsegp = 0; nsego = 0;
+      for i=1:np               % parallel cells
+        transl = d{i}.copylist.t;
+        nsegp = nsegp + numel(transl);
+        for j=1:numel(transl)
+          b.pseg.translate(transl(j)).plot; hold on;
+        end
+      end
+      for i=np+(1:no)          % other cells
+        transl = d{i}.copylist.t;
+        nsego = nsego + numel(transl);
+        for j=1:numel(transl)
+          b.oseg.translate(transl(j)).plot; hold on;
+        end
+      end
+      fprintf('np=%d no=%d, nsegp=%d nsego=%d\n', np, no, nsegp, nsego)
+    end % func
+      
   end % methods
 end

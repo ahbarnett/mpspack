@@ -1,21 +1,30 @@
 % test photonic bands QP unit cell layer pot sticking-out scheme
-% barnett 8/6/08, convergence 8/10/08
+% barnett 8/6/08, convergence 8/10/08, checked for new evalcopies 9/8/08
 
 clear classes
 test = 'c';           % b = basis objects, c = convergnece
-verb = 1;
+verb = 2;
 k = 10;
 uc = qpunitcell(1, 0.5+1i, k, 20);
 uc.setbloch(-1, -1);               % furthest point from origin in Brillouin
 if test=='b'     % ................. basis objects basic test
-  if verb>1
+  if verb>1          % simple basis eval
     b = qpuclayerpot(uc, 'B', 's', k);
-    b.showgeom; axis equal;
+    uc.plot; b.showgeom; axis equal;
     sig = ones(b.Nf, 1);              % toy density
     dx = 0.04; gx = -2:dx:2; gy = -1:dx:1;
     [xx yy] = meshgrid(gx, gy); zz = xx(:)+1i*yy(:); A = b.eval(pointset(zz));
     u = reshape(A*sig, [numel(gy) numel(gx)]);
     showfield(gx, gy, u, [], 'qpuclayerpot.eval SLP test');
+  end
+  % time to see if reusing data is correct...
+  tic; [A d] = b.evalunitcellcopies(pointset(zz)); fprintf('eval in %.2g s\n', toc)
+  opts.data = d;
+  tic; [A d] = b.evalunitcellcopies(pointset(zz), [], opts); fprintf('eval (pre-stored) %.2g s\n', toc)
+  if 0                     % speed test for reusing data
+    profile clear; profile on;
+    for j=1:100, [A d] = b.evalunitcellcopies(pointset(zz), [], opts); end
+    profile off; profile viewer
   end
   uc.addqpuclayerpots;
   if verb>1, A = uc.evalbases(pointset(zz));
@@ -41,7 +50,7 @@ elseif test=='c'       % .............. convergence test
   rs = 0*Ns; idns = 0*Ns; tfs = 0*Ns; ts = 0 *Ns;     % resid, int norm, times
   for i=1:numel(Ns) % ====== loop over N
     fprintf('N = %d:\n', Ns(i))
-    uc.seg.requadrature(Ns(i));       % set N quadr points per unit cell wall
+    uc.seg.requadrature(Ns(i)); uc.setupbasisdofs;  % N quadr pts per UC wall
     tic; Q = uc.evalbasesdiscrep; tfs(i) = toc;
     fprintf('\tfill Q in %.2g s\n', tfs(i))
     fprintf('\tcond(Q) = %.3g\n', cond(Q))
