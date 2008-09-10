@@ -1,8 +1,8 @@
-% test basis.evallocalcopies, qpunitcell.evalbasescopies
-% barnett 8/22/08
+% test basis.evalunitcellcopies, maybe qpunitcell.evalbasescopies
+% barnett 8/22/08, resurrected 9/7/08
 
 clear classes
-k = 10; bas = ''; o.nei = 1;   % test params: bas = 'm', 'qL', 'qB' ('' to skip)
+k = 10; bas = 'm'; o.nei = 1; % test params: bas = 'm', 'qL', 'qB' ('' to skip)
 
 uc = qpunitcell(1, 0.5+1i, k, 10);  uc.setbloch(-1,-1);  % problem is pre-stored data from qpuclp lags behind uc.a in the naive summation.
 if ~isempty(bas)
@@ -15,15 +15,17 @@ elseif bas(1)=='q'
 end
 [xx yy] = meshgrid(g,g); p = pointset(xx(:)+1i*yy(:), ones(size(xx(:))));
 %u = b.eval(p);
-tic; [A o.data] = b.evallocalcopies(p, uc, o);
-fprintf('eval copies from cold = %.3g s\n', toc)
-tic; A = b.evallocalcopies(p, uc, o);
-fprintf('eval copies using stored data = %.3g s\n', toc)
-%profile clear; profile on; for i=1:100, A = b.evallocalcopies(p, uc, o); end; profile off; profile viewer % test that matrix mults dominate reusing storage.
+tic; [A o.data] = b.evalunitcellcopies(p, uc, o);
+fprintf('evalunitcellcopies from cold = %.3g s\n', toc)
+tic; A = b.evalunitcellcopies(p, uc, o);
+fprintf('evalunitcellcopies using stored data = %.3g s\n', toc)
+%profile clear; profile on; for i=1:100, A = b.evalunitcellcopies(p, uc, o); end; profile off; profile viewer % test that matrix mults dominate reusing storage.
 u = reshape(A*ones(size(A,2),1), size(xx));
 figure; imagesc(g, g, real(u)); set(gca, 'ydir', 'normal'); colorbar;
-hold on; uc.plot;
+hold on; uc.plot; caxis([-1 1])
 end
+
+return
 
 % now test the all-uc-bases code for block row of B matrix values...
 uc.clearbases; uc.addqpuclayerpots;
@@ -48,7 +50,7 @@ figure; showmatpoly(Br);
 
 if 0 % interesting timing about stacking in block cols... better to preallocate
   tic; B = []; for i=1:10, B = [B ones(300,1000)]; end; toc  % 3-4 times slower!
-  tic; B = zeros(300,10000); for i=1:10, B(:,1000*(i-1)+(1:1000))= ones(300,1000); end; toc
+  tic; B = zeros(300,10000); for i=1:10, B(:,1000*(i-1)+(1:1000))= ones(300,1000); end; toc  % preallocates, is faster
 end
 
 if 0  % 0.8 ms for setupbasisdofs

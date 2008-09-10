@@ -24,6 +24,8 @@ function [A Dker_noang cosker] = D(k, s, t, o)
 %    opts.Dker_noang = quad-unweighted kernel matrix of fund-sols derivs
 %                      without the cosphi factors (prevents recomputation
 %                      of H1's).
+%    opts.displ = matrix of source-target displacements, prevents recalculation.
+%    opts.rdist = matrix of source-target distances, prevents recalculation.
 %    opts.derivSLP = true, then uses target-normals instead of
 %                      source-normals, which computes n-deriv of SLP instead.
 %
@@ -43,8 +45,10 @@ if self, t = s; end              % use source as target pts (handle copy)
 M = numel(t.x);                  % # target pts
 sp = s.speed/2/pi; % note: 2pi converts to speed wrt s in [0,2pi] @ src pt
 needA = ~isfield(o, 'Dker_noang'); % true if must compute H1 matrix
-d = repmat(t.x, [1 N]) - repmat(s.x.', [M 1]); % C-# displacements mat
-r = abs(d);                     % dist matrix R^{MxN}
+if isfield(o, 'displ'), d = o.displ; else
+  d = repmat(t.x, [1 N]) - repmat(s.x.', [M 1]); end % C-# displacements mat
+if isfield(o, 'rdist'), r = o.rdist; else
+  r = abs(d); end                                    % dist matrix R^{MxN}
 if self, r(diagind(r)) = 999; end % dummy nonzero diag values
 if isfield(o, 'derivSLP') & o.derivSLP   % dPhi(x,y)/dnx
   nx = repmat(-t.nx, [1 N]);      % identical cols given by targ normals
