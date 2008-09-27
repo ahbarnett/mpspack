@@ -159,6 +159,9 @@ classdef problem < handle
       for n=1:numel(pr.doms)
         d = pr.doms(n);
         ii = d.inside(p.x);
+        if nnz(ii)==0, 
+            continue 
+        end                                  % Do nothing if there are no elements
         di(ii) = n;
         u(ii) = 0;                           % accumulate contribs to u in dom
         opts.dom = d;                        % b.eval might need know which dom
