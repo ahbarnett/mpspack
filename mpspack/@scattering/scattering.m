@@ -136,20 +136,36 @@ classdef scattering < bvp & handle
       if nargin<2, o = []; end
       if ~isfield(o, 'imag'), o.imag = 0; end
       if ~isfield(o, 'bdry'), o.bdry = 0; end
-      tsubplot(1,3,1);
+      if ~isfield(o,'sepfigs'), o.sepfigs=0; end % If true plot in sep. figs.
+      if o.sepfigs,
+          figure;
+      else
+          tsubplot(1,3,1);
+      end
       [ui gx gy di] = pr.gridincidentwave(o);
       if o.imag, imagesc(gx, gy, imag(ui)); title('Im[u_i]');
       else, imagesc(gx, gy, real(ui)); title('Re[u_i]'); end
       c = caxis; caxis([-1 1]*max(c));           % make colorscale symmetric
       axis equal tight;colorbar; set(gca,'ydir','normal'); hold on;
       if o.bdry, pr.showbdry; end
-      tsubplot(1,3,2); [us gx gy di] = pr.gridsolution(o);
+      
+      if o.sepfigs,
+          figure
+      else
+          tsubplot(1,3,2);
+      end
+      [us gx gy di] = pr.gridsolution(o);
       if o.imag, imagesc(gx, gy, imag(us)); title('Im[u_s]');
       else, imagesc(gx, gy, real(us)); title('Re[u_s]'); end
       c = caxis; caxis([-1 1]*max(c));
       axis equal tight;colorbar; set(gca,'ydir','normal'); hold on;
       if o.bdry, pr.showbdry; end
-      tsubplot(1,3,3);
+      
+      if o.sepfigs,
+          figure
+      else
+        tsubplot(1,3,3);
+      end
       if isfield(o,'testtransparent') & o.testtransparent
         [xx yy] = meshgrid(gx, gy); zz = xx + 1i*yy;
         uiR = pr.ui(zz);                  % u_i eval over whole R^2
