@@ -84,7 +84,7 @@ classdef scattering < bvp & handle
       end % segs loop
     end % func
     
-    function [u di] = pointincidentwave(pr, p) % ........eval u_inc on pointset
+    function [u di] = pointincidentwave(pr, p,o) % ........eval u_inc on pointset
     % POINTINCIDENTWAVE - evaluate incident wave for a problem on a pointset
     %
     %  [ui di] = pointsolution(pr, pts) returns array of values ui, and
@@ -94,13 +94,14 @@ classdef scattering < bvp & handle
     %   all domains.
     %
     % See also GRIDINCIDENTWAVE
+    if ~isfield(o,'all'), o.all=0; end; % Evaluate wave over all domains
       di = NaN*zeros(size(p.x));                    % NaN indicates in no domain
       u = di;                                       % solution field
       for n=1:numel(pr.doms)
         d = pr.doms(n);
         ii = d.inside(p.x);
         di(ii) = n;
-        if d.isair                                  % here there's u_i wave
+        if d.isair | o.all                          % here there's u_i wave
           u(ii) = pr.ui(p.x(ii));
         else                                        % here there's 0 inc wave
           u(ii) = 0;
@@ -117,10 +118,12 @@ classdef scattering < bvp & handle
     %   gridpoint is in are done using domain.inside, which may be approximate.
     %
     % See also POINTINCIDENTWAVE, GRIDBOUNDINGBOX
+
+    
       o = pr.gridboundingbox(o);
       gx = o.bb(1):o.dx:o.bb(2); gy = o.bb(3):o.dx:o.bb(4);  % plotting region
       [xx yy] = meshgrid(gx, gy); zz = xx + 1i*yy;  % keep zz rect array
-      [u di] = pr.pointincidentwave(pointset(zz));
+      [u di] = pr.pointincidentwave(pointset(zz),o);
     end % func
     
     function showthreefields(pr, o)
