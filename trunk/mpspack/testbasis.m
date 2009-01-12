@@ -6,15 +6,15 @@
 % * reg FB: - fix |x|=0 NaN problem, same for nu FB.
 
 clear classes
-verb = 0;                            % use verb=0, N=50, for more of a test
+verb = 2;                            % use verb=0, N=50, for more of a test
 err = 1;                             % false, show vals / true, show errors
-dx = 0.01; g = -1:dx:1;              % plotting region
+dx = 0.02; g = -1:dx:1;              % plotting region, -1:.01:1 default
 [xx yy] = meshgrid(g, g);
-M = numel(xx);
+M = numel(xx); o = [];
 p = pointset([xx(:) + 1i*yy(:)], ones(size(xx(:)))); % set up n for x-derivs
 k = 10;
 
-for type = 1:10
+for type = 9 %1:10
   switch type
    case {1,2,3}             % ................. Reg FB: real/cmplx, rescl
     N = 10;               
@@ -35,18 +35,18 @@ for type = 1:10
     opts.real = (type==6);
     opts.fast = 2;       % about 10x faster than o.fast=0 (matlab hankel)!
     b = mfsbasis(@(t) exp(1i*t), -0.4, N, k, opts);  % tau keeps them outside
-    c = 1.0; js = 1:b.Nf;
+    c = 0.2; js = 1:b.Nf;
     fprintf('evaluating MFS basis... real=%d\n', opts.real)
    
    case {8,9,10}            % ................. SLP, DLP, SLP+DLP
-    N = 10; s = segment(N, [-1.5+.5i, .5i]);
-    lp = 'S'; if type==9, lp = 'D'; elseif type==10, lp = [1 1i]; end
+    N = 10; s = segment(N, [-1.5+.5i, .5i]); c = 0.03;
+    lp = 'S'; if type==9, lp = 'D'; c=c*k; elseif type==10, lp = [1 1i]; end
     o.fast = 2;       % about 5x faster than o.fast=0 (matlab hankel)!
     b = layerpot(s, lp, k, o); if type==10, lp = 'SLP+D'; end % hack for text
-    c = 0.25; js = 1; %b.Nf; % 1 is off the region, b.Nf is in the region
-    fprintf('evaluating {S,D}LP basis... %sLP\n', lp)
+    js = 7; %b.Nf; % 1 is off the region, b.Nf is in the region
+    fprintf('evaluating {S,D}LP basis... %sLP\n', lp), o.close = 0.4;
   end
-  tic; [A Ax Ay] = b.eval(p); t=toc;
+  tic; [A Ax Ay] = b.eval(p, o); t=toc;
   fprintf('\t%d evals (w/ x,y derivs) in %.2g secs = %.2g us per eval\n',...
           numel(A), t, 1e6*t/numel(A))
   n = numel(js);

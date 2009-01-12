@@ -41,6 +41,22 @@ classdef qpunitcell < handle & domain
       uc.buffer = 0;                              % default discrep UC size
     end % func
     
+    function [x i j] = fold(uc, x)
+    % FOLD - fold a point back into the principal unit cell
+    %
+    %  [x i j] = FOLD(x) returns in x the folded C-number coordinates of a
+    %   list of numbers, and (optionally)
+    %   in i and j the integer numbers of unit cells
+    %   needed to move in.
+      M = [real(uc.e1) real(uc.e2); imag(uc.e1) imag(uc.e2)];
+      xvecs = [real(x(:))'; imag(x(:))']; % convert to 2-by-n stack of vectors
+      y = M\xvecs + 0.5;                  % work relative to lower left corner
+      f = floor(y);
+      i = reshape(f(1,:), size(x)); j = reshape(f(2,:), size(x));
+      y = M*(y - f - 0.5);
+      x = reshape(y(1,:) + 1i*y(2,:), size(x));  % convert from vec to C-number
+    end
+    
     function [N noff] = setupbasisdofs(uc)
     % SETUPBASISDOFS - set up indices of basis degrees of freedom in unit cell
     %
@@ -143,16 +159,16 @@ classdef qpunitcell < handle & domain
         b = uc.bas{i}; ns = noff(i)+(1:b.Nf);  % column indices for this basis
         o.data = opts.data{i};              % its allotted poly storage struct
         if nargout==1                       % handle each # outp args separately
-          Bb = b.evalunitcellcopies(p, b.uc, o);  % block-column of B
+          Bb = b.evalunitcellcopies(p, uc, o);  % block-column of B
           B(:,ns,:) = Bb;
         elseif nargout==2
-          [Bb db] = b.evalunitcellcopies(p, b.uc, o);
+          [Bb db] = b.evalunitcellcopies(p, uc, o);
           B(:,ns,:) = Bb; d{i} = db;          % create d cell array of structs
         elseif nargout==3
-          [Bb B1b db] = b.evalunitcellcopies(p, b.uc, o);
+          [Bb B1b db] = b.evalunitcellcopies(p, uc, o);
           B(:,ns,:) = Bb; B1(:,ns,:) = B1b; d{i} = db;
         else
-          [Bb B1b B2b db] = b.evalunitcellcopies(p, b.uc, o);
+          [Bb B1b B2b db] = b.evalunitcellcopies(p, uc, o);
           B(:,ns,:) = Bb; B1(:,ns,:) = B1b; B2(:,ns,:) = B2b; d{i} = db;
         end
       end                  %------------
@@ -249,6 +265,21 @@ classdef qpunitcell < handle & domain
       end
       c.remph = [ones(size(ppow)); -ones(size(ppow))]; % -ve in discrep form
     end % func
+    
+    function f = spuriousdistance(uc)
+    % SPURIOUSDISTANCE - function tries to kill spurious singvals in 3xUC scheme
+    % uses k overall wavenumber, and alpha, beta, from uc.
+      om = uc.k;                       % omega = overall wavenumber
+      n=ceil(3*om/min(svd(uc.recip))); % size of rect array of points in k-space
+      [xx yy] = meshgrid((-n:n)/3);    % now kill k's at centers of recip UCs
+      j = find(xx~=round(xx) | yy~=round(yy)); ks = xx(j)*uc.r1 + yy(j)*uc.r2;
+      %figure; plot(real(ks), imag(ks), '+'); axis equal;
+      % we are left with ks a list, punctured grid of centers in C plane
+      d = abs(uc.kbloch - ks);         % list of distances of k from centers
+      f = min(abs(d-om));              % min dist to omega-circles at centers
+    end
+    
+    d = datawrapR(uc, d, i)             % trial wrapping-over-R-wall of mat data
     
   end % methods
 end
