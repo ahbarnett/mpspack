@@ -23,10 +23,13 @@ function [A Sker] = S(k, s, t, o)
 %    opts.ord = 2,6,10. controls order of Kapur-Rokhlin rule.
 %    opts.Sker = quad-unweighted kernel matrix of fund-sols (prevents
 %                recomputation of r or fundsol values).
+%    opts.rdist = matrix of source-target distances, prevents recalculation.
+%    opts.close = distance below which adaptive quadrature is used to evaluate
+%                distant targets (slow). If not present, never adaptive.
 %
 % [S Sker] = S(...) also returns quad-unweighted kernel values matrix Sker.
 %
-%  Adapted from leslie/pc2d/slp_matrix.m, barnett 7/31/08
+%  Adapted from leslie/pc2d/slp_matrix.m, barnett 7/31/08, close eval 10/16/08
 %  Tested by routine: testlpquad.m
 if isempty(k) | isnan(k), error('SLP: k must be a number'); return; end
 if nargin<4, o = []; end
@@ -39,9 +42,12 @@ if self, t = s; end              % use source as target pts (handle copy)
 M = numel(t.x);                  % # target pts
 sp = s.speed/2/pi; % note: 2pi converts to speed wrt s in [0,2pi] @ src pt
 needA = ~isfield(o, 'Sker');     % true if must compute kernel vals
+if isfield(o, 'rdist'), r = o.rdist; end
 if needA
-  d = repmat(t.x, [1 N]) - repmat(s.x.', [M 1]); % C-# displacements mat
-  r = abs(d);                                    % dist matrix R^{MxN}
+  if exist('r',1)
+    d = repmat(t.x, [1 N]) - repmat(s.x.', [M 1]); % C-# displacements mat
+    r = abs(d);                                    % dist matrix R^{MxN}
+  end
   if self, r(diagind(r)) = 999; end % dummy nonzero diag values
 end
 if needA
@@ -100,5 +106,26 @@ if self % ........... source curve = target curve; can be singular kernel
 else % ............................ distant target curve, so smooth kernel
   
   A = A .* repmat(s.w, [M 1]);       % use segment quadrature weights
+  
+  % Now overwrite needed rows of A using very slow adaptive gauss quadrature...
+  if isfield(o,'close') & k>0        % use adaptive quadr
+    rows = find(min(r,[],2)<o.close);   % which eval target pts need adaptive
+    x = s.t;                            % source quadrature nodes in [0,1]
+    w = zeros(size(x));
+    for i=1:numel(x)       % Barycentric weights for Lagrange interp
+      w(i) = 1./prod(x(find((1:numel(x))~=i))-x(i));
+    end
+    for i=rows'                      % must make a row vector for loop to work!
+      if s.qtype=='g' | s.qtype=='c'
+        for j=1:N
+          xneqj = x(find((1:numel(x))~=j));  % col vec of nodes excluding j
+          f = @(y) reshape(prod(repmat(xneqj, [1 numel(y)])-repmat(y(:).',[N-1 1]),1).' .* abs(s.Zp(y(:))) .* besselh(0,k*abs(s.Z(y(:))-t.x(i))), size(y));
+          %f = @(y) y*fprintf('%g\n', y);  % debug tool to see what y requested
+          %f([.2 .3])                      % debug
+          A(i,j) = w(j) * (1i/4)*quadgk(f, 0, 1, 'RelTol', 1e-9, 'AbsTol', 0);
+        end
+      end
+    end
+  end
 end
     

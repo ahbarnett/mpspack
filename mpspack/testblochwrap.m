@@ -1,5 +1,6 @@
 % Bloch mode problem without the 'problem' class, for single Dirichlet segment.
 % barnett 8/22/08, cleaned up and changed for simpler copylists, 9/9/08
+% wrapping of 1xUC scheme (R wall only; including poly), 1/11/09.
 
 clear all classes
 sys = 's';             % 'e' empty UC, 's' scatterer (Dirichlet closed seg)
@@ -11,15 +12,17 @@ uc = qpunitcell(1, 0.5+1i, k, Mu);       % decide the UC shape (1, 0.5+1i)
 uc.buffer = 0;       % choose QP scheme. 0: 1xUC sticking out (nei=0,1)
                      % 1: 3xUC sticking out (nei=2), 2: 3x scaled UC (nei=1,2)
 o.nei = 1;           % 0,1,etc: # segment src neighbor copies (1x1, 3x3, etc)
-o.close = 0;%0.25;   % dist to go adaptive for close-evaluation in B filling
+o.close = 0.25;   % dist to go adaptive for close-evaluation in B filling
 if uc.buffer==2, ucQsiz = 3;                    % NB won't work for alpha-poly
   ucQ = qpunitcell(3*uc.e1, 3*uc.e2, k, Mu);    % discrep uses 3x size unit cell
 else ucQ = uc; ucQsiz = 1; end                  % discrep uses original uc
 if bas=='j', ucQ.addregfbbasis(0,38,k); ucQ.setupbasisdofs;
 elseif bas=='q', ucQ.addqpuclayerpots; end
 s = scale(segment.smoothstar(Ms, 0.3, 3), 0.2);  % Ms quadr pts on inclusion
-%s.translate(0.23);        % test ew invariance under transl (>=0.23 hits UC)
-wrap = 0;                 % 0: none, 1: wrap A & B correctly
+%s = scale(segment.smoothstar(Ms, 0.3, 3), 0.42); s.translate(0.1);
+s.translate(0.3);        % test ew invariance under transl (>0.229 hits UC R)
+wrap = 1;                % 0: none, 1: wrap A & B correctly (R wall only)
+if wrap==1 & (o.nei~=1 | uc.buffer~=0), disp('o.nei must be 1 to wrap!'); end
 e = domain([], [], s, -1); o.dom = e;
 b = e.addlayerpotbasis(s, [1i*k 1], k); b = b{1}; % BWLP pot; get basis handle
 %b = e.addlayerpotbasis(s, 's', k); b = b{1}; % BWLP pot; get basis handle
@@ -33,11 +36,25 @@ if 1 % no poly...
   fprintf('Filling times (Q,B,A,C) from cold:\n');
   tic; Q = ucQ.evalbasesdiscrep; toc % poly data storage is in ucQ automatically
   if sys~='e'
-    if wrap==1, oldsx = s.x; [s.x i j] = uc.fold(s.x); end
+    if wrap==1, oldsx = s.x; [s.x ix jx] = uc.fold(s.x); end
     tic; [B dB] = ucQ.evalbaseswithdata(s,o); toc % (ucQ>uc poly bad)
-    if wrap==1, B = diag(uc.a.^i.*uc.b.^j)*B; s.x = oldsx; end
+    if wrap==1, B = diag(uc.a.^ix.*uc.b.^jx)*B; s.x=oldsx; % rephase B rows
+      for i=1:numel(dB), dB{i} = uc.datawrapR(dB{i}, find(ix>0)); end, end
     o.close=0;                                     % don't use close for A, C
     tic; [A dA] = b.evalunitcellcopies(s, uc, o); toc % square source block
+    if wrap==1, ii=find(ix>0);  % wrapped rows, spec to G2 penetrating R UC wall
+      cc = find(dA.copylist.apow==-1); dA.B(ii,:,cc) = 0; %kill (-1,:) copy rows
+      o.copylist.t = -2*uc.e1 - (-1:1)*uc.e2; % new (2,:) col of copies for G2
+      o.copylist.apow = [2 2 2]; o.copylist.bpow = [-1 0 1]; % (above trans -ve)
+      o.copylist.remph = [1 1 1]; p2 = pointset(s.x(ii), s.nx(ii)); % G2 pts
+      [A2 dA2] = b.evalunitcellcopies(p2, uc, o); % new copies (2,:)
+      ns=size(dA.B,3)+(1:3); dA.B(:,:,ns) = 0; dA.B(ii,:,ns) = dA2.B;
+      dA.copylist.t(ns) = o.copylist.t; dA.copylist.apow(ns) = o.copylist.apow;
+      dA.copylist.bpow(ns) = o.copylist.bpow; dA.copylist.remph(ns) = 1;
+      o = rmfield(o, 'copylist'); clear A2 dA2;
+      o.data = dA; A = b.evalunitcellcopies(s, uc, o); % resum w/ new list
+      o = rmfield(o, 'data');   % now dA has correct data for this freq k
+      end
     tic; [C dC] = b.evalunitcelldiscrep(uc, o); toc % heeds ucbuf=2
     M = [2*A 2*B; C Q];
     if verb>1,figure;imagesc(real(M));colorbar;title('M');end
@@ -72,8 +89,8 @@ if 1 % no poly...
   end
 end
 
-if 0            % sweep alpha & beta over BZ
-  da = 0.03; inv = 1; % # singvals keep, & whether to use BZ inv symm
+if 1            % sweep alpha & beta over BZ
+  da = 0.1; inv = 1; % # singvals keep, & whether to use BZ inv symm
   aangs = pi*(-1:da:1);    % alpha angles  (make 0 for single slice)
   bangs = pi*(-1:da:1);     % beta angles
   %aangs = 2.5:0.01:2.7; bangs = -0.3:0.01:-0.1; weak area for restr-u-nrm trick
@@ -125,8 +142,8 @@ if 0            % sweep alpha & beta over BZ
   end
 end
 
-if 0 % no poly... using stored values, check code speed profile
-  if sys=='s', uc.setbloch(exp(1i*pi*-0.82638945966), 1);  % also mode
+if 1 % no poly... using stored values, check code speed profile
+  if sys=='s', uc.setbloch(exp(1i*pi*-0.82638945966117), 1);  % also mode
   else uc.setbloch(exp(1i*pi*-0.618810864777384),1i); end % also empty mode
   fprintf('Filling times (Q,B,C,A) reusing stored data, at a new k_block:\n');
        %profile clear; profile on; for i=1:100
@@ -140,7 +157,7 @@ if 0 % no poly... using stored values, check code speed profile
   fprintf('min sing val of M = %.15g     (should also be small)\n', min(svd(M)))
 end
   
-if 0 % poly... from stored data, then do a PEP matrix solve on it...
+if 0 % poly... from stored data, then do a PEP matrix solve on it... wrap ok too
   o.poly = 4 + 3*uc.buffer;  % quartic, or septic for full scheme
   fprintf('Filling (Q,B,C,A) with poly=%d, stored data:\n', o.poly);
   tic; Q = uc.evalbasesdiscrep(o); toc % poly data store is in uc automatically

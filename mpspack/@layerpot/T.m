@@ -24,6 +24,8 @@ function [A Sker Dker_noang] = T(k, s, t, o);
 %    opts.rdist = matrix of source-target distances, prevents recalculation.
 %   Passing any of the above options stops it from being calculated internally.
 %   When k=0, the options Sker and Dker_noang have no effect.
+%    opts.close = distance below which adaptive quadrature is used to evaluate
+%                distant targets (slow). If not present, never adaptive.
 %
 %  [T Sker Dker_noang] = T(...) also returns quad-unweighted
 %   kernel values matrices Sker, Dker_noang, when k>0 (empty for Laplace)
@@ -87,4 +89,38 @@ if self % ........... source curve = target curve; can be singular kernel
 else % ............................ distant target curve, so smooth kernel
   
   A = A .* repmat(s.w, [M 1]);       % use segment quadrature weights
+  
+  % Now overwrite needed rows of A using very slow adaptive gauss quadrature...
+  if isfield(o,'close') & k>0        % use adaptive quadr
+    rows = find(min(r,[],2)<o.close);   % which eval target pts need adaptive
+    x = s.t;                            % source quadrature nodes in [0,1]
+    w = zeros(size(x));
+    for i=1:numel(x)       % Barycentric weights for Lagrange interp
+      w(i) = 1./prod(x(find((1:numel(x))~=i))-x(i));
+    end
+    for i=rows'                      % must make a row vector for loop to work!
+      if s.qtype=='g' | s.qtype=='c'
+        for j=1:N
+          xneqj = x(find((1:numel(x))~=j));  % col vec of nodes excluding j
+          f = @(y) Lagrange_DLP_deriv(y, xneqj, k, s, t.x(i), t.nx(i));
+          A(i,j) = w(j) * quadgk(f, 0, 1, 'RelTol', 1e-9, 'AbsTol', 0);
+        end
+      end
+    end
+  end
 end
+
+function f = Lagrange_DLP_deriv(t, xneqj, k, s, x, nx) % -----------------------
+% evaluate target-normal deriv of j-th Lagrange basis density DLP
+% at any list of t (0<=t<=1 along source segment).
+% x, nx = single target location, normal deriv.
+
+% Lagrange basis (excluding its t-indep denominators)...
+f = prod(repmat(xneqj, [1 numel(t)])-repmat(t(:).',[numel(xneqj) 1]), 1).';
+d = s.Z(t(:))-x; r = abs(d);
+csrx = conj(nx)*d;                     % (code taken from above)
+csry = conj(s.Zn(t(:))).*d;             % cos src normals
+cc = real(csry).*real(csrx) ./ (r.*r);      % cos phi cos th
+cdor = real(csry.*csrx) ./ (r.*r.*r);   % cos(phi-th) / r
+val = (1i*k/4)*besselh(1,k*r) .* (-cdor) + (1i*k*k/4)*cc.*besselh(0,k*r);
+f = reshape(f .* val .* abs(s.Zp(t(:))), size(t));

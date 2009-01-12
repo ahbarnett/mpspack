@@ -1,6 +1,6 @@
 function circle(cx, cy, r, linetype);
 
-N = 40;
+N = 150;
 x = zeros(1,N+1);
 y = zeros(1,N+1);
 for n=1:N+1
