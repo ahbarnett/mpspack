@@ -90,7 +90,7 @@ else % ............................ distant target curve, so smooth kernel
   
   A = A .* repmat(s.w, [M 1]);       % use segment quadrature weights
   
-  % Now overwrite needed rows of A using very slow adaptive gauss quadrature...
+  % Now overwrite `close' rows of A, if any, using very slow adaptive gauss quadr...
   if isfield(o,'close') & k>0        % use adaptive quadr
     rows = find(min(r,[],2)<o.close);   % which eval target pts need adaptive
     x = s.t;                            % source quadrature nodes in [0,1]

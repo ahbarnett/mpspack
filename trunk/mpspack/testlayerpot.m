@@ -1,7 +1,7 @@
 % test routine for layer potential basis objects, interaction with domains
 % Also see * testlpquad for more low-level tests of layerpot.S etc.
 %          * testbvp.m for GRF test on interior values
-% barnett 7/30/08, GRF test 8/4/08
+% barnett 7/30/08, GRF test 8/4/08. Needs generalizing to interior & close evals
 
 clear classes
 sh = 's';                    % 't' or 's' for triangle or smooth curve
@@ -11,8 +11,8 @@ elseif sh=='t', s = segment.polyseglist([], [1 1i exp(4i*pi/3)], 'g');  % tri
   Ms = 20:20:100;
 end
 d = domain(s, 1);                    % interior domain
-if 0
-k = 0;                     % allows tau=1 test to work
+if 0       % --------- do a Laplace eqn (k=0) visual test of known tau=1 DLP
+k = 0;                     % otherwise tau=1 test cannot work
 [g.x g.ii g.gx g.gy] = d.grid(0.05);                     % some interior points
 for m = 1:numel(Ms)
   M = Ms(m); s.requadrature(ceil(M/numel(s))); % can also try 'g', better

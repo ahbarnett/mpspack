@@ -55,6 +55,8 @@ classdef basis < handle
         else
           pt = pointset(p.x + transl(i), p.nx); % make moved target copy, as pts
         end
+        % following is a hack specific to layerpot basis, shifting origin...
+        if isfield(opts, 'Jfilter'), opts.Jfilter.origin = transl(i); end
         if nargs==1                % call eval w/ appropriate # args
           d.B(:,:,i) = b.eval(pt, opts);
         elseif nargs==2

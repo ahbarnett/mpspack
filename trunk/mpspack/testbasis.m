@@ -14,7 +14,7 @@ M = numel(xx); o = [];
 p = pointset([xx(:) + 1i*yy(:)], ones(size(xx(:)))); % set up n for x-derivs
 k = 10;
 
-for type = 9 %1:10
+for type = 1:10
   switch type
    case {1,2,3}             % ................. Reg FB: real/cmplx, rescl
     N = 10;               

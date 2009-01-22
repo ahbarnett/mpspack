@@ -160,7 +160,8 @@ classdef scattering < bvp & handle
       [us gx gy di] = pr.gridsolution(o);
       if o.imag, imagesc(gx, gy, imag(us)); title('Im[u_s]');
       else, imagesc(gx, gy, real(us)); title('Re[u_s]'); end
-      c = caxis; caxis([-1 1]*max(c));
+      %c = caxis; caxis([-1 1]*max(c));
+      caxis(2*[-1 1]*max(c));                 % choose double caxis hack
       axis equal tight;colorbar; set(gca,'ydir','normal'); hold on;
       if o.bdry, pr.showbdry; end
       
@@ -183,7 +184,8 @@ classdef scattering < bvp & handle
         if o.imag, imagesc(gx, gy, imag(ui+us)); title('Im[u_t] = Im[u_i+u_s]');
         else, imagesc(gx, gy, real(ui+us)); title('Re[u_t] = Re[u_i+u_s]'); end
       end
-      c = caxis; caxis([-1 1]*max(c));
+      %c = caxis; caxis([-1 1]*max(c));
+      caxis(2*[-1 1]*max(c));                  % choose double caxis hack
       axis equal tight;colorbar; set(gca,'ydir','normal'); hold on;
       if o.bdry, pr.showbdry; end
     end % func

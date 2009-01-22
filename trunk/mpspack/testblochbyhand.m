@@ -5,20 +5,21 @@ clear all classes
 sys = 's';             % 'e' empty UC, 's' scatterer (Dirichlet closed seg)
 bas = 'q';             % QP basis type ('j' is only test; 'q' is real deal)
 % note test cases specific to k=10, eg sys='s' reaches 1e-14 for Mu=30,Ms=70
-k = 10; Mu = 20; Ms = 40;           % Mu quadr pts per UC wall seg (18,80)
+k = 10; Mu = 40; Ms = 40;           % Mu quadr pts per UC wall seg (18,80)
 verb = 0; bwcan = 1;             % verbosity, & whether to cancel Bloch wave
 uc = qpunitcell(1, 0.5+1i, k, Mu);       % decide the UC shape (1, 0.5+1i)
 uc.buffer = 0;       % choose QP scheme. 0: 1xUC sticking out (nei=0,1)
                      % 1: 3xUC sticking out (nei=2), 2: 3x scaled UC (nei=1,2)
 o.nei = 1;           % 0,1,etc: # segment src neighbor copies (1x1, 3x3, etc)
-o.close = 0;%0.25;   % dist to go adaptive for close-evaluation in B filling
+bo.Jfilter.M = 20; bo.Jfilter.rescale_rad = 0.5;  % B: J-filter QPLP close-eval
+bo.close = 0;%0.25;   % dist to go adaptive for close-evaluation in B filling
 if uc.buffer==2, ucQsiz = 3;                    % NB won't work for alpha-poly
   ucQ = qpunitcell(3*uc.e1, 3*uc.e2, k, Mu);    % discrep uses 3x size unit cell
 else ucQ = uc; ucQsiz = 1; end                  % discrep uses original uc
 if bas=='j', ucQ.addregfbbasis(0,38,k); ucQ.setupbasisdofs;
 elseif bas=='q', ucQ.addqpuclayerpots; end
 s = scale(segment.smoothstar(Ms, 0.3, 3), 0.2);  % Ms quadr pts on inclusion
-%s.translate(0.23);        % test ew invariance under transl (>=0.23 hits UC)
+s.translate(0.35-.4i);        % test ew invariance under transl (>=0.23 hits UC)
 wrap = 0;                 % 0: none, 1: wrap A & B correctly
 e = domain([], [], s, -1); o.dom = e;
 b = e.addlayerpotbasis(s, [1i*k 1], k); b = b{1}; % BWLP pot; get basis handle
@@ -32,16 +33,16 @@ if 1 % no poly...
   ucQ.setbloch(uc.a^ucQsiz, uc.b^ucQsiz);   % maybe cubed discrepancy phases
   fprintf('Filling times (Q,B,A,C) from cold:\n');
   tic; Q = ucQ.evalbasesdiscrep; toc % poly data storage is in ucQ automatically
-  if sys~='e'
+  if sys~='e'                        % if there's an inclusion
     if wrap==1, oldsx = s.x; [s.x i j] = uc.fold(s.x); end
-    tic; [B dB] = ucQ.evalbaseswithdata(s,o); toc % (ucQ>uc poly bad)
+    tic; [B dB] = ucQ.evalbaseswithdata(s, bo); toc % (ucQ>uc poly bad)
     if wrap==1, B = diag(uc.a.^i.*uc.b.^j)*B; s.x = oldsx; end
     o.close=0;                                     % don't use close for A, C
     tic; [A dA] = b.evalunitcellcopies(s, uc, o); toc % square source block
     tic; [C dC] = b.evalunitcelldiscrep(uc, o); toc % heeds ucbuf=2
     M = [2*A 2*B; C Q];
     if verb>1,figure;imagesc(real(M));colorbar;title('M');end
-  else M = Q; A = []; end
+  else M = Q; A = []; end            % empty unit-cell case
   [U S V] = svd(M); sig = diag(S); svec = V(:,end); % min right sing vec=coeffs
   fprintf('min sing val of M = %.15g   (should be v small)\n', sig(end))
   if verb, if uc.buffer==0, g = -1:0.01:1; else g = -2:0.02:2; end % grid mode
@@ -73,8 +74,8 @@ if 1 % no poly...
 end
 
 if 0            % sweep alpha & beta over BZ
-  da = 0.03; inv = 1; % # singvals keep, & whether to use BZ inv symm
-  aangs = pi*(-1:da:1);    % alpha angles  (make 0 for single slice)
+  da = 0.01; inv = 1; % # singvals keep, & whether to use BZ inv symm
+  aangs = 0; %pi*(-1:da:1);    % alpha angles  (make 0 for single slice)
   bangs = pi*(-1:da:1);     % beta angles
   %aangs = 2.5:0.01:2.7; bangs = -0.3:0.01:-0.1; weak area for restr-u-nrm trick
   %bangs = 2.7:1e-3:2.8;
@@ -144,7 +145,7 @@ if 0 % poly... from stored data, then do a PEP matrix solve on it...
   o.poly = 4 + 3*uc.buffer;  % quartic, or septic for full scheme
   fprintf('Filling (Q,B,C,A) with poly=%d, stored data:\n', o.poly);
   tic; Q = uc.evalbasesdiscrep(o); toc % poly data store is in uc automatically
-  if sys~='e',tic; o.data = dB; B = uc.evalbaseswithdata(s, o); toc % dB is data
+  if sys~='e',tic; o.data = dB; B = uc.evalbaseswithdata(s, o); toc %dB is data
   tic; o.data = dC; C = b.evalunitcelldiscrep(uc, o); toc
   tic; o.data = dA; A = b.evalunitcellcopies(s, uc, o); toc
   M = [2*A 2*B; C Q];  % 2's correspond to halving defn of mismatch (to get Id)
@@ -158,7 +159,7 @@ if 0 % poly... from stored data, then do a PEP matrix solve on it...
   if verb, figure; plot(E, '+'); axis equal; axis([-2 2 -2 2]);title('eigs');
     hold on; circle(0,0,1,'k-'); end
   alphas = E(find(abs(abs(E)-1)<1e-3)); % keep PEP evals lying near unit circle
-  if sys=='s'
+  if sys=='s' & numel(alphas)>1
     fprintf('eigval angs/pi: %.15g %.15g   (close to +-0.82638946)\n', ...
             angle(alphas(1))/pi, angle(alphas(2))/pi)
     fprintf('|eigvals|-1:    %g %g   (should be small)\n', ...

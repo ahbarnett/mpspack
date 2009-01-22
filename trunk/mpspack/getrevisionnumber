@@ -1,0 +1,3 @@
+#!/bin/sh
+svn info ../mpspack | awk '/Revision:/ {print $2}'
+

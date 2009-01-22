@@ -6,7 +6,8 @@ clear all classes
 sys = 's';             % 'e' empty UC, 's' scatterer (Dirichlet closed seg)
 bas = 'q';             % QP basis type ('j' is only test; 'q' is real deal)
 % note test cases specific to k=10, eg sys='s' reaches 1e-14 for Mu=30,Ms=70
-k = 10; Mu = 20; Ms = 40;           % Mu quadr pts per UC wall seg (18,80)
+%k = 27.9; Mu = 20; Ms = 100;           % Mu quadr pts per UC wall seg (18,80)
+k = 10; Mu = 24; Ms = 40;
 verb = 0; bwcan = 1;             % verbosity, & whether to cancel Bloch wave
 uc = qpunitcell(1, 0.5+1i, k, Mu);       % decide the UC shape (1, 0.5+1i)
 uc.buffer = 0;       % choose QP scheme. 0: 1xUC sticking out (nei=0,1)
@@ -20,7 +21,7 @@ if bas=='j', ucQ.addregfbbasis(0,38,k); ucQ.setupbasisdofs;
 elseif bas=='q', ucQ.addqpuclayerpots; end
 s = scale(segment.smoothstar(Ms, 0.3, 3), 0.2);  % Ms quadr pts on inclusion
 %s = scale(segment.smoothstar(Ms, 0.3, 3), 0.42); s.translate(0.1);
-s.translate(0.3);        % test ew invariance under transl (>0.229 hits UC R)
+%s.translate(0.3);        % test ew invariance under transl (>0.229 hits UC R)
 wrap = 1;                % 0: none, 1: wrap A & B correctly (R wall only)
 if wrap==1 & (o.nei~=1 | uc.buffer~=0), disp('o.nei must be 1 to wrap!'); end
 e = domain([], [], s, -1); o.dom = e;
@@ -30,6 +31,7 @@ if verb>1, figure; uc.plot; hold on; ucQ.plot; s.plot; title('uc & ucQ'); end
 
 if 1 % no poly...
   if sys=='s', uc.setbloch(exp(1i*pi*0.82638945966117), 1); % a mode to 12 digs
+            %      uc.setbloch(exp(1i*pi*0.62918),1);
   else uc.setbloch(exp(1i*pi*0.818199331592963),1i); end % empty mode to 15 digs
 %uc.setbloch(exp(1i*pi*(0.818199331592963-2/3)),1i);  % spurious 3xempty eigval
   ucQ.setbloch(uc.a^ucQsiz, uc.b^ucQsiz);   % maybe cubed discrepancy phases
@@ -89,7 +91,7 @@ if 1 % no poly...
   end
 end
 
-if 1            % sweep alpha & beta over BZ
+if 0            % sweep alpha & beta over BZ
   da = 0.1; inv = 1; % # singvals keep, & whether to use BZ inv symm
   aangs = pi*(-1:da:1);    % alpha angles  (make 0 for single slice)
   bangs = pi*(-1:da:1);     % beta angles
@@ -157,7 +159,7 @@ if 1 % no poly... using stored values, check code speed profile
   fprintf('min sing val of M = %.15g     (should also be small)\n', min(svd(M)))
 end
   
-if 0 % poly... from stored data, then do a PEP matrix solve on it... wrap ok too
+if 1 % poly... from stored data, then do a PEP matrix solve on it... wrap ok too
   o.poly = 4 + 3*uc.buffer;  % quartic, or septic for full scheme
   fprintf('Filling (Q,B,C,A) with poly=%d, stored data:\n', o.poly);
   tic; Q = uc.evalbasesdiscrep(o); toc % poly data store is in uc automatically
