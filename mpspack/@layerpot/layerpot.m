@@ -34,6 +34,9 @@ classdef layerpot < handle & basis
       if opts.fast==2 & exist('@utils/greengardrokhlinhank106.mexglx')~=3
         opts.fast = 1;               % downgrade the speed if 106 not available
       end
+      if opts.fast==1 & exist('@utils/greengardrokhlinhank103.mexglx')~=3
+        opts.fast = 0;               % downgrade the speed if 103 not available
+      end
       b.fast = opts.fast;
       if ~isfield(opts, 'real'), opts.real = 0; end
       b.real = opts.real;
@@ -80,6 +83,13 @@ classdef layerpot < handle & basis
 %     p being the segment on which the LP density sits, opts.dom must be
 %     defined, since it resolves which sign the jump relation has.
 %    opts.fast: if 0 use matlab Hankel, 1 use fast fortran Hankel, 2 even faster
+%    opts.Jfilter: if present, use evaluation through J-expansion instead.
+%     Expects structure with:
+%                  Jfilter.M = max order of local expansion
+%       (optional) Jfilter.rescale_rad = radius to rescale J-exp to be O(1) at
+%       (optional) Jfilter.origin = center of J-expansion
+%
+%   Barnett 1/17/09: added Jfilter
       if nargin<3, o = []; end
       if ~isfield(o, 'fast'), o.fast = b.fast; end    % default given in b obj
       b.updateNf;
@@ -96,6 +106,46 @@ classdef layerpot < handle & basis
         p = [];              % tell S, D, etc to use self-interaction
       end
       k = b.k;                          % could look up from b.doms someday...
+
+      if isfield(o, 'Jfilter')  % ========== J-expansion filter
+        
+        if isempty(p), error 'layerpot.eval J-filter cannot do self-eval!', end
+        if isfield(o.Jfilter, 'rescale_rad')
+          Jopts.rescale_rad = o.Jfilter.rescale_rad; % same resc for S2L as J
+        end
+        xo = 0; if isfield(o.Jfilter, 'origin'), xo=o.Jfilter.origin; end
+        Jopts.real = 0; Jopts.usegsl = 1;      % GSL needed for small J vals
+        Jexp = regfbbasis(xo, o.Jfilter.M, k, Jopts); % make new local exp basis
+               
+        % fill S2L matrix (layer potential quadr pts to top level J-expansion):
+        if b.a(2)==0             % only SLP
+          S2L = layerpot.localfromSLP(b.seg, Jexp);  % k, rescale_rad from Jexp
+          if b.a(1)~=1, S2L = S2L * b.a(1); end 
+        elseif b.a(1)==0         % only DLP
+          S2L = layerpot.localfromDLP(b.seg, Jexp);  % k, rescale_rad from Jexp
+          if b.a(2)~=1, S2L = S2L * b.a(2); end
+           S2L = layerpot.localfromDLP(b.seg, Jexp);
+        else                     % mixture of SLP + DLP
+          S2L = b.a(1) * layerpot.localfromSLP(b.seg, Jexp) + ...
+                b.a(2) * layerpot.localfromDLP(b.seg, Jexp);
+        end
+
+        %max(abs(S2L(:)))
+        %figure; imagesc(abs(S2L)); colorbar
+        
+        if nargout==1  % evaluate the local J-expansion, with correct # out args
+          AJ = Jexp.eval(p);
+          A = AJ * S2L;    % note O(N^3) .... don't know how to avoid yet ?
+        elseif nargout==2
+          [AJ AJn] = Jexp.eval(p);
+          A = AJ * S2L; Ax = AJn * S2L;
+        else
+          [AJ AJx AJy] = Jexp.eval(p);
+          A = AJ * S2L; Ax = AJx * S2L; Ay = AJy * S2L;
+        end
+      
+      else  % ================= use usual layer-potential evaluations
+      
       % precompute the displacement and distance matrices... used throughout
       N = numel(b.seg.x);                                % # src pts
       t = p; if self, t = b.seg; end                     % use src if self
@@ -190,7 +240,8 @@ classdef layerpot < handle & basis
           error('LP self jump rels not yet implemented for Ax Ay grad vec!')
         end
         
-      end
+      end % ------ end nargout switch
+      end % ================= end Jfilter switch
     end % func
     
     function showgeom(b, opts) % .................. crude show discr pts of seg
@@ -202,6 +253,8 @@ classdef layerpot < handle & basis
   methods (Static) %...................... the beef: kernel evaluation routines
     [A Sker] = S(k, s, t, o)                      % Phi kernel matrix
     [A Dker_noang cosker] = D(k, s, t, o)         % dPhi/dny or dPhi/dny matrix
-    [A Sker Dker_noang] = T(k, s, t, o)           % d^2Phi/dnxdny matrix
+    [A Sker Dker_noang] = T(k, s, t, o)           % d^2Phi/dnxdny matrix    
+    A = localfromSLP(k, s, M, o)                  % Jfilter: S2L for SLP
+    A = localfromDLP(k, s, M, o)                  % Jfilter: S2L for DLP
   end % methods
 end

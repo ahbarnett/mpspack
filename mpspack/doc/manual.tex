@@ -69,7 +69,7 @@ ght.$}
 and Timo Betcke\footnote{School
 of Mathematics, The University of Manchester,
   Manchester, M13 9PL, UK}}
-\date{code revision 31: \today}
+\date{code revision 36: \today}   % how pipe from getrevisionnumber + 1?
 
 \maketitle
 \begin{abstract}
@@ -116,28 +116,50 @@ Requirements:
 \ei
 
 We make use of the object-oriented programming ability of MATLAB which
-unfortunately means the toolbox cannot work with versions earlier than 7.6.
+unfortunately means this toolbox cannot work with versions earlier than 7.6.
 
 
 The project is hosted at
 {\tt http://code.google.com/p/mpspack}
 
-To download it you need to first install the {\tt subversion} (SVN) version
-control software from {\tt http://subversion.tigris.org}
+There are two alternative methods to download and unpack:
+\ben
+\item
+Get a gzip-compressed tar archive from
+
+{\tt http://code.google.com/p/mpspack/downloads/list}. 
+
+In a UNIX environment you may now
+unpack this with
+
+{\tt tar zxvf mpspack-r*.tar.gz}
+
+This creates the directory tree {\tt mpspack-r*}, where {\tt *} represents
+the revision (version) number.
+
+\item
+First install the {\tt subversion} (SVN) version
+control software from
+
+{\tt http://subversion.tigris.org}
 
 Anonymous check out of {\tt MPSpack} is then via the subversion command:
 
 {\tt svn checkout http://mpspack.googlecode.com/svn/trunk/ mpspack-read-only}
 
 This creates a directory {\tt mpspack-read-only} in which you will find
-the {\tt mpspack} subdirectory.
+the {\tt mpspack} directory tree.
 
-Alternatively you might prefer a more user-friendly graphical
-subversion client such as those listed at 
+You might prefer a more user-friendly graphical
+subversion client such as those listed at
+ 
 {\tt http://subversion.tigris.org/links.html\#clients}
 
-From the {\tt mpspack} subdirectory, type {\tt make} (GNU/Linux OS)
-to make optional MEX files (used for faster basis evaluations).
+\een
+
+To compile the faster basis evaluation routines (Fortran and MEX files)
+in a UNIX environment,
+from the {\tt mpspack} subdirectory, type {\tt make}
 
 You should now add the {\tt mpspack}
 subdirectory to your MATLAB path, for instance by adding the line
@@ -146,7 +168,7 @@ subdirectory to your MATLAB path, for instance by adding the line
 
 to your MATLAB {\tt startup.m} file
 
-You are now ready to use {\tt MPSpack}
+You are now ready to use {\tt MPSpack} !
 
 
 \subsection{Boundary-value problems}

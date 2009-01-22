@@ -48,11 +48,11 @@ classdef regfbbasis < handle & basis
             if nnz(err)>0,
                 warning('Error in computing regular Bessel functions. Try to reduce basis size.');
             end
-            c=cos(ang*(1:N));
+            c=cos(ang*(1:N));   % NB * here is outer product! (also below)
             s=sin(ang*(1:N));
             A=[bes(:,1), bes(:,2:end-1).*c, bes(:,2:end-1).*s];
             if resc              % rescale by orders
-              scfac = 1./besselj(0:N, min(0:N, regfb.rescale_arg));
+              scfac = 1./regfb.Jrescalefactors(0:N);  % uses rescale_arg
               A = A .* repmat([scfac scfac(2:end)], [numel(ang) 1]);
             end
             if nargout>1, % derivs wanted
@@ -105,6 +105,13 @@ classdef regfbbasis < handle & basis
             text(real(regfb.origin), imag(regfb.origin), opts.label);
           end
         end % func
+        
+        function sc = Jrescalefactors(regfb, n) % ... used to effect rescale_rad
+        % JRESCALEFACTORS - given list of orders, return FB J-rescaling factors
+          sc = abs(besselj(n, min(n, regfb.rescale_arg))); % note n can be list
+          % the min here stops the J from getting to osc region (it stays 
+          % at turning point)
+        end
         
     end % ... end methods
     methods (Access=private)

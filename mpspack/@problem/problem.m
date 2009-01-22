@@ -160,8 +160,8 @@ classdef problem < handle
         d = pr.doms(n);
         ii = d.inside(p.x);
         if nnz(ii)==0, 
-            continue 
-        end                                  % Do nothing if there are no elements
+            continue
+        end                                % Do nothing if there are no elements
         di(ii) = n;
         u(ii) = 0;                           % accumulate contribs to u in dom
         opts.dom = d;                        % b.eval might need know which dom
@@ -234,7 +234,7 @@ classdef problem < handle
     %   its wavenumber will become n^2 k.
       pr.k = k;
       for d=pr.doms
-        d.k = d.refr_ind^2 * k;
+        d.k = d.refr_ind * k;
          % do basis sets, if any, in each domain...
         for i=1:numel(d.bas), d.bas{i}.k = d.k; end
       end

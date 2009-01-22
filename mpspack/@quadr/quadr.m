@@ -8,5 +8,6 @@ classdef quadr
         [x w] = clencurt(N)
         [x,w,cs,ier]=kapurtrap(n,m)
         Rjn = kress_Rjn(n)
+        D = perispecdiffrow(N)
     end
 end

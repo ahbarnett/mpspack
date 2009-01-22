@@ -18,11 +18,11 @@
 %   object, jump relations will be taken into account, corresponding to
 %   evaluation on the interior (limit approaching from inside) of the domain.
 
-function [A Ax Ay] = evalbases(d, p)
+function [A Ax Ay] = evalbases(d, p, opts)
 
 A = []; Ax = []; Ay = [];   % matrices will be stacked as columns
 
-opts = [];
+if nargin<3, opts = []; end
 for b=d.bas                    % loop over only basis set objects in domain
   bas = b{1};                  % ugly, extracts object from cell
   opts.dom = d;                % pass in which domain we're in (for jump rels)

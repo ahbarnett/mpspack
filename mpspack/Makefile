@@ -1,8 +1,11 @@
-# GNU Makefile for MEX compilation for MPSPack MATLAB toolbox
+# GNU Makefile for fortran/MEX compilation for MPSpack MATLAB toolbox
 #
 # Currently linux OS (glnx86) only.
 #
-# Barnett 9/5/08
+# Barnett 9/5/08, updated creation of archive & getrevisionnumber 1/21/09
+
+rev := $(shell ./getrevisionnumber)
+pkg := mpspack-r$(rev)
 
 default: all
 
@@ -14,7 +17,8 @@ special:
 .PHONY: all special clean
 
 tar:
-	(cd ..; tar zcvf mpspack.tar.gz mpspack)
+#	echo $(rev); echo $(pkg)
+	(cd ..; svn export mpspack $(pkg); tar zcvf $(pkg).tar.gz $(pkg); rm -Rf $(pkg))
 
 clean:
 	(cd @utils; make clean)

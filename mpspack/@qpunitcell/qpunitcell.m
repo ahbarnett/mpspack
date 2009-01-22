@@ -127,7 +127,7 @@ classdef qpunitcell < handle & domain
     end % func
     
     function [B B1 B2 d] = evalbaseswithdata(uc, p, opts) % evalbases w/ data IO
-    % EVALBASESWITHDATA - like basis/EVALBASES except gathers prestored data I/O
+    % EVALBASESWITHDATA - UC version of domain/EVALBASES w/ prestored data I/O
     %
     % B = EVALBASESWITHDATA(uc, pts) evaluates matrix mapping basis coeffs in
     %   the unit cell uc to their values on the pointset pts. This is identical

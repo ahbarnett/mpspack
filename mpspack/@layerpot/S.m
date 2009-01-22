@@ -44,7 +44,7 @@ sp = s.speed/2/pi; % note: 2pi converts to speed wrt s in [0,2pi] @ src pt
 needA = ~isfield(o, 'Sker');     % true if must compute kernel vals
 if isfield(o, 'rdist'), r = o.rdist; end
 if needA
-  if exist('r',1)
+  if exist('r', 'var')
     d = repmat(t.x, [1 N]) - repmat(s.x.', [M 1]); % C-# displacements mat
     r = abs(d);                                    % dist matrix R^{MxN}
   end
