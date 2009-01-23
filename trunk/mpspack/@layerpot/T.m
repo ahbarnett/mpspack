@@ -16,6 +16,12 @@ function [A Sker Dker_noang] = T(k, s, t, o);
 %
 %  T = T(k, s, [], opts) or T = T(k, s, t, opts) does the above two choices
 %   but with options struct opts including the following:
+%    opts.quad = 'k' (Kapur-Rokhlin), 'm' (Maue-Kress spectral* for k>0)
+%                periodic quadrature rules, used only if s.qtype is 'p';
+%                any other does low-order non-periodic quad using segment's own.
+%      * Note: the k-independent cot (Cauchy pole) is dropped since cancels
+%        (T-T_0) in Rokhlin scheme [Kress 1991 MCM gives needed Wittich quadr].
+%    opts.ord = 2,6,10. controls order of Kapur-Rokhlin rule.
 %    opts.Sker = quad-unweighted kernel matrix of fund-sols (i/4)H_0
 %    opts.Dker_noang = quad-unweighted kernel matrix of fund-sols derivs
 %                      without the cosphi factors (prevents recomputation
@@ -31,11 +37,12 @@ function [A Sker Dker_noang] = T(k, s, t, o);
 %   kernel values matrices Sker, Dker_noang, when k>0 (empty for Laplace)
 %
 %  barnett 8/4/08, Tested by routine: testbasis.m, case 9 (non-self case only)
+%  Added Kress-Maue spectral quadr, absent the cot term, 1/21/09
 if isempty(k) | isnan(k), error('T: k must be a number'); end
 if nargin<4, o = []; end
 if nargin<3, t = []; end
 if ~isfield(o, 'quad'), o.quad='m'; end; % default self periodic quadr
-if ~isfield(o, 'ord'), o.ord=10; end;    % default quadr order
+if ~isfield(o, 'ord'), o.ord=10; end;    % default quadr order (Kapur-Rokh)
 self = isempty(t);               % self-interact: potentially sing kernel
 N = numel(s.x);                  % # src pts
 if self, t = s; end              % use source as target pts (handle copy)
@@ -51,24 +58,28 @@ ny = repmat(s.nx.', [M 1]);      % identical rows given by src normals
 csry = conj(ny).*d;              % (cos phi + i sin phi).r
 nx = repmat(t.nx, [1 N]);        % identical cols given by target normals
 csrx = conj(nx).*d;              % (cos th + i sin th).r
-clear nx ny d
-if k==0                          % Laplace; don't reuse since v. fast anyway
-  A = -real(csry.*csrx)./(r.^2.^2)/(2*pi); % (-1/2pi)cos(phi-th)/r^2
-  Sker = []; Dker_noang = [];
-else
-  cc = real(csry).*real(csrx) ./ (r.*r);      % cos phi cos th
-  cdor = real(csry.*csrx) ./ (r.*r.*r);   % cos(phi-th) / r
-  if ~isfield(o, 'Sker')
-    o.Sker = utils.fundsol(r, k);           % Phi
-  end
-  if ~isfield(o, 'Dker_noang')
-    [A o.Dker_noang] = utils.fundsol_deriv(r, -cdor, k); % compute n-deriv Phi
+clear d
+if ~isfield(o, 'Sker')
+  o.Sker = utils.fundsol(r, k);           % Phi
+end
+if s.qtype~='p' | o.quad~='m' % all but hypersing spectral, Maue '49, Kress '91
+  clear nx ny
+  if k==0                          % Laplace; don't reuse since v. fast anyway
+    A = -real(csry.*csrx)./(r.^2.^2)/(2*pi); % (-1/2pi)cos(phi-th)/r^2
+    Sker = []; Dker_noang = [];
   else
-    [A o.Dker_noang] = utils.fundsol_deriv(r, -cdor, k, o.Dker_noang);
+    cc = real(csry).*real(csrx) ./ (r.*r);      % cos phi cos th
+    cdor = real(csry.*csrx) ./ (r.*r.*r);   % cos(phi-th) / r
+    clear csrx csry
+    if ~isfield(o, 'Dker_noang')
+      [A o.Dker_noang] = utils.fundsol_deriv(r, -cdor, k); % compute n-deriv Phi
+    else
+      [A o.Dker_noang] = utils.fundsol_deriv(r, -cdor, k, o.Dker_noang);
+    end
+    % put all this together to compute the kernel value matrix...
+    A = A + k^2 * cc .* o.Sker;
+    Sker = o.Sker; Dker_noang = o.Dker_noang; % pass out some calcs for reuse
   end
-  % put all this together to compute the kernel value matrix...
-  A = A + k^2 * cc .* o.Sker;
-  Sker = o.Sker; Dker_noang = o.Dker_noang; % pass out some calcs for later use
 end
 
 if self % ........... source curve = target curve; can be singular kernel
@@ -79,10 +90,51 @@ if self % ........... source curve = target curve; can be singular kernel
     w = 2*pi * w;                 % change interval from [0,1) to [0,2pi)
     A = circulant(w(1:end-1)) .* A .* repmat(sp.', [M 1]); % speed
   
+  elseif s.qtype=='p' & o.quad=='m' % hypersing spectral, Maue '49, Kress '91
+    if isempty(s.kappa) | isempty(s.relaccel)
+      error('cant do Maue-Kress hypersing quadr without s.kappa or s.relaccel!')
+    end
+    if k==0
+      error 'Maue-Kress hypersing quadr not implemented for k=0!'
+    else
+      if ~exist('r', 'var')  % compute dist matrix if needed
+        d = repmat(t.x, [1 N]) - repmat(s.x.', [M 1]); % C-# displacements mat
+        r = abs(d);                                    % dist matrix R^{MxN}
+        r(diagind(r)) = 999; % dummy nonzero diag values
+      end
+      AS = o.Sker;                       % single-layer kernel value matrix
+      S1 = triu(besselj(0,k*triu(r,1)),1);  % use symmetry (arg=0 is fast)
+      S1 = -(1/4/pi)*(S1.'+S1);     % next fix it as if diag(r) were 0
+      S1(diagind(S1)) = -(1/4/pi);  % S1=M_1/2 of Kress w/out speed fac
+      logmat = circulant(log(4*sin(pi*(0:N-1)/N).^2));
+      AS = AS - S1.*logmat;                   % AS=D2=M_2/2 "
+      eulergamma = -psi(1);         % now set diag vals Kress M_2(t,t)/2
+      AS(diagind(AS)) = 1i/4 - eulergamma/2/pi - log((k*sp).^2/4)/4/pi;
+      AS = (circulant(quadr.kress_Rjn(N/2)).*S1 + AS*(2*pi/N)) .* ...
+          repmat(sp.', [M 1]);
+      % ...AS is now single-layer Kress-quadr matrix w/ speed factor
+      A = k^2 * real(conj(nx).*ny) .* AS;   % first Maue term
+      % Do tangential deriv term (2nd term in Maue splitting eqn):
+      spsinphi = imag(csrx)./r .* repmat(sp, [1 M]);  % -speed times sin phi 
+      if ~isfield(o, 'Dker_noang')
+        [B o.Dker_noang] = utils.fundsol_deriv(r, -spsinphi, k);
+      else
+        [B o.Dker_noang] = utils.fundsol_deriv(r, -spsinphi, k, o.Dker_noang);
+      end
+      S1 = triu(besselj(1,k*triu(r,1)),1);  % use symmetry (arg=0 is fast)
+      S1 = (k/4/pi)*(S1.'+S1) .* spsinphi;  % S1=N_1/2 of Kress, diag is 0
+      B = B - circulant(cot(pi*(0:N-1)/N)/4/pi) - S1.*logmat; % B=N_2/2 Kress
+      B(diagind(B)) = -s.relaccel/4/pi/2/pi; % diag val Kress, sign err? (/2pi) 
+      %figure; imagesc(real(B)); colorbar; figure; plot(real(B(70,:)), '+-');
+      D = circulant(quadr.perispecdiffrow(N)); % spectral differentiation
+      % add 2nd term in Maue...
+      A = A + (repmat(1./sp, [1 M]).*(circulant(quadr.kress_Rjn(N/2)).*S1 + B*(2*pi/N))) * D;
+    end
+    
   else       % ------ self-interacts, but no special quadr, just use seg's
     % Use the crude approximation of kappa for diag, usual s.w off-diag...
     A = A .* repmat(s.w, [M 1]);  % use segment usual quadrature weights
-    fprintf('warning: using T crude self-quadr, will be awful (no diag)!\n')
+    warning 'using T crude self-quadr, will be awful (no diag)!'
     A(diagind(A)) = 0;
   end
   

@@ -1,14 +1,16 @@
 % dielectric transmission scattering with Rokhlin hypersingular-cancelling
-% barnett 1/12/09
+% Comparing Kress hypersingular spectral (great) vs Kapur-Rokhlin quadrature
+% Barnett 1/12/09
 
 clear classes
 verb = 1;                                         % verbosity
 k = 8;                                            % overall (ext) wavenumber
-n = 1.4;                                            % interior refractive index
-M = 200; s = segment.smoothstar(M, 0.2, 3);        % smooth closed segment
+n = 1.4;                                          % interior refractive index
+M = 110; s = segment.smoothstar(M, 0.2, 3);        % smooth closed segment
 di = domain(s, 1); di.setrefractiveindex(n);      % interior
 de = domain([], [], s, -1);                       % exterior
-o.quad = 'k'; o.ord = 10;             % quadrature for LPs
+o.quad = 'm';
+%o.quad = 'k'; o.ord = 10;             % Kapur-Rokh quadrature for LPs, M=200 ok
 de.addlayerpotbasis(s, 'd', [], o); de.addlayerpotbasis(s, 's', [], o);
 di.addlayerpotbasis(s, 'd', [], o); di.addlayerpotbasis(s, 's', [], o);
 setmatch(s, 'diel', 'TM');
@@ -23,7 +25,8 @@ N = pr.N/2; pr.A = pr.A(:,1:N) + pr.A(:,N+1:end);
 pr.linsolve; pr.bcresidualnorm, norm(pr.co)
 pr.co = [pr.co; pr.co];           % duplicate basis dofs for plotting
 pr.pointsolution(pointset(1+1i))        % check u_scatt at one ext pt
-if verb,
-  opts.dx = 0.05; opts.bb = [-3 3 -3 3]; figure;
+% compare: 1.176452635715030 - 0.798366817843056i   (Kress M=110 to 1e-15)
+% Note Kapur-Rokh needs N=600 to get ans to 1e-8, N=400 to 1e-6. Terrible.
+if verb, opts.dx = 0.05; opts.bb = [-3 3 -3 3]; figure;
   tic; pr.showthreefields(opts); fprintf('\tgrid eval in %.2g sec\n', toc);
 end

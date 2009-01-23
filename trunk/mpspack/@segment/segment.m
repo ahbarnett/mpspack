@@ -30,6 +30,7 @@ classdef segment < handle & pointset
         w                      % quadrature weights, sum = seg len (row vec)
         speed                  % |dZ/dt| at quadrature pts (col vec)
         kappa                  % kappa curvature at quad pts (col vec; optional)
+        relaccel               % tangential accel, Maue-Kress (col vec; opt)
         qtype                  % quadrature type
         eloc                   % [start point; end point] as C-#s
         eang                   % [start angle; end angle] as C-#s on unit circle
@@ -125,6 +126,7 @@ classdef segment < handle & pointset
           s.nx = -1i*dZdt./s.speed;
           if ~isempty(s.Zpp)         % d^2Z/dt^2 available...
             s.kappa = -real(conj(-1i*dZdt).*s.Zpp(s.t)) ./ s.speed.^3;%curvature
+            s.relaccel = real(conj(dZdt).*s.Zpp(s.t)) ./ s.speed.^2; %Maue-Kress
           end
         end
       end
