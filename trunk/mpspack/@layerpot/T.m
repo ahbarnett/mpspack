@@ -62,7 +62,7 @@ clear d
 if ~isfield(o, 'Sker')
   o.Sker = utils.fundsol(r, k);           % Phi
 end
-if s.qtype~='p' | o.quad~='m' % all but hypersing spectral, Maue '49, Kress '91
+if ~self | s.qtype~='p' | o.quad~='m' % all but hypersing spectral quadr
   clear nx ny
   if k==0                          % Laplace; don't reuse since v. fast anyway
     A = -real(csry.*csrx)./(r.^2.^2)/(2*pi); % (-1/2pi)cos(phi-th)/r^2

@@ -103,8 +103,10 @@ classdef qpunitcell < handle & domain
       end
     end % func
     
-    function h = plot(uc)   % ..................... overloads domain plot
-      h = domain.showsegments(uc.seg, 1);          % show 4 segments
+    function h = plot(uc, o)   % ..................... overloads domain plot
+    % PLOT - paired-down version of DOMAIN/PLOT for unit-cell objects
+      if nargin<2, o = []; end
+      h = domain.showsegments(uc.seg, 1, o);          % show 4 segments
     end
     
     function showbrillouin(uc)
