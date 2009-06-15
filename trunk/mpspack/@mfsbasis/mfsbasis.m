@@ -15,6 +15,7 @@ classdef mfsbasis < handle & basis
 %  There should be other input formats for MFSBASIS!
 %
 % To do: other location methods, inferface to mfsloc.m code from analytic_mfs
+% Fully implement double and combined potential
   properties
     Z                     % function handle for charge curve
     tau                   % imaginary distance
@@ -22,6 +23,10 @@ classdef mfsbasis < handle & basis
     y                     % row vec of charge points (C-#s)
     realflag              % if true, use real part only, ie Y_0
     fast                  % Hankel evaluation method (0 matlab, 1,2, faster)
+    eta                   % If eta=inf (default) then use single layer potential 
+                          % MFS basis. For eta\neq inf
+                          % use linear combination of double and single
+                          % layer potential MFS basis
     %locmeth              % charge point location method
   end
   
@@ -31,10 +36,15 @@ classdef mfsbasis < handle & basis
       if ~isfield(opts, 'real'), opts.real = 0; end
       b.realflag = opts.real;
       if ~isfield(opts, 'fast'), opts.fast = 2; end
+      if ~isfield(opts,'eta'), opts.eta=inf; end
       if opts.fast==2 & exist('@utils/greengardrokhlinhank106.mexglx')~=3
         opts.fast = 1;               % downgrade the speed if 106 not available
       end
       b.fast = opts.fast;
+      b.eta  = opts.eta;
+      if (b.fast>0 & b.eta<inf), 
+          error('MFSERROR','Fast evaluation of combined basis not implemented');
+      end
       if ~isempty(k), b.k = k; end
       if isnumeric(Z)                         % Z contains y list of MFS pts
         N = numel(Z);

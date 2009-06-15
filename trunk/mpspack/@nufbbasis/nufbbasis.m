@@ -29,6 +29,7 @@ classdef nufbbasis < handle & basis
         type     % 'c': Fourier-Bessel cosine basis
                  % 's': Fourier-Bessel sine basis
                  % 'cs': Fourier-Bessel cosine/sine basis (default)
+        rescale_arg % argument (kR) to rescale the J bessels
     end
 
     methods
@@ -48,26 +49,34 @@ classdef nufbbasis < handle & basis
             if opts.type=='s', nufb.type='s'; nufb.Nf=N; end;
             if opts.type=='c', nufb.type='c'; nufb.Nf=N+1; end;
             if strcmp(opts.type,'cs'), nufb.type='cs'; nufb.Nf=2*N+1; end;
+            if ~isfield(opts,'rescale_rad'), opts.rescale_rad=0; end
+            nufb.rescale_arg=k*opts.rescale_rad;
 
         end
         function [A, A1, A2] = eval(nufb,pts,opts)
 
+            resc=(nufb.rescale_arg>0);
             % Evaluates the basis at a given set of points
             N=nufb.N; k=nufb.k; nu=nufb.nu; origin=nufb.origin;
             np=length(pts.x); % Number of points
             R=abs(pts.x-nufb.origin);
             ang=angle(-(pts.x-nufb.origin)./nufb.branch);
             offang=angle(-nufb.offset./nufb.branch);
+            bes=besselj((0:N)*nu,k*R);
+            if resc
+               scfac=1./nufb.Jrescalefactors(0:N);
+               bes=bes.*repmat(scfac,[numel(ang) 1]);
+            end            
             if nufb.type=='s',
-                bes=besselj((1:N)*nu,k*R);
+                %bes=besselj((1:N)*nu,k*R);
                 s=sin(nu*(ang-offang)*(1:N));
-                A=bes.*s;
+                A=bes(:,2:end).*s;
             elseif nufb.type=='c',
-                bes=besselj((0:N)*nu,k*R);
+                %bes=besselj((0:N)*nu,k*R);
                 c=cos(nu*(ang-offang)*(0:N));
                 A=bes.*c;
             elseif strcmp(nufb.type,'cs'),
-                bes=besselj((0:N)*nu,k*R);
+                %bes=besselj((0:N)*nu,k*R);
                 s=sin(nu*(ang-offang)*(1:N));
                 c=cos(nu*(ang-offang)*(0:N));
                 A=[bes.*c,bes(:,2:end).*s];
@@ -77,9 +86,13 @@ classdef nufbbasis < handle & basis
                     warning('Computing x/y or normal derivatives of irregular Bessel functions at origin not implemented');
                 end
                 besr=k/2*(besselj(nu*(0:N)-1,k*R)-besselj(nu*(0:N)+1,k*R));
+                if resc
+                   scfac=1./nufb.Jrescalefactors(0:N);
+                   besr=besr.*repmat(scfac,[numel(ang) 1]);
+                end            
                 if nufb.type=='s',
                     Ar=besr(:,2:end).*s;
-                    At=nu*repmat(1:N,np,1).*bes.*cos(nu*(ang-offang)*(1:N));
+                    At=nu*repmat(1:N,np,1).*bes(:,2:end).*cos(nu*(ang-offang)*(1:N));
                 elseif nufb.type=='c',
                     Ar=besr.*c;
                     At=-nu*repmat(0:N,np,1).*bes.*sin(nu*(ang-offang)*(0:N));
@@ -106,13 +119,19 @@ classdef nufbbasis < handle & basis
 
         function showgeom(b, opts) % .............. plotting of nufb basis geom
           if nargin<2, opts = []; end
-          plot(real(regfb.origin), imag(regfb.origin), 'ro');
+          plot(real(nufb.origin), imag(nufb.origin), 'ro');
           str = sprintf('(nu=%.2g) ', b.nu);
           if isfield(opts, 'label'), str = [str opts.label]; end
-          text(real(regfb.origin), imag(regfb.origin), str);
+          text(real(nufb.origin), imag(nufb.origin), str);
         end % func
         
- 
+        function sc = Jrescalefactors(nufb, n) % ... used to effect rescale_rad
+        % JRESCALEFACTORS - given list of orders, return FB J-rescaling factors
+          sc = abs(besselj(nufb.nu*n, min(nufb.nu*n, nufb.rescale_arg))); % note n can be list
+          % the min here stops the J from getting to osc region (it stays 
+          % at turning point)
+        end
+
 
     end  % methods
 end
