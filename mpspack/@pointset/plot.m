@@ -10,6 +10,7 @@ function h = plot(pts)
 g = gcf;
 figure(g); hold on;
 h = plot(real(pts.x), imag(pts.x), '.');
-% show normals...
-l = 0.1;                                 % length of normals
-h = [h; plot([pts.x(:).'; (pts.x(:)+l*pts.nx(:)).'], 'k-')];
+if ~isempty(pts.nx)                        % show normals...
+  l = 0.1;                                 % length of normals
+  h = [h; plot([pts.x(:).'; (pts.x(:)+l*pts.nx(:)).'], 'k-')];
+end

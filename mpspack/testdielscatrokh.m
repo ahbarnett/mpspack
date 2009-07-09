@@ -2,7 +2,7 @@
 % Comparing Kress hypersingular spectral (great) vs Kapur-Rokhlin quadrature
 % Barnett 1/12/09
 
-clear classes
+clear all classes
 verb = 1;                                         % verbosity
 k = 8;                                            % overall (ext) wavenumber
 n = 1.4;                                          % interior refractive index

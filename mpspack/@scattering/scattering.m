@@ -84,10 +84,10 @@ classdef scattering < bvp & handle
       end % segs loop
     end % func
     
-    function [u di] = pointincidentwave(pr, p,o) % ........eval u_inc on pointset
+    function [u di] = pointincidentwave(pr,p,o) % ........eval u_inc on pointset
     % POINTINCIDENTWAVE - evaluate incident wave for a problem on a pointset
     %
-    %  [ui di] = pointsolution(pr, pts) returns array of values ui, and
+    %  [ui di] = pointincidentwave(pr, pts) returns array of values ui, and
     %   optionally, domain index list di (integer array of same shape as ui).
     %   Decisions about which domain a gridpoint is in are done using
     %   domain.inside, which may be approximate. di and ui are NaN outside of
@@ -133,6 +133,7 @@ classdef scattering < bvp & handle
     %    transparency, reports L2 error estimated over grid too.
     %   if opts.imag = true, plots imag instead of real part
     %   opts.bdry = true, shows boundary too
+    %   opts.sepfigs: if true, make three separate figures
     %
     %  Need to * make a real/complex flag
     %          * store Ad eval matrices for later access (expensive to fill)?
