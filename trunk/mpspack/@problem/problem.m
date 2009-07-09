@@ -191,7 +191,8 @@ classdef problem < handle
       o = pr.gridboundingbox(o);
       gx = o.bb(1):o.dx:o.bb(2); gy = o.bb(3):o.dx:o.bb(4);  % plotting region
       [xx yy] = meshgrid(gx, gy); zz = xx + 1i*yy;  % keep zz rect array
-      [u di] = pr.pointsolution(pointset(zz));
+      [u di] = pr.pointsolution(pointset(zz(:)));
+      u = reshape(u, size(xx));
     end % func
     
     function o = gridboundingbox(pr, o)

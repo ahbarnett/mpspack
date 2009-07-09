@@ -8,6 +8,7 @@
 %  h = PLOT(s, pm, opts) allows various options in opts, namely
 %   opts.arrow: if true, show direction via an arrow (default true)
 %   opts.normals: if true, show directions of the normals (default true)
+%   opts.blobs: if true, show quadrature pt blobs (default true)
 %
 % See also: pointset/PLOT, domain/SHOWSEGMENTS
 
@@ -16,6 +17,9 @@ if nargin<2, pm = 1; end                       % default sense is positive
 if nargin<3, o = []; end
 if ~isfield(o, 'arrow'), o.arrow = 1; end % default is show arrow
 if ~isfield(o,'normals'), o.normals=1; end % default is show normals
+lt = '.-';                                 % default is show quad pt blobs
+if isfield(o,'blobs') & ~o.blobs, lt='-'; end % switch off blobs
+closed = (abs(s.Z(0)-s.Z(1))<1e-15);       % hack to tell if segment is closed
 
 g = gcf;
 figure(g); hold on;
@@ -23,8 +27,9 @@ figure(g); hold on;
 if numel(s)>1                       % vectorize using domain routine
   domain.showsegments(s, pm, o);
 else                                % just one seg, plot it!
-  h = plot(real(s.x), imag(s.x), '.-');
-
+  if closed, h = plot(real([s.x; s.x(1)]), imag([s.x; s.x(1)]), lt);
+  else, h = plot(real(s.x), imag(s.x), lt);
+  end
   if o.normals,
     l = 0.1;                                       % show normals... length
     h = [h; plot([s.x(:).'; (s.x(:)+l*pm*s.nx(:)).'], 'k-')]; % uses sign from pm
