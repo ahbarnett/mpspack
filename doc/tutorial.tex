@@ -1,0 +1,189 @@
+\documentclass[11pt]{article}
+\usepackage{graphicx,bm,amssymb,amsmath,amsthm}
+\input{macros}
+
+\begin{document}
+\title{\mpspack\ tutorial}
+\author{Alex Barnett\footnote{Department of Mathematics, Dartmouth College,
+Hanover, NH, 03755, USA}
+\ and
+Timo Betcke\footnote{Department of Mathematics,
+University of Reading, Berkshire, RG6 6AX, UK}}
+\date{\today}   % how pipe from getrevisionnumber + 1?
+
+\maketitle
+\begin{abstract}
+This is a short tutorial showing how boundary-value problems
+may be simply and accurately solved with the \mpspack\ toolbox
+in \matlab. We assume basic familiarity with \matlab\
+and with partial differential equations.
+%concept of particular-solution type numerical methods is assumed.
+\end{abstract}
+
+\tableofcontents
+
+\section{About this tutorial}
+
+This tutorial is designed for `bottom-up' learning of the features
+of \mpspack, i.e.\ by progressing through simple examples.
+In that sense it complements the user manual which describes
+the theoretical framework in broad strokes and therefore could
+be considered `top-down'.
+We will skip the mathematics behind the solution techniques,
+focusing on computing and plotting useful PDE solutions.
+
+Throughout we will identify the plane $\mathbb{R}^2$ with the complex
+plane $\mathbb{C}$, by the usual map $z=x+iy$. In other words
+$(2,3)$ and $2+3i$ represent the same point.
+We use {\tt teletype} font to designate commands that may be typed
+at the \matlab\ prompt.
+All the code examples in this document, and code to generate the
+figures, is found in {\tt tutorial.m} in the {\tt examples/} directory.
+
+\bfi % ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+a)\raisebox{-0.35\textwidth}{\ig{height=0.35\textwidth}{seg.eps}}
+b)\raisebox{-0.35\textwidth}{\ig{height=0.35\textwidth}{dom.eps}}
+\ca{a) circular closed segment, b) unit disc domain.
+Both have a periodic trapezoidal quadrature rule
+with $M=20$ quadrature points}{f:sd}
+\efi
+
+\section{Solving Laplace's equation in a smooth domain}
+
+We start by setting up a domain in $\mathbb{R}^2$.
+% in which a PDE will be solved.
+Domains are built from segments which define their boundary.
+To make the unit disc domain,
+we first need a circle segment with center
+0, radius 1, and angle range
+$[0,2\pi)$, as follows,
+\co{s = segment([], [0 1 0 2*pi])}
+The object {\tt s} is indeed a circular segment, as we may check by
+typing {\tt s.plot}, producing Fig.~\ref{f:sd}a.
+%or by examining its contents by typing {\tt s}.
+All segments have a {\em sense}, i.e.\ direction of travel:
+for this segment it is counter-clockwise, as shown by the
+downwards-pointing
+arrow symbol overlayed onto the segment at about 9 o'clock.%
+  \footnote{In fact, segments are parametrized internally as function $z(t)$
+    of a real variable $t\in[0,1]$, and the sense is the direction of
+    increasing $t$. Segment {\tt s} stores this function as {\tt s.Z}.}
+Notice also normal vectors (short `hairs') pointing outwards
+at each boundary point; our definition is that
+normals on a segment always point to the {\em right} when traversing the
+sense of the segment.
+
+We create the domain interior to this segment with
+\co{d = domain(s, +1)}
+where the second argument (here $+1$, the only other option being $-1$)
+specifies that the domain is to the `standard' side of the segment, which
+we take to be such that the normals point {\em away from} the domain.
+That is, with $+1$ the domain lies to the {\em left} of the segment
+when traversed in its correct sense (with $-1$ the domain
+would lie to the right of the segment.)
+Typing {\tt d.plot} produces%
+  \footnote{There are extra plotting options and features that
+    are described in documentation such as {\tt help domain.plot}.
+    E.g.\ in this figure a grid of points interior to the domain has been
+    included, achieved with {\tt opts.gridinside=0.05; d.plot(opts);}
+    %TODO: demo switch off corner fan.
+  }
+Fig.~\ref{f:sd}b.
+Note that perimeter and area are automatically
+labelled (these are only rough approximations intended for sanity checks).
+
+%The small black semicircle at angle $\theta=0$ illustrates that \mpspack\
+%has connected the start and end of the segment to form a `corner'
+%(which in this case has an 
+
+Laplace's equation $\Delta u = 0$ is Helmholtz's equation with wavenumber
+zero, which we set for this domain with,
+\co{d.k = 0;}
+Our philosophy is
+to approximate the solution in the domain by a linear combination of
+{\em basis functions}, each defined over the whole domain.
+%We have to choose how many to use, i.e.\ the
+%{\em order} of approximation.
+We choose harmonic polynomials up to 8th order,
+i.e. $u(z) = \sum_{n=0}^{8} c_n \,\mbox{Re}\,z^n +
+\sum_{n=1}^{8} c_{-n}\,\mbox{Im}\,z^n$, where $\mbf{c}:=\{c_n\}_{n=-8}^{8}
+\in\mathbb{R}^{17}$
+is a coefficient vector,
+%i.e.\ the sets $\{\mbox{Re } z^n\}_{n=0}^{10}$ and
+%$\{\mbox{Im } z^n\}_{n=1}^{10}$,
+using the command
+\co{d.addregfbbasis([], 8);}
+Let's specify Dirichlet boundary data $f(x,y) = \ln \sqrt{(x-2)^2+(y-3)^2} =
+\ln |z-2-3i|$, for
+$z$ on the segment, by representing this as an anonymous function {\tt f}
+and passing it to the segment,
+\co{f = @(z) log(abs(z-2-3i));  \\
+s.setbc(-1, 'd', [], @(t) f(s.Z(t)));}
+Note that in fact we needed to pass in a function of the segment parameter $t$,
+which was achieved by
+wrapping ${\tt f}$ around the parametrization function ${\tt s.Z}$.
+The first argument $-1$ expresses that the boundary condition is to be
+understood in the limit approaching from the side {\em opposite} the
+segment's normal direction, which is where the domain is located.
+Finally we set up a BVP by passing domains to a problem object, and then
+may solve (in the least-squares sense) for the coefficients
+\co{p = bvp(d);\\
+p.solvecoeffs;}
+Now {\tt p.co} contains the coefficients vector $\mbf{c}$.
+To evaluate and the solution we simply use,
+\co{p.showsolution;}
+This command evaluated selected an appropriate grid covering the domain
+(points outside the domain are made transparent), giving Fig.~\ref{f:u}a.
+
+\bfi % ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+a)\raisebox{-0.35\textwidth}{\ig{height=0.35\textwidth}{u.eps}}
+b)\raisebox{-0.35\textwidth}{\ig{height=0.35\textwidth}{uerr.eps}}
+\ca{a) numerical solution field $u$, b) pointwise error $u-f$,
+for Laplace's equation in the unit disc with $M=20$ quadrature points
+and harmonic polynomials up to 8th order.}{f:u}
+\efi
+
+How accurate was our numerical solution $u$? One measure is the
+$L^2$ error on the boundary, and is estimated by
+\co{p.bcresidualnorm}
+However, since the function $f(z)$ is already harmonic in $\mathbb{R}^2$,
+it is the unique analytic solution, and we may compare against this
+over the domain by passing in an option,
+\co{opts.comparefunc = f; p.showsolution(opts);}
+giving Fig.~\ref{f:u}b.
+%We may collect the gridded solution $u$ and subtract it from $f$ evaluated
+%on the same grid to plot the error 
+%\co{[u gx gy di] = p.showsolution;}
+
+\subsection{Convergence}
+
+This is easy.
+Change $M$, watch 
+\co{pr.bcresidualnorm}
+Convergence loop with $N$, easy.
+
+
+\section{More interesting domains, and corners}
+
+We create a closed segment with polar function $r(\theta) = 1 + \cos 3\theta$
+for $0\le \theta<2\pi$ using
+\co{s = segment.radialfunc([], {@(th) 1 + cos(3*th), @(th) -3*sin(3*th)});}
+Notice that we pass in a cell array of two function handles:
+$r(\theta)$ and $r'(\theta)$. The latter is needed to compute normal
+directions accurately.
+
+
+
+
+\section{Exterior domains}
+
+\section{Scattering problems}
+
+\section{Corner basis sets}
+
+
+
+
+\bibliographystyle{siam} 
+\bibliography{alexrefs}
+\end{document}

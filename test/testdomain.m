@@ -1,8 +1,10 @@
-% test the domain constructor
+% test the domain constructor, via plotting and computing area & perim.
 % barnett 7/3/08
 
 clear all classes
 verb = 1;                           % verbosity 0=quiet, 1=figures, 2=more
+
+if verb, fprintf('You should see 9 figures with a variety of domains:\n'); end
 
 % simply-connected polygon w/ different quadrature types
 p = [0 1 1+2i]; M = 10;

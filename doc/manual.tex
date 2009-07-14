@@ -1,98 +1,87 @@
 \documentclass[12pt]{article}
 \usepackage{graphicx,bm,amssymb,amsmath,amsthm}
-
-% timo macros
-\newcommand{\bx}{\textbf{x}}
-\newcommand{\by}{\textbf{y}}
-\newcommand{\bs}{\textbf{s}}
-
-% alex macros
-\newcommand{\bi}{\begin{itemize}}
-\newcommand{\ei}{\end{itemize}}
-\newcommand{\ben}{\begin{enumerate}}
-\newcommand{\een}{\end{enumerate}}
-\newcommand{\be}{\begin{equation}}
-\newcommand{\ee}{\end{equation}}
-\newcommand{\bea}{\begin{eqnarray}}
-\newcommand{\eea}{\end{eqnarray}}
-\newcommand{\bc}{\begin{center}}
-\newcommand{\ec}{\end{center}}
-\newcommand{\bfi}{\begin{figure}}
-\newcommand{\efi}{\end{figure}}
-\newcommand{\ca}[2]{\caption{#1 \label{#2}}}
-\newcommand{\ig}[2]{\includegraphics[#1]{#2}}
-\newcommand{\spl}[2]{\left\{\begin{array}{ll}#1\\#2\end{array}\right.}
-\newcommand{\ie}{{\it i.e.\ }}
-\newcommand{\eg}{{\it e.g.\ }}
-\newcommand{\pd}[2]{\frac{\partial #1}{\partial #2}}
-\newcommand{\pdc}[3]{\left. \frac{\partial #1}{\partial #2}\right|_{#3}}
-\newcommand{\infint}{\int_{-\infty}^{\infty} \!\!}      % infinite integral
-\newcommand{\tbox}[1]{{\mbox{\tiny #1}}}
-\newcommand{\mbf}[1]{{\bm #1}}           % requires bm package
-\newcommand{\pO}{{\partial\Omega}}
-\newcommand{\uN}{u^{(N)}}
-\newcommand{\emach}{\epsilon_\tbox{mach}}
-%\newcommand{\crk}{C_{s}} %C_{R,k}         % const for exponential s(m) bnd
-\newcommand{\bmp}[1]{\begin{minipage}{#1}}
-\newcommand{\emp}{\end{minipage}}
-
-\newtheorem{thm}{Theorem}
-\newtheorem{cnj}{Conjecture}
-\newtheorem{lem}{Lemma}[thm]
-\newtheorem{cor}{Corollary}[thm]
-
-\newtheorem{rmk}[thm]{Remark}
-\newtheorem{pro}[thm]{Proposition}
-%\newtheorem{cnj}[thm]{Conjecture}
-%\newtheorem{lemma}[thm]{Lemma}
-
-\newcommand{\bp}{{\bf Proof:\ }}   % {\begin{proof}}
-\newcommand{\ep}{\hfill $\square$ \vspace{1ex} \\} % {\end{proof}}
-% note elsart ones horrible: \pr and \endpr
-\newcommand{\bmal}{{\bm \alpha}}             % bold alpha
-\newcommand{\xx}{\mbf{x}}             % bold x
-\newcommand{\splt}[2]{$\left\{\begin{array}{l}\mbox{#1}\\\mbox{#2}\end{array}\ri
-ght.$}
-\newcommand{\lo}{{L^2(\Omega)}}
-\newcommand{\lpo}{{L^2(\pO)}}
-\newcommand{\cu}{\tilde{u}}            % symbol for continuation of u
-\newcommand{\cOmega}{\tilde{\Omega}}   % symbol for domain to be continued into
-\newcommand{\dmax}{D_\tbox{max}}       % max dist in splane_charge_curve
-
-\newcommand{\tw}{\textwidth}
-\newcommand{\vg}{\vspace{2ex}}
- 
+\input{macros}
 
 \begin{document}
-\title{{\tt MPSpack} user manual}
+\title{\mpspack\ user manual}
 \author{Alex Barnett\footnote{Department of Mathematics, Dartmouth College, Hanover, NH, 03755, USA}
-and Timo Betcke\footnote{School
-of Mathematics, The University of Manchester,
-  Manchester, M13 9PL, UK}}
-\date{code revision 36: \today}   % how pipe from getrevisionnumber + 1?
+and Timo Betcke\footnote{Department of Mathematics,
+University of Reading, Berkshire, RG6 6AX, UK}}
+\date{\today}   % how pipe from getrevisionnumber + 1?
 
 \maketitle
 \begin{abstract}
-{\tt MPSpack} is a fully object-oriented MATLAB toolbox that implements the Method of Particular Solutions and related methods (\eg fundamental solutions) for efficient solution of Laplace eigenvalue, interior/exterior Helmholtz problems (\eg wave scattering), and related problems, on piecewise-constant 2D domains.
-It is designed to be simple to use, and to enable highly-accurate solutions.
-This is the user manual.
+\mpspack\ is a fully object-oriented \matlab\ toolbox for
+solving Laplace, Helmholtz, wave scattering, and related PDE boundary-value
+problems
+on piecewise-homogeneous 2D domains.
+The philosophy is to
+%represent solutions using
+use basis functions
+which are particular solutions to the
+PDE in some region; solving is thus reduced to matching on
+the boundary (or on boundaries of subregions).
+This idea is known as the Method of Particular Solutions, or as Trefftz,
+ultra-weak, or non-polynomial 
+methods in the FEM community.
+Basis functions include plane-wave, Fourier-Bessel,
+corner-adapted expansions,
+fundamental solutions.
+Layer potential representations and associated
+singular quadrature schemes are also integrated into this framework.
+It is designed to
+be simple to use, and to enable highly-accurate solutions.  This is
+the user manual; for a more hands-on approach try the accompanying tutorial.
 \end{abstract}
 
 \section{Overview}
 
-{\tt MPSpack} is a MATLAB toolbox to solve Helmholtz boundary-value
-problems (BVP) and
-eigenvalue problems (EVP) with particular and fundamental solution methods.
+In numerical analysis there has been a recent flurry of activity
+on methods for solving PDEs where solutions are approximated by
+linear combinations of particular solutions to the PDE with
+good convergence properties.
+These methods are high-order (often exponentially convergent),
+efficient at high frequencies (the number of degrees of freedom
+scales linearly with wavenumber, in 2D),
+and are quite simple to implement.
+When geometries become more complicated, the domain needs to be split
+up into multiple subdomains, e.g.\ one for each corner, and the
+implementation becomes cumbersome.
+The goal of this software toolbox is to make such an implementation simple
+and transparent, and create an intuitive, unifying framework in which many
+types of BVP, basis sets, boundary conditions, and domain geometries
+may be solved, explored and graphed with ease.
+Since in these methods, the number of subdomains is small and fixed,
+we leave the job of specifying subdomains, i.e.\ `meshing',
+to the user (this contrasts with the philosophy of the large number of
+finite-element packages already in existence.)
 
-Give example commands, eg eigenmodes of disc.
+We are most interested in the scalar Helmholtz equation in the plane,
+\bea
+(\Delta+k^2)u& =& 0 \qquad \mbox{in } \Omega~,
+\eea
+where $\Omega \subset \mathbb{R}^2$ is an interior or exterior
+domain, $k$ is the wavenumber, and certain
+imhomogeneous boundary conditions are imposed.
+Such problems arise in wave scattering and cavity resonances.
+More generally we may have multiple domains with different
+wavenumbers connected by homogeneous or inhomogeneous boundary conditions,
+as in transmission, dielectric-coated, or photonic crystal problems.
+With $k=0$ we have Laplace's equation, with applications to
+electrostatics, steady-state heat flow, and probability.
 
-Define BVP, EVP
-
-
+In this release we discuss BVPs.
+It is a small extension to compute
+eigenvalue problems and periodic problems; we will document these in
+future releases.
+%We believe the object-oriented framework we have set up generalizes
+%gracefully to 
 
 Fig.~\ref{f:relat} shows how a geometry is built up from objects, and the
 relationships between them.
 
+Our influences include Driscoll's SC Toolbox, and the {\tt chebfun} system
+by Trefethen et al.
 
 
 \bfi % fffffffffffffffffffffffffff
@@ -112,64 +101,46 @@ are referenced. A basis set may influence more than one domain.}{f:relat}
 
 Requirements:
 \bi
-\item MATLAB version 7.6 (2008a) or newer.
+\item \matlab\ version 7.6 (2008a) or newer is needed,
+since we make heavy use of recent object-oriented programming features.
 \ei
 
-We make use of the object-oriented programming ability of MATLAB which
-unfortunately means this toolbox cannot work with versions earlier than 7.6.
-
-
 The project is hosted at
-{\tt http://code.google.com/p/mpspack}
-
+\co{http://code.google.com/p/mpspack}
 There are two alternative methods to download and unpack:
 \ben
 \item
 Get a gzip-compressed tar archive from
-
-{\tt http://code.google.com/p/mpspack/downloads/list}
-
+\co{http://code.google.com/p/mpspack/downloads/list}
 In a UNIX environment you may now
 unpack this with
-
-{\tt tar zxvf mpspack-r*.tar.gz}
-
-This creates the directory tree {\tt mpspack-r*}, where {\tt *} represents
-the revision (version) number.
+\co{tar zxvf mpspack-r*.tar.gz}
+This creates the directory {\tt mpspack-r*} containing the toolbox,
+where {\tt *} represents the revision (version) number.
 
 \item
 First install the {\tt subversion} (SVN) version
 control software from
-
-{\tt http://subversion.tigris.org}
-
+\co{http://subversion.tigris.org}
 Anonymous check out of {\tt MPSpack} is then via the subversion command:
-
-{\tt svn checkout http://mpspack.googlecode.com/svn/trunk/ mpspack-read-only}
-
-This creates a directory {\tt mpspack-read-only} in which you will find
-the {\tt mpspack} directory tree.
+\co{svn checkout http://mpspack.googlecode.com/svn/trunk/ mpspack}
+This creates a directory {\tt mpspack} containing the toolbox.
 
 You might prefer a more user-friendly graphical
 subversion client such as those listed at
- 
-{\tt http://subversion.tigris.org/links.html\#clients}
-
+\co{http://subversion.tigris.org/links.html\#clients}
 \een
 
-To compile the faster basis evaluation routines (C and Fortran with MEX
-interfaces)
-in a UNIX environment,
-from the {\tt mpspack} subdirectory, type {\tt make}
+There are some optional fast basis evaluation routines
+(C and Fortran with MEX interfaces), which should be compiled
+in a UNIX environment as follows:
+from the {\tt mpspack} directory type {\tt make}
 
 You should now add the {\tt mpspack}
 subdirectory to your MATLAB path, for instance by adding the line
-
-{\tt addpath 'path/to/mpspack-read-only/mpspack';}
-
-to your MATLAB {\tt startup.m} file
-
-You are now ready to use {\tt MPSpack} !
+\co{addpath 'path/to/mpspack';}
+to your MATLAB {\tt startup.m} file.
+You are now ready to use \mpspack\ !
 
 
 \subsection{Boundary-value problems}

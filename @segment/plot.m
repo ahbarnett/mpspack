@@ -40,3 +40,5 @@ else                                % just one seg, plot it!
     h = [h; plot(s.Z(t), '-')];
   end
 end
+axis equal;
+hold off;

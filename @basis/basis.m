@@ -1,14 +1,15 @@
 classdef basis < handle
     
-  % Class basis - Abstract class that defines the interfaces which are
-  % common for all basis objects. Also defines qpunitcell
+  % Basis class - Abstract class that defines the interfaces which are
+  % common for all basis objects. Also defines periodizing (qpunitcell)
   % basis and discrepancy evaluation methods that apply to generic bases.
     
   properties
-    k                       % Wavevector. TODO: make this refer to a domain's k
-    N                       % Number or degree of basis fct. Exact
-                            % specification depends on type of basis
-    Nf                      % Actual number of basis functions
+    doms                    % array of handles of domains affected by basis
+                            %     (added 7/14/09, required)
+    N                       % Degree of basis set: interpretation depends on
+                            %     type of basis.
+    Nf                      % Actual number of functions (degrees of freedom)
   end
   
   methods (Abstract)
@@ -25,7 +26,17 @@ classdef basis < handle
   
     function updateNf(b) % ................ dummy for all but layerpot bases
     end
-  
+    
+    function k = k(b, opts) % .................... looks up the basis wavenumber
+    % K - look up a basis set's wavenumber from the domain(s) it affects
+    %
+    % k = k(bas) returns the wavenumber in the domain affected by basis set bas.
+    %
+    % Issues: need to generalize to basis sets that affect >1 domain.
+      k = b.doms(1).k;       % note, given no further info, only knows 1st dom
+    end
+    
+    
     function d = copiesdata(b, p, transl, nargs, opts) %.......eval copies data
     % COPIESDATA - data struct of basis func evals on many copies of pointset
     %

@@ -1,16 +1,17 @@
 % DOMAIN - create an interior/exterior domain possibly with excluded subregions
 %
 % A domain is an ordered connected list of segments defining the exterior
-% boundary, with one or more ordered connected lists of segments defining the
-% boundaries of excluded regions. If the exterior boundary is empty it is
-% taken to be the whole plane, ie an exterior domain.
+% boundary, with zero or more ordered connected lists of segments defining the
+% boundaries of any interior excluded regions. If the exterior boundary is empty
+% the domain from which interior regions are possibly excluded is taken to be
+% the whole plane, resulting in an unbounded exterior domain.
 %
 %  d = DOMAIN(s, pm) creates an interior domain whose boundary is the list
 %   of handles of segment objects s, using the list of senses pm (each element
 %   is the number +1 or -1). A warning is given if the segments do not appear
 %   to connect up at corners. Normals should all point outwards, ie away from
 %   the domain, otherwise a warning is given. If pm has only 1 element, it will
-%   be duplicated as necessary.
+%   be duplicated as necessary to match the size of s.
 %
 %  d = DOMAIN() or d = DOMAIN([], []) creates an exterior domain equal to the
 %   whole plane R^2.
@@ -25,7 +26,7 @@
 %  d = DOMAIN(s, pm, si, pmi) combines the above features, creating a bounded
 %   domain with excluded region(s).
 %
-% Notes:
+% Notes / issues:
 %  1) should diam, center, x, w, boundingbox, etc, be precomputed on
 %     construction, only recomputed if a segment changes? Currently not.
 %     Not a big deal.
@@ -44,7 +45,7 @@ classdef domain < handle
         area                      % area (via quadr pts; only O(1/M^2) acc)
         exterior                  % true if exterior domain (w bndd complement) 
         bas                       % pointer list to basis set objects (cell arr)
-        k                         % wavevector for domain
+        k                         % wavevector for domain: controls all bases
         refr_ind                  % refractive index of domain (default = 1)
         isair                     % 1 if gets an inc wave, 0 if not (scattering)
     end
@@ -144,10 +145,10 @@ classdef domain < handle
       end
       
       function bb = boundingbox(d) % ......... bounding box
-      % BOUNDINGBOX - return [xmin xmax ymin ymax] for interior domain
+      % BOUNDINGBOX - return bounding [xmin xmax ymin ymax] for interior domain
       %
       %  If the domain is exterior, a box enclosing the boundary with some
-      %   extra padding is returned.
+      %   extra padding is returned (padding currently not user-selectable).
         x = d.x;
         bb = [min(real(x)), max(real(x)), min(imag(x)), max(imag(x))];
         if isempty(bb), bb = zeros(1,4); end    % only if d is whole plane
@@ -159,21 +160,33 @@ classdef domain < handle
       
       function xc = center(d) % .............. center of bounding box
       % CENTER - return center x (as complex number) of bounding box of domain
+      %
+      % c = CENTER(dom) returns center of domain dom's rectangular bounding box.
+      %
+      % See also: DOMAIN.BOUNDINGBOX
         bb = boundingbox(d);
         xc = (bb(1)+bb(2)+1i*bb(3)+1i*bb(4))/2;
       end
       
       function diam = diam(d) % ..... diameter of interior domain (about center)
-      % DIAM - approximate diameter of interior domain
+      % DIAM - approximate diameter of an interior domain
+      %
+      %  d = diam(dom) returns the diameter of domain dom, defined as the
+      %   maximum distance of any of its defining points from its `center'.
+      %
+      % See also: DOMAIN.CENTER
         diam = max(abs(d.x - center(d))); % not quite optimal since uses box
       end
       
       function [zz ii gx gy] = grid(d, dx) % ............. grid covering domain
       % GRID - make grid covering interior domain, or some of exterior domain
       %
-      %  [zz ii gx gy] = grid(dom, dx) returns list of C-#s zz and the indices
-      %   ii to where these fall in a regular rectangular grid with x- and
-      %   y-grids gx and gy respectively.
+      %  [zz ii gx gy] = grid(dom, dx) returns column-vector list of C-#s zz
+      %   falling in the domain, and the indices ii to where these fall in a
+      %   regular rectangular grid with x- an y-axis 1D grids gx and gy
+      %   respectively.
+      %
+      %  See also: DOMAIN.BOUNDINGBOX
         if dx<=0, error('dx must be positive!'); end
         bb = d.boundingbox;
         bb(1) = dx * floor(bb(1)/dx);            % quantize to grid through 0
@@ -210,11 +223,11 @@ classdef domain < handle
       % methods defined by separate files...
       addconnectedsegs(d, s, pm, o)  % helper routine for constructor
       h = plot(d, o)                     % domain plot: o is plot opts struct
-      addregfbbasis(d, origin, N, k, opts) % add reg FB basis object
-      addnufbbasis(d,origin,nu,offset,branch,N,k,opts) % add irreg. FB basis
-      addrpwbasis(d, N, k, opts)           % add real PW basis
-      addmfsbasis(d, Z, tau, N, k, opts)   % add MFS basis
-      b = addlayerpotbasis(d, a, k, segs, opts) % add layer-potential basis
+      addregfbbasis(d, origin, N, opts) % add reg FB basis object
+      addnufbbasis(d,origin,nu,offset,branch,N,opts) % add irreg. FB basis
+      addrpwbasis(d, N, opts)           % add real PW basis
+      addmfsbasis(d, Z, tau, N, opts)   % add MFS basis
+      b = addlayerpotbasis(d, a, segs, opts) % add layer-potential basis
       [A A1 A2] = evalbases(d, p, opts)    % evaluate all basis funcs in domain
       setrefractiveindex(doms, n)
       
@@ -222,7 +235,6 @@ classdef domain < handle
       checktopology(d)             % checks all pieces in interior, normals
       requadrature(d, M, type, inds) % resets M, quadr, in some segments
       subtract(d, dint)              % remove (exclude) domain dint from d
-      changek(d, k)                  % changes wave# of basis sets in domain
     end % methods
     
     % --------------------------------------------------------------------
