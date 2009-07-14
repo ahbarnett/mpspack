@@ -1,0 +1,73 @@
+% timo macros...
+\newcommand{\bx}{\textbf{x}}
+\newcommand{\by}{\textbf{y}}
+\newcommand{\bs}{\textbf{s}}
+
+% alex macros...
+\newcommand{\bi}{\begin{itemize}}
+\newcommand{\ei}{\end{itemize}}
+\newcommand{\ben}{\begin{enumerate}}
+\newcommand{\een}{\end{enumerate}}
+\newcommand{\be}{\begin{equation}}
+\newcommand{\ee}{\end{equation}}
+\newcommand{\bea}{\begin{eqnarray}}
+\newcommand{\eea}{\end{eqnarray}}
+\newcommand{\bc}{\begin{center}}
+\newcommand{\ec}{\end{center}}
+\newcommand{\bfi}{\begin{figure}}
+\newcommand{\efi}{\end{figure}}
+\newcommand{\ca}[2]{\caption{#1 \label{#2}}}
+\newcommand{\ig}[2]{\includegraphics[#1]{#2}}
+\newcommand{\spl}[2]{\left\{\begin{array}{ll}#1\\#2\end{array}\right.}
+\newcommand{\ie}{{\it i.e.\ }}
+\newcommand{\eg}{{\it e.g.\ }}
+\newcommand{\pd}[2]{\frac{\partial #1}{\partial #2}}
+\newcommand{\pdc}[3]{\left. \frac{\partial #1}{\partial #2}\right|_{#3}}
+\newcommand{\infint}{\int_{-\infty}^{\infty} \!\!}      % infinite integral
+\newcommand{\tbox}[1]{{\mbox{\tiny #1}}}
+\newcommand{\mbf}[1]{{\bm #1}}           % requires bm package
+\newcommand{\pO}{{\partial\Omega}}
+\newcommand{\uN}{u^{(N)}}
+\newcommand{\emach}{\epsilon_\tbox{mach}}
+%\newcommand{\crk}{C_{s}} %C_{R,k}         % const for exponential s(m) bnd
+\newcommand{\bmp}[1]{\begin{minipage}{#1}}
+\newcommand{\emp}{\end{minipage}}
+
+\newtheorem{thm}{Theorem}
+\newtheorem{cnj}{Conjecture}
+\newtheorem{lem}{Lemma}[thm]
+\newtheorem{cor}{Corollary}[thm]
+
+\newtheorem{rmk}[thm]{Remark}
+\newtheorem{pro}[thm]{Proposition}
+%\newtheorem{cnj}[thm]{Conjecture}
+%\newtheorem{lemma}[thm]{Lemma}
+
+\newcommand{\bp}{{\bf Proof:\ }}   % {\begin{proof}}
+\newcommand{\ep}{\hfill $\square$ \vspace{1ex} \\} % {\end{proof}}
+% note elsart ones horrible: \pr and \endpr
+\newcommand{\bmal}{{\bm \alpha}}             % bold alpha
+\newcommand{\xx}{\mbf{x}}             % bold x
+\newcommand{\splt}[2]{$\left\{\begin{array}{l}\mbox{#1}\\\mbox{#2}\end{array}\ri
+ght.$}
+\newcommand{\lo}{{L^2(\Omega)}}
+\newcommand{\lpo}{{L^2(\pO)}}
+\newcommand{\cu}{\tilde{u}}            % symbol for continuation of u
+\newcommand{\cOmega}{\tilde{\Omega}}   % symbol for domain to be continued into
+\newcommand{\dmax}{D_\tbox{max}}       % max dist in splane_charge_curve
+
+% spacers...
+\newcommand{\tw}{\textwidth}
+\newcommand{\vg}{\vspace{2ex}}
+
+% brand names... 
+\newcommand{\mpspack}{{\tt MPSpack}}            % name of this package
+\newcommand{\matlab}{{M{\scriptsize ATLAB}}}            % name of MATLAB
+
+% code formatting... (nearly ok, gets multiple-line padding wrong)
+\newcommand{\co}[1]{\vspace{.5ex}
+\\
+\mbox{}\hspace{5ex}\begin{minipage}{\textwidth}{\tt #1}\end{minipage}%
+\vspace{.5ex}%
+\\}
+

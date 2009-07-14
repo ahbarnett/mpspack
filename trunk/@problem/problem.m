@@ -4,7 +4,7 @@ classdef problem < handle
   properties
     segs                    % array of handles of segments in problem
     doms                    % array of handles of domains in problem
-    k                       % overall wavenumber
+    k                       % overall wavenumber (or, if you will, frequency)
     A                       % BC inhomogeneity matrix (incl sqrt(w) quad wei)
     sqrtwei                 % row vec of sqrt of quadrature weights w
     bas                     % cell array of handles of basis sets in problem
@@ -180,7 +180,7 @@ classdef problem < handle
     % GRIDSOLUTION - evaluate solution to a problem over a grid, given coeffs
     %
     %  [u gx gy di] = gridsolution(pr, opts) returns array of values u, and
-    %   optionally, x- and y-grids (1d lists) gx, gy, and domain index list di
+    %   optionally, x- and y-grids (1D lists) gx, gy, and domain index list di
     %   (integer array of same shape as u). Decisions about which domain a
     %   gridpoint is in are done using domain.inside, which may be approximate.
     %
@@ -191,8 +191,9 @@ classdef problem < handle
       o = pr.gridboundingbox(o);
       gx = o.bb(1):o.dx:o.bb(2); gy = o.bb(3):o.dx:o.bb(4);  % plotting region
       [xx yy] = meshgrid(gx, gy); zz = xx + 1i*yy;  % keep zz rect array
-      [u di] = pr.pointsolution(pointset(zz(:)));
+      [u di] = pr.pointsolution(pointset(zz(:))); % make zz a col vec
       u = reshape(u, size(xx));
+      di = reshape(di, size(xx));
     end % func
     
     function o = gridboundingbox(pr, o)
@@ -232,7 +233,7 @@ classdef problem < handle
     %
     %  setoverallwavenumber(pr, k) propagates overall wavenumber k to each
     %   domain, and its basis sets. If a domain has refractive index n, then
-    %   its wavenumber will become n^2 k.
+    %   its wavenumber will become nk.
       pr.k = k;
       for d=pr.doms
         d.k = d.refr_ind * k;
@@ -241,9 +242,60 @@ classdef problem < handle
       end
     end
     
+    function [u gx gy di h] = showsolution(pr, o) % ............. plot solution
+    % SHOWSOLUTION - plot figure with solution Re u over all domains in problem
+    %
+    % showsolution(pr) plots an image of the solution field u (its real part
+    %   if complex) over a rectangular grid covering the domains in the
+    %   problem pr.
+    %
+    % showsolution(pr, opts) also passes in an option structure containing
+    %   optional fields:
+    %      opts.imag = true, plots imag instead of real part
+    %      opts.bdry = true, shows boundary too (default)
+    %      opts.comparefunc = handle to function to subtract pointwise
+    %                         (this function must cope with vector inputs)
+    %   Other fields are passed to problem.gridsolution (see its documentation)
+    %
+    % [u gx gy di h] = showsolution(pr, ...) also returns solution data in
+    %   same format at problem.gridsolution, and h is a handle to the image
+    %   graphical object
+    %
+    %  Issues: * make a real/complex flag
+    %          * store Ad eval matrices for later access (expensive to fill)?
+    %          * Make opts.comparefunc, if a vector of func handles, apply
+    %            different handle to each domain in the problem.
+    %
+    % Also see: GRIDSOLUTION, SCATTERING.SHOWTHREEFIELDS
+      if nargin<2, o = []; end
+      if ~isfield(o, 'imag'), o.imag = 0; end
+      if ~isfield(o, 'bdry'), o.bdry = 0; end
+      
+      [u gx gy di] = pr.gridsolution(o);   % expensive: do basis evaluations
+      
+      if isfield(o, 'comparefunc')
+        if isa(o.comparefunc, 'function_handle')
+          [xx yy] = meshgrid(gx, gy); zz = xx + 1i*yy;
+          u = u - o.comparefunc(zz);       % eval comparison func over grid
+        else
+          error('opts.comparefunc must be a function_handle!');
+        end
+      end
+      % note use of transparency outside all domains...
+      if o.imag, h = imagesc(gx, gy, imag(u), 'alphadata', ~isnan(di));
+        %title('Im[u]');
+      else, h = imagesc(gx, gy, real(u), 'alphadata', ~isnan(di));
+        %title('Re[u]');
+      end
+      c = caxis; caxis([-1 1]*max(c));           % make colorscale symmetric
+      axis equal tight; colorbar; colormap(jet(256));
+      set(gca,'ydir','normal'); hold on;
+      if o.bdry, pr.showbdry; end
+    end % func
+    
+    
     % *** Methods to be written ........... ****
     [u un] = bdrysolution(pr, seg, pm) % ........... evaluate soln on a bdry
-    
     
   end % methods
    

@@ -31,7 +31,7 @@ classdef segment < handle & pointset
         speed                  % |dZ/dt| at quadrature pts (col vec)
         kappa                  % kappa curvature at quad pts (col vec; optional)
         relaccel               % tangential accel, Maue-Kress (col vec; opt)
-        qtype                  % quadrature type
+        qtype                  % quadrature type ('c', 'p', etc)
         eloc                   % [start point; end point] as C-#s
         eang                   % [start angle; end angle] as C-#s on unit circle
         Z                      % analytic function handle Z(t) on [0,1]
@@ -68,6 +68,7 @@ classdef segment < handle & pointset
           s.Z = @(t) p(1) + p(2)*exp(1i*(p(3) + t*(p(4)-p(3))));
           s.Zp = @(t) 1i*(p(4)-p(3))*p(2)*exp(1i*(p(3) + t*(p(4)-p(3))));
           s.Zpp = @(t) -(p(4)-p(3))^2*p(2)*exp(1i*(p(3) + t*(p(4)-p(3))));
+          if abs(p(4)-p(3)-2*pi)<1e-15, qtype = 'p'; end % closed -> periodic q
           Napprox = 50;      % # pts for crude inside-polygon test, must be even
         else
           error('segment second argument not valid!');
@@ -88,10 +89,11 @@ classdef segment < handle & pointset
       %
       %  REQUADRATURE(seg, M) changes the number of points to M (or M+1
       %   depending on the type, see below), without changing the quadrature
-      %   type. If seg is a list of segments, it does it for each.
+      %   type. If seg is a list of segments, it does so for each.
       %
       %  REQUADRATURE(seg, M, qtype) chooses new M and new quadrature type
-      %   qtype = 'p': periodic trapezoid (appropriate for periodic segments, M pts)
+      %   qtype = 'p': periodic trapezoid (appropriate for periodic segments,
+      %                M pts are created)
       %           't': trapezoid rule (ie, half each endpoint, M+1 pts)
       %           'c': Clenshaw-Curtis (includes endpoints, M+1 pts)
       %           'g': Gauss (takes O(M^3) to compute, M pts)
@@ -147,16 +149,20 @@ classdef segment < handle & pointset
       %
       %  setbc(seg, pm, type, [], f) imposes inhomogeneous BC of type 'd' or 'n'
       %   with data func f(t) where t in [0,1] parametrizes the segment, if f is
-      %   a function handle. If instead f is a (col vec) array of same size as
+      %   a function handle with one argument. If f is a function handle with
+      %   two arguments, it is interpreted as f(x,y) for points (x,y) on the
+      %   segment. If instead f is a (col vec) array of same size as
       %   seg.x, is interpreted as data sampled on the quadrature points.
-      %
-      %  Notes
+      % 
+      %  Notes/Issues:
       %  1) a seg can currently carry only one BC, or instead a matching
       %   condition (which is a pair of relations on the segment).
       %  2) this routine merely copies info into the segment. The chief routines
       %   which interpret and calculate using the BC/matching include
       %   problem.fillbcmatrix, bvp.fillrighthandside, and
-      %   scattering.setincidentwave. 
+      %   scattering.setincidentwave.
+      %  3) Having f(x,y) vs f(t) distinguish whether f is a func of location
+      %   or of parameter t is not great. Prefer f(z) vz f(t) - how distinguish?
         if numel(pm)==1, pm = pm*ones(size(seg)); end
         for i=1:numel(seg)
           s = seg(i);
@@ -165,8 +171,16 @@ classdef segment < handle & pointset
             error(sprintf('side %d of seg not connected to a domain!', pm(i)));
           end
           s.bcside = pm(i);               % same natural segment side convention
-          if nargin<5, f = @(t) zeros(size(s.t)); end % covers homogeneous case
-          s.f = f;         % may be func handle (not eval'd until need) or array
+          if nargin<5, s.f = @(t) zeros(size(s.t)); % covers homogeneous case
+          elseif isa(f,'function_handle')
+            s.f = f;                      % func handle (not eval'd until need)
+            try, f(0); catch me,          % test to see if f has >1 argument
+              if strcmp(me.identifier, 'MATLAB:inputArgUndefined') % hack
+                s.f = @(t) f(real(s.Z(t)),imag(s.Z(t))); % interpret as f(x,y)
+              end
+            end
+          else, s.f = f;                  % will be an array
+          end
           if nargin<4 | isempty(b)
             switch a
              case {'D', 'd'}
