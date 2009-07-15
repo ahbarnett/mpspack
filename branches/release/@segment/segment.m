@@ -1,17 +1,19 @@
 % SEGMENT - create segment object
 %
-%  s = SEGMENT(M, [xi xf]) create line segment object from xi to xf, both C#s.
+%  s = SEGMENT(M, [xi xf]) creates a line segment object from xi to xf, both
+%  complex numbers.
 %
-%  s = SEGMENT(M, [xc R ti tf]) create circular arc segment, center xc (C-#),
-%   radius R, from angle ti to tf. Order is important: if tf>ti then goes CCW,
-%   otherwise CW.
-%
-%  s = SEGMENT(M, {Z, Zp}) analytic curve given by image of analytic function
-%   Z:[0,1]->C. Zp must be the derivative function Z'. Note the argument is a
-%   1-by-2 cell array of function handles. If instead the 2nd argument is
-%   {Z, Zp, Zpp} where Zpp is the 2nd derivative Z'', curvature information is
-%   also generated (which is useful for layer potentials).
-%
+%  s = SEGMENT(M, [xc R ti tf]) creates a circular arc segment with center
+%  xi, radius R and angles from ti to tf. The order is important. If tf>ti
+%  the orientation is counter-clockwise, otherwise clockwise.
+%  
+%  s = SEGMENT(M, {Z, Zp}) creats an analytic curve given by the image of 
+%  the analytic function Z:[0,1]->C. Zp must be the derivative of Z. 
+%  Z and Zp are function handles. 
+%  
+%  s = SEGMENT(M, {Z, Zp, Zpp}) works as above but also takes the second
+%  derivative Z'' of Z. This is useful for layer potentials.
+% 
 %  s = SEGMENT(M, p, qtype) where p is any of the above, chooses quadrature type
 %   qtype = 'p': periodic trapezoid (appropriate for periodic segments, M pts)
 %           't': trapezoid rule (ie, half each endpoint, M+1 pts)
