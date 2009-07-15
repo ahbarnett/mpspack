@@ -31,8 +31,11 @@ classdef regfbbasis < handle & basis
             regfb.usegsl=opts.usegsl;
             regfb.N=N;
             regfb.origin=origin;
-            regfb.Nf = 2*N+1;           % there are 2N+1 functions
             regfb.rescale_rad = opts.rescale_rad;
+        end
+        
+        function Nf = Nf(regfb) % ...................... returns # dofs
+            Nf = 2*regfb.N + 1;
         end
         
         function [A, A1, A2] = eval(regfb,pts,opts) % ........... evaluator
