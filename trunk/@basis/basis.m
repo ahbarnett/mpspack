@@ -8,8 +8,7 @@ classdef basis < handle
     doms                    % array of handles of domains affected by basis
                             %     (added 7/14/09, required)
     N                       % Degree of basis set: interpretation depends on
-                            %     type of basis.
-    Nf                      % Actual number of functions (degrees of freedom)
+                            %     type of basis (see basis.Nf method)
   end
   
   methods (Abstract)
