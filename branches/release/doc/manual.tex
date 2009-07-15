@@ -1,0 +1,303 @@
+\documentclass[12pt]{article}
+\usepackage{graphicx,bm,amssymb,amsmath,amsthm}
+\input{macros}
+
+\begin{document}
+\title{\mpspack\ user manual}
+\author{Alex Barnett\footnote{Department of Mathematics, Dartmouth College, Hanover, NH, 03755, USA}
+and Timo Betcke\footnote{Department of Mathematics,
+University of Reading, Berkshire, RG6 6AX, UK}}
+\date{\today}   % how pipe from getrevisionnumber + 1?
+
+\maketitle
+\begin{abstract}
+\mpspack\ is a fully object-oriented \matlab\ toolbox for
+solving Laplace, Helmholtz, wave scattering, and related PDE boundary-value
+problems
+on piecewise-homogeneous 2D domains.
+The philosophy is to
+%represent solutions using
+use basis functions
+which are particular solutions to the
+PDE in some region; solving is thus reduced to matching on
+the boundary (or on boundaries of subregions).
+This idea is known as the Method of Particular Solutions, or as Trefftz,
+ultra-weak, or non-polynomial 
+methods in the FEM community.
+Basis functions include plane-wave, Fourier-Bessel,
+corner-adapted expansions,
+fundamental solutions.
+Layer potential representations and associated
+singular quadrature schemes are also integrated into this framework.
+It is designed to
+be simple to use, and to enable highly-accurate solutions.  This is
+the user manual; for a more hands-on approach try the accompanying tutorial.
+\end{abstract}
+
+\section{Overview}
+
+In numerical analysis there has been a recent flurry of activity
+on methods for solving PDEs where solutions are approximated by
+linear combinations of particular solutions to the PDE with
+good convergence properties.
+These methods are high-order (often exponentially convergent),
+efficient at high frequencies (the number of degrees of freedom
+scales linearly with wavenumber, in 2D),
+and are quite simple to implement.
+When geometries become more complicated, the domain needs to be split
+up into multiple subdomains, e.g.\ one for each corner, and the
+implementation becomes cumbersome.
+The goal of this software toolbox is to make such an implementation simple
+and transparent, and create an intuitive, unifying framework in which many
+types of BVP, basis sets, boundary conditions, and domain geometries
+may be solved, explored and graphed with ease.
+Since in these methods, the number of subdomains is small and fixed,
+we leave the job of specifying subdomains, i.e.\ `meshing',
+to the user (this contrasts with the philosophy of the large number of
+finite-element packages already in existence.)
+
+We are most interested in the scalar Helmholtz equation in the plane,
+\bea
+(\Delta+k^2)u& =& 0 \qquad \mbox{in } \Omega~,
+\eea
+where $\Omega \subset \mathbb{R}^2$ is an interior or exterior
+domain, $k$ is the wavenumber, and certain
+imhomogeneous boundary conditions are imposed.
+Such problems arise in wave scattering and cavity resonances.
+More generally we may have multiple domains with different
+wavenumbers connected by homogeneous or inhomogeneous boundary conditions,
+as in transmission, dielectric-coated, or photonic crystal problems.
+With $k=0$ we have Laplace's equation, with applications to
+electrostatics, steady-state heat flow, and probability.
+
+In this release we discuss BVPs.
+It is a small extension to compute
+eigenvalue problems and periodic problems; we will document these in
+future releases.
+%We believe the object-oriented framework we have set up generalizes
+%gracefully to 
+
+Fig.~\ref{f:relat} shows how a geometry is built up from objects, and the
+relationships between them.
+
+Our influences include Driscoll's SC Toolbox, and the {\tt chebfun} system
+by Trefethen et al.
+
+
+\bfi % fffffffffffffffffffffffffff
+\ig{width=\textwidth}{relat.eps}
+\ca{Relationship of {\tt MPSpack}
+objects used to solve a typical BVP or EVP.
+The physical geometry is shown on the left, and the code structures on the
+right.
+Each segment has a normal direction. Each domain is built from
+segments with a list of signs ($+$ or $-$) which define the sense in which
+the segments are used to form the boundary.
+Basis sets affect the function values inside each domain in which they
+are referenced. A basis set may influence more than one domain.}{f:relat}
+\efi
+
+\section{Installation}
+
+Requirements:
+\bi
+\item \matlab\ version 7.6 (2008a) or newer is needed,
+since we make heavy use of recent object-oriented programming features.
+\ei
+
+The project is hosted at
+\co{http://code.google.com/p/mpspack}
+There are two alternative methods to download and unpack:
+\ben
+\item
+Get a gzip-compressed tar archive from
+\co{http://code.google.com/p/mpspack/downloads/list}
+In a UNIX environment you may now
+unpack this with
+\co{tar zxvf mpspack-r*.tar.gz}
+This creates the directory {\tt mpspack-r*} containing the toolbox,
+where {\tt *} represents the revision (version) number.
+
+\item
+First install the {\tt subversion} (SVN) version
+control software from
+\co{http://subversion.tigris.org}
+Anonymous check out of {\tt MPSpack} is then via the subversion command:
+\co{svn checkout http://mpspack.googlecode.com/svn/trunk/ mpspack}
+This creates a directory {\tt mpspack} containing the toolbox.
+
+You might prefer a more user-friendly graphical
+subversion client such as those listed at
+\co{http://subversion.tigris.org/links.html\#clients}
+\een
+
+There are some optional fast basis evaluation routines
+(C and Fortran with MEX interfaces), which should be compiled
+in a UNIX environment as follows:
+from the {\tt mpspack} directory type {\tt make}
+
+You should now add the {\tt mpspack}
+subdirectory to your MATLAB path, for instance by adding the line
+\co{addpath 'path/to/mpspack';}
+to your MATLAB {\tt startup.m} file.
+You are now ready to use \mpspack\ !
+
+
+\subsection{Boundary-value problems}
+
+Let $\Omega \subset \mathbb{R}^2$
+
+\bea
+(\Delta+k^2)u& =& 0 \qquad \mbox{in } \Omega\\
+au + b u_n&=&f\qquad \mbox{on } \pO
+\eea
+
+In our implementation we restrict to functions $a$, $b$ that are
+constant on segments used to define the boundary $\pO$.
+
+If $\Omega$ is an exterior domain, we may wish to impose
+additional boundary conditions at infinity, such as Sommerfeld's
+radiation condition.
+This may be achieved by choosing basis sets satisfying this condition.
+
+See \cite{mfs} for
+an example of using the Method of Fundamental Solutions to solve
+an interior Helmholtz problem.
+
+To solve a BVP the usual flow is as follows:
+
+\ben
+\item define piecewise-analytic segments forming all boundaries
+\item define domains using various of these segments as their boundaries
+\item choose MPS basis set(s) within each domain
+\item set up inhomogeneous boundary or matching conditions on each segment
+\item solve a %least-squares
+linear system to get the basis coefficient vector
+\item evaluate solution on desired points
+\item plot solution or compute error estimates
+\een
+
+\ldots
+
+\subsection{Eigenvalue problems}
+
+
+
+
+\subsection{Geometry}
+
+\ldots
+
+When domains are built from segments, each segment stores information about
+which domain, if any, it is connected to on each side.
+If segments are to be reused to construct new domains, while erasing any
+old domains, the current way to do this is via the {\tt s.disconnect}
+command, where {\tt s} is a segment handle or array of such. This clears
+these segments of any connections with domains.
+
+The segment object field responsible for
+this is {\tt s.dom}, which is a 1-by-2 cell array
+of handles to the domain on the segment's natural normal side and
+back side respectively. If there is no domain on a particular side, the
+cell element is empty.
+
+
+\subsection{Boundary conditions}
+
+A segment $\Gamma$ may contain a boundary condition on only one of its sides,
+of the form
+$$
+a u(s) + b u_n(s) = f(s)  \qquad s\in\Gamma, \quad a,b \in \mathbb{C}
+$$
+or, alternatively matching conditions of the form
+\bea
+%\left.\begin{array}{rcl}
+a^+ u^+(s) + a^- u^-(s) &=& f(s)\\
+b^+ u_n^+(s) + b^- u_n^-(s) &=& g(s)
+\eea
+where $a^+,a^-,b^+,b^- \in \mathbb{C}$, and where $u^+$ is the
+limiting value approaching the segment from its positive normal side.
+In the above $f$ and $g$ are functions on the boundary.
+In our implementation the user
+may supply these as handles to functions of segment parameter
+$t\in[0,1]$, or as a data column vector on the segment quadrature points.
+
+The segment fields {\tt a} and {\tt b} store
+$a$ and $b$ for a boundary condition, or
+$[a^+, a^-]$ and $[b^+, b^-]$
+respectively for a matching condition.
+
+\subsection{Basis sets}
+
+Basis sets exist independently of domains or segments
+\footnote{apart from layer potentials which require a segment on which
+their source density is placed}.
+However, for a basis set to influence a domain {\tt d}, its handle must appear
+in the cell array field {\tt d.bas}
+This is set up automatically when you perform {\tt d.addregfbbasis()}
+or any of the other 
+
+There will be more elaborate basis set types which naturally affect two domains,
+such as dielectric corner and transmission layer potential objects;
+their handles will appear in the {\tt bas} cell array of more than one domain.
+
+
+\section{In-depth examples}
+
+\section{Test routines}
+
+The code {\tt testbvp.m} shows the main steps for solution of a BVP on
+a variety of domains.
+
+\section{Limitations}
+
+\bi
+\item Checking of whether inside a domain is approximate, based on approximating
+polygons.
+\ei
+
+\section{List of improvements to make}
+
+List to be prioritized:
+
+\bi
+\item make {\tt segment.bdryfunc} which creates $u$, $u_n$ data given a
+field function and its gradient field function, useful for choosing BC
+data corresponding to exact fields
+\item make {\tt domain.setbc} which uses one BC data function on all segments
+\item eigenvalue problems: MPS, scaling method
+\item segment methods to create analytic interpolant function from boundary
+point data, enabling user to specify a segment using points on a curve.
+\item add better automated ways to choose MFS charge points, based on JCP paper
+\item add layer-potential bases, and associated periodic quadrature methods
+\item write {\tt segment.bdrysolution} which evaluates $u$, $u_n$ on one
+or other side of a boundary. For layer potentials this would take into account
+jump relations. This should then be used in {\tt problem.fillbcmatrix}
+\item keep discrepancy and evaluation matrices, for efficiency in multiple
+right-hand sides.
+\item classes which symmetrize basis sets for single reflection, $C_4$, etc
+symmetry, by wrapping the calls to basis evaluations using reflection
+points
+\item dielectric constants, overall frequency,
+automatically changing $k$ in domains
+\item periodic boundary conditions connecting values and derivatives
+on given sides of two different segments, needed for photonic crystals
+\item allow nufbbasis to accept empty k input, like other basis types.
+\item make better addnufbbasis which attaches to a requested corner.
+\item basisgeom for nufbbasis, split off utils.plotfan from domain.plot and
+use.
+\ei
+
+\section{Known bugs}
+
+Please alert the authors to any bugs you discover, including a description
+of how to reproduce the behavior, using the interface at
+
+{\tt http://code.google.com/p/mpspack/issues/list}
+
+\bibliographystyle{siam} 
+\bibliography{alexrefs}
+
+
+
+\end{document}
