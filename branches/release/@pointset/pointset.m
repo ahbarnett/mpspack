@@ -1,4 +1,5 @@
-% POINTSET - create a pointset object with locations and normal vectors in C
+% POINTSET - create a pointset object with locations and normal vectors as
+% complex numbers.
 %
 % A pointset is simple object containing a list of points in 2D, plus possibly
 % associated normal directions.  It is used to store quadrature points on a
