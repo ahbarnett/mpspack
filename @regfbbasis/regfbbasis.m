@@ -83,6 +83,7 @@ classdef regfbbasis < handle & basis
             resc = (regfb.rescale_rad>0); % whether to rescale or not
             N = regfb.N;
             k = regfb.k;                  % NB this is now a method not property
+            if isnan(k), error('regfbbasis: no domain wavenumber defined!'); end
             np = length(pts.x);               % Number of eval points
             R=abs(pts.x-regfb.origin);        % col vec of distances
             ang=angle(pts.x-regfb.origin);    % col vec of angles
@@ -178,7 +179,8 @@ classdef regfbbasis < handle & basis
         end   % ....................... end function eval
         
         function showgeom(regfb, opts) % ...................... show basis geom
-          if nargin<2, opts = []; end
+        % SHOWGEOM - plot regular FB basis set geometry info (just origin now)
+         if nargin<2, opts = []; end
           plot(real(regfb.origin), imag(regfb.origin), 'ro');
           if isfield(opts, 'label')
             text(real(regfb.origin), imag(regfb.origin), opts.label);
@@ -212,7 +214,12 @@ classdef regfbbasis < handle & basis
               ret=utils.recursivebessel(N,r);    % Alex's recurrence code
               err=0; % No error checking implemented for utils.recursivebessel
              case 'g'
-              [ret,err]=utils.gslbesselj(0,N,r); % Timo's MEX interface to GSL
+              if exist('@utils/gslbesselj.mexglx')==3
+                [ret,err]=utils.gslbesselj(0,N,r); % Timo's MEX interface to GSL
+              else
+                warning('besselwrapper: @utils/gslbesselj not compiled to MEX')
+                [ret,err] = besselj(0:N, r(:));  % built-in, expands to table
+              end
              case 'm'
               [ret,err] = besselj(0:N, r(:));  % built-in, expands to table
              otherwise

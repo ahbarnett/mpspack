@@ -6,10 +6,10 @@
 % To Do:
 % * fix |x|=0 problem for nufbbasis.
 % * make the below test eval nargout=2 and =3. (switch by hand line 55)
-% * validate rebfbbasis besselcode options against each other
+% * validate regfbbasis besselcode options against each other
 
 clear all classes
-verb = 0;                            % use verb=0, N=50, for more of a test
+verb = 2;                            % use verb=0, N=50, for more of a test
 err = 1;                             % false, show vals / true, show errors
 dx = 0.01; g = -1:dx:1;              % plotting region, -1:.01:1 default
 [xx yy] = meshgrid(g, g);
@@ -18,7 +18,7 @@ p = pointset([xx(:) + 1i*yy(:)], ones(size(xx(:)))); % set up n for x-derivs
 k = 10;                              % wavenumber for tests (may be 0)
 d = domain(); d.k = k;               % create R^2 domain
 
-for type = 1:3              % select the cases you want to test here
+for type = 1:5              % select the cases you want to test here
   switch type
    case {1,2,3}             % ................. Reg FB: real/cmplx, rescl
     N = 10;
