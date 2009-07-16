@@ -97,7 +97,7 @@ Basis sets affect the function values inside each domain in which they
 are referenced. A basis set may influence more than one domain.}{f:relat}
 \efi
 
-\section{Installation}
+\subsection{Installation}
 
 Requirements:
 \bi
@@ -143,7 +143,7 @@ to your MATLAB {\tt startup.m} file.
 You are now ready to use \mpspack\ !
 
 
-\subsection{Boundary-value problems}
+\subsection{What kind of problems does \mpspack\ solve?}
 
 Let $\Omega \subset \mathbb{R}^2$
 
@@ -179,12 +179,17 @@ linear system to get the basis coefficient vector
 
 \ldots
 
-\subsection{Eigenvalue problems}
+%Eigenvalue problems
 
 
 
 
-\subsection{Geometry}
+
+
+
+\section{Representing geometry}
+
+Move this to START.
 
 \ldots
 
@@ -227,7 +232,9 @@ $a$ and $b$ for a boundary condition, or
 $[a^+, a^-]$ and $[b^+, b^-]$
 respectively for a matching condition.
 
-\subsection{Basis sets}
+\section{Basis sets and problem classes}
+
+FIX THIS TO REFLECT NEW basis.doms[] PROPERTY:
 
 Basis sets exist independently of domains or segments
 \footnote{apart from layer potentials which require a segment on which
@@ -263,13 +270,15 @@ List to be prioritized:
 \bi
 \item make {\tt segment.bdryfunc} which creates $u$, $u_n$ data given a
 field function and its gradient field function, useful for choosing BC
-data corresponding to exact fields
+data corresponding to exact fields. DONE - see tutorial.
+Vectorize it over s?
+
 \item make {\tt domain.setbc} which uses one BC data function on all segments
 \item eigenvalue problems: MPS, scaling method
 \item segment methods to create analytic interpolant function from boundary
-point data, enabling user to specify a segment using points on a curve.
+point data, enabling user to specify a segment using points on a curve,
+as in Greengard.
 \item add better automated ways to choose MFS charge points, based on JCP paper
-\item add layer-potential bases, and associated periodic quadrature methods
 \item write {\tt segment.bdrysolution} which evaluates $u$, $u_n$ on one
 or other side of a boundary. For layer potentials this would take into account
 jump relations. This should then be used in {\tt problem.fillbcmatrix}
@@ -277,12 +286,9 @@ jump relations. This should then be used in {\tt problem.fillbcmatrix}
 right-hand sides.
 \item classes which symmetrize basis sets for single reflection, $C_4$, etc
 symmetry, by wrapping the calls to basis evaluations using reflection
-points
-\item dielectric constants, overall frequency,
-automatically changing $k$ in domains
+points. This is only needed for eigenvalue problems.
 \item periodic boundary conditions connecting values and derivatives
 on given sides of two different segments, needed for photonic crystals
-\item allow nufbbasis to accept empty k input, like other basis types.
 \item make better addnufbbasis which attaches to a requested corner.
 \item basisgeom for nufbbasis, split off utils.plotfan from domain.plot and
 use.

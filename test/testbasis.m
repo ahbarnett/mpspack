@@ -6,24 +6,26 @@
 % To Do:
 % * fix |x|=0 problem for nufbbasis.
 % * make the below test eval nargout=2 and =3. (switch by hand line 55)
+% * validate rebfbbasis besselcode options against each other
 
 clear all classes
-verb = 2;                            % use verb=0, N=50, for more of a test
+verb = 0;                            % use verb=0, N=50, for more of a test
 err = 1;                             % false, show vals / true, show errors
 dx = 0.01; g = -1:dx:1;              % plotting region, -1:.01:1 default
 [xx yy] = meshgrid(g, g);
 M = numel(xx); o = [];
 p = pointset([xx(:) + 1i*yy(:)], ones(size(xx(:)))); % set up n for x-derivs
-k = 0;                              % wavenumber for tests (may be 0)
+k = 10;                              % wavenumber for tests (may be 0)
 d = domain(); d.k = k;               % create R^2 domain
 
-for type = 1:3
+for type = 1:3              % select the cases you want to test here
   switch type
    case {1,2,3}             % ................. Reg FB: real/cmplx, rescl
     N = 10;
-    opts.real = (type~=2); opts.rescale_rad = 1.5*(type==3); opts.usegsl = 0;
+    opts.real = (type~=2); opts.rescale_rad = 1.4*(type==3);
+    opts.besselcode = 'r';                  % try 'r' 'g' or 'm' here
     b = regfbbasis(0, N, opts); b.doms = d;  % attach basis to R^2 domain
-    c = 0.5;                 % set caxis scale for this basis type
+    c = 0.5 + (k==0);             % set caxis scale for this basis type
     js = 1:b.Nf;             % indices to plot, here all of them
     fprintf('evaluating Reg FB basis... real=%d, resc=%g\n', opts.real, ...
             opts.rescale_rad)
@@ -77,7 +79,7 @@ for type = 1:3
     %           sprintf('type %d: FD val du_j/dx', type));
   end
   fprintf('\tmax err in u_x from FD calc = %g\n', max(abs(unje(:))))
-  if verb>1, showfields(g, g(2:end-1), unje, c*(k*dx)^2, ...
+  if verb>1, showfields(g, g(2:end-1), unje, c*((k+(k==0))*dx)^2, ...
                       sprintf('type %d: FD err in du_j/dx', type));
   end
   % errors in y-derivs...   plots should have no values larger than colorscale
@@ -89,7 +91,7 @@ for type = 1:3
                       sprintf('type %d: FD val du_j/dy', type));
   end
   fprintf('\tmax err in u_y from FD calc = %g\n', max(abs(unje(:))))
-  if verb>1, showfields(g(2:end-1), g, unje, c*(k*dx)^2, ...
+  if verb>1, showfields(g(2:end-1), g, unje, c*((k+(k==0))*dx)^2, ...
                       sprintf('type %d: FD err in du_j/dy', type));
   end
 end
