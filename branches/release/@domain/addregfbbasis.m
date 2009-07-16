@@ -2,7 +2,7 @@
 %
 %  ADDREGFBBASIS(d, origin, N, opts) creates a regular FB basis
 %   object within a domain object whose handle is d.
-%   Other arguments are as in REGFBBASIS
+%   The rest of the argument list is discussed in REGFBBASIS
 %
 % See also: REGFBBASIS
 

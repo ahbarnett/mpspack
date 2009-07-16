@@ -1,4 +1,5 @@
-% Test regular Fourier-Bessel basis
+% Test regular Fourier-Bessel basis. Timo's early code.
+% Fixed up, Barnett 7/16/09. Also see cases 1:3 in testbasis.m
 
 k=2;
 N=5;
@@ -29,7 +30,10 @@ nx1=real(nz); nx2=imag(nz);
 An=repmat(nx1,1,2*N+1).*Ax+repmat(nx2,1,2*N+1).*Ay;
 
 % Compare with output from regfbbasis.eval
-opts.realflag=1;
-opts.usegsl=0;
-b = regfbbasis(0,N,k,opts);
+% The following edited by Alex for updated interface, 7/16/09:
+opts.real=1;
+opts.besselcode='r';
+b = regfbbasis(0,N,opts); b.doms = domain(); b.doms.k = k;
 [AA AAx AAy]=b.eval(pts);
+% I assume this is what you wanted...
+norm(A-AA), norm(Ax-AAx), norm(Ay-AAy)
