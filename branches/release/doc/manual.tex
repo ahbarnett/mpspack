@@ -177,21 +177,30 @@ linear system to get the basis coefficient vector
 \item plot solution or compute error estimates
 \een
 
-\ldots
+The accompanying
+tutorial document is a good way to be taken through these steps
+in the context of examples.
+The rest of this manual documents in a more theoretical way the
+data structures, organized by topic such as sements, domains, etc.
 
 %Eigenvalue problems
 
-
-
-
-
-
-
 \section{Representing geometry}
 
-Move this to START.
+Fig ** outlines the objects.
 
-\ldots
+A segment is specified as a parametrized function $z(t)$ for $0\le t\le 1$,
+and $z'(t)$ is also needed.
+From this all information follows such as locations and normal vectors
+at quadrature points.
+Since our focus is on high-order and accurate methods,
+we feel that forcing the user to go to the trouble of providing $z$ and $z'$
+is reasonable.%
+  \footnote{In future releases we may allow $z$ and $z'$ to be automatically
+    generated as high-order polynomial fits to a set of boundary points such
+    as might be available from an engineering or CAD package.}
+The benefit is that the use may simply switch between quadrature point
+numbers and types.
 
 When domains are built from segments, each segment stores information about
 which domain, if any, it is connected to on each side.
@@ -236,7 +245,9 @@ respectively for a matching condition.
 
 FIX THIS TO REFLECT NEW basis.doms[] PROPERTY:
 
-Basis sets exist independently of domains or segments
+Each basis set has one (or possibly more) domain that it affects.
+
+
 \footnote{apart from layer potentials which require a segment on which
 their source density is placed}.
 However, for a basis set to influence a domain {\tt d}, its handle must appear
