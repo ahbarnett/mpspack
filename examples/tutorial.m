@@ -77,6 +77,65 @@ figure; s.plot;  % kill the arrow maybe
 
 % ------------- 4. Helmholtz, exterior -----------------------------------
 
+% exterior domain
+tref = segment.radialfunc(50, {@(q) 1 + 0.3*cos(3*q), @(q) -0.9*sin(3*q)});
+d = domain([], [], tref, -1);
+   
+% TIMO add code for mfs
+
+%...
+
+% multiply-connected domains. 1 hole...
+tref.disconnect;                         % clears any domains from segment
+c = segment([], [0.5 0.4 0 2*pi]);       % new circular segment
+d = domain(tref, 1, c, -1);
+% 2 holes...
+tref.disconnect; c.disconnect;
+smtref = tref.scale(0.3);                % create new rescaled copy of tref
+smtref.translate(-0.3+0.5i);             % move the segment smtref
+d = domain(tref, 1, {c smtref}, {-1 -1});
+if verb  % generate f:doms a
+  figure; set(gca, 'fontsize', 14); d.plot; axis off;
+  print -depsc2 twoholes.eps
+end
+  
+% ----------------------- 5. Corners -------------------------------------
+
+% triangle interior...
+s = segment.polyseglist([], [1, 1i, exp(4i*pi/3)]);
+tri = domain(s, 1);
+if verb  % generate f:doms b
+  figure; opts.gridinside=0.05; tri.plot(opts); axis off; print -depsc2 tri.eps
+end
+
+s.disconnect;
+exttri = domain([], [], s, -1]);
+s.disconnect; 
+ss = s.translate(2);
+exttwotri = domain([], [], {s(end:-1:1), ss(end:-1:1)}, {-1, -1});
+%if verb  % generate f:doms c
+%  figure; exttwotri.plot(opts); axis off; print -depsc2 exttwotri.eps
+%end
+
+% Helmholtz triangle BVP...
+clear all classes
+s = segment.polyseglist([], [1, 1i, exp(4i*pi/3)]); s.requadrature(50);
+tri = domain(s, 1);
+s.setbc(-1, 'd', [], @(t) 1+0*t);
+tri.addregfbbasis(0, []); tri.bas{1}.rescale_rad = 1.0;
+p = bvp(tri);
+tri.k = 5;
+Ns = 2:2:30; for i=1:numel(Ns)
+  tri.bas{1}.N = Ns(i); p.solvecoeffs; r(i) = p.bcresidualnorm;
+  %nm(i) = norm(p.co);
+end
+figure; loglog(Ns, r, '+-'); xlabel('N'); ylabel('bdry err norm');
+%figure; loglog(Ns, nm, '+-'); xlabel('N'); ylabel('coeff norm');
+
+if verb  % generate f:triconv a
+  figure;loglog(Ns, r, '+-'); set(gca,'fontsize', 20); axis tight;
+  xlabel('N'); ylabel('bdry err norm'); print -depsc2 triFB.eps
+end
 
 
 

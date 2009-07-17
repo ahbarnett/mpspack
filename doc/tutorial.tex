@@ -157,7 +157,7 @@ b)\raisebox{-0.3\textwidth}{\ig{height=0.35\textwidth}{radfunc.eps}}
 \ca{a) Convergence of boundary error $L^2$ norm for harmonic
 polynomials for Laplace equation
 in the unit disc, b) solution error for same boundary data $f$
-in a smooth star-shaped domain (normals also shown).}{f:conv}
+in a smooth star-shaped `trefoil' domain (normals also shown).}{f:conv}
 \efi
 
 % ----------------------------------------------------------------------------
@@ -198,13 +198,13 @@ As Fig.~\ref{f:conv}a shows, the convergence is exponential.%
     the nearest singularity \cite{timothesis}, which here is at $2+3i$.}
 
 Say we want to change the shape of segment {\tt s}, to
-a smooth star-shaped domain expressed as by radius $R(\theta) =
+a smooth star-shaped `trefoil' domain expressed as by radius $R(\theta) =
 1 + 0.3\cos 3\theta$ as a function of angle $0\le \theta< 2\pi$.
 This is achieved by passing a 1-by-2
 cell array containing the function $R$ and its
 derivative $R' = dR/d\theta$ to a variant of the segment constructor,
 \begin{verbatim}
-   s = segment.radialfunc(50, {@(q) 1 + 0.3*cos(3*q), @(q) -3*0.3*sin(3*q)});
+   s = segment.radialfunc(50, {@(q) 1 + 0.3*cos(3*q), @(q) -0.9*sin(3*q)});
 \end{verbatim}
 We again chose $M=50$.
 The analytic formula for $R'$ is needed to compute normal derivatives
@@ -257,7 +257,7 @@ up, and the domain constructor above will report an error.
 
 
 % ----------------------------------------------------------------------------
-\section{Helmholtz equation, exterior and non-simply connected domains}
+\section{Helmholtz equation, exterior and multiply connected domains}
 
 Changing from the Laplace to Helmholtz equation is as simple
 as setting {\tt d.k} to a different value.
@@ -265,42 +265,195 @@ We start a fresh example: a exterior Helmholtz BVP
 with Neumann boundary data, and the Sommerfeld radiation
 condition \cite{coltonkress}. This has a unique solution.
 
-
-
-
-
+The simplest unbounded domain is $\mathbb{R}^2$, which is created with
+\co{d = domain();}
+One may check that its area {\tt d.area} is $\infty$.
+Exterior domains can be created by excluding a closed segment, for instance
+the trefoil segment introduced above,
 \begin{verbatim}
-   
+   tref = segment.radialfunc(50, {@(q) 1 + 0.3*cos(3*q), @(q) -0.9*sin(3*q)});
+   d = domain([], [], tref, -1);                    % overwrites previous d
 \end{verbatim}
+Note the choice $-1$ for the direction argument, which states that
+the domain lies on the `nonstandard' side of the segment, i.e.\
+to the right side as the segment is traversed in its natural sense,
+with the segment normals pointing {\em into} the exterior domain.
 
+
+
+
+
+[TIMO insert mfsbasis, solve exterior smooth domain Helmholtz Dirichlet
+BVP. Add your code to examples/tutorial.m]
+
+\vspace{10ex}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\bfi % ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+a)\raisebox{-0.4\textwidth}{\ig{height=0.45\textwidth}{twoholes.eps}}
+b)\raisebox{-0.4\textwidth}{\ig{height=0.45\textwidth}{tri.eps}}
+\ca{a) A multiply-connected domain. b) A polygonal domain.}{f:doms}
+\efi
+
+A non-simply connected domain may be built by specifying excluded
+regions from a simply connected bounded domain. For example,
+to remove from an interior trefoil a circular `hole',
 \begin{verbatim}
-   
+   tref.disconnect;                         % clears any domains from segment
+   c = segment([], [0.5 0.4 0 2*pi]);       % new circular segment
+   d = domain(tref, 1, c, -1);
 \end{verbatim}
+Note that segment {\tt tref} had previously
+been `linked' to the old domain {\tt d}
+at the start of this section, hence the need to `disconnect' it
+(or create a fresh segment) before
+building new domains from it. 
+If the direction signs $+1$ and $-1$ are not correct as above, an
+error is reported (check this!)
+We may exclude two regions as follows, where the new region is a smaller copy
+of the trefoil,
+\begin{verbatim}
+   tref.disconnect; c.disconnect;
+   smtref = tref.scale(0.3);                % create new rescaled copy of tref
+   smtref.translate(-0.3+0.4i);             % move the segment smtref
+   d = domain(tref, 1, {c smtref}, {-1 -1});
+\end{verbatim}
+Typing {\tt d.plot} gives Fig.~\ref{f:doms}a. Notice that
+the domain's boundary is the union of three segments. They are labeled
+1, 2, and 3, showing the order in which segment handles
+are stored internally in the domain object {\tt d.seg}.
+The convention for plotting domains is that the normals
+are those of the domain, rather than the normal intrinsic to each segment.
+The figure shows all normals pointing away from the domain, as it should.
+Similarly, the arrow directions are modified by the signs $(1,-1,-1)$ that
+were passed in, so that, following the arrows the domain always lies to
+the {\em left}. (The black semicircles will be explained in the next section.)
+
+
+[MAYBE add mfsbasis example here with three src curves one for each segment?]
+
+\vspace{10ex}
 
 
 
+\bfi % ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+a)\raisebox{-0.3\textwidth}{\ig{height=0.35\textwidth}{triFB.eps}}
+%b)\raisebox{-0.4\textwidth}{\ig{height=0.45\textwidth}{tri.eps}}
+\ca{a) Slow convergence of boundary error for Fourier-Bessel basis
+in a triangle with unity Dirichlet boundary data, on log-log axes.
+b) Convergence with corner-adapted basis set.}{f:triconv}
+\efi
 
 
 
 % ----------------------------------------------------------------------------
-\section{Polygons and domains with corners}
+\section{Polygons, corners, and corner-adapted bases}
+\label{s:poly}
 
-line segments, quadrature rules on $[0,1]$.
+So far each disconnected boundary piece of the domain
+has been a single segment connected to itself head-to-tail.
+More generally, a {\em list} of segments may be used to create 
+these closed boundary pieces, as long as the last in the list
+connects back to the starting point of the first.
+For instance, a triangle is built from sending a list of
+three line segments to the domain command;
+this list may conveniently be made with a polygon constructor,
+\begin{verbatim}
+   s = segment.polyseglist([], [1, 1i, exp(4i*pi/3)]);
+   tri = domain(s, 1);
+\end{verbatim}
+Since {\tt s} is a 1-by-3 array of (handles to) segments,
+the 2nd argument is automatically vectorized to {\tt [1 1 1]}.
+Each of the segments could have been made separately, e.g.\ the first by
+\co{s(1) = segment([], [1 1i]);}
+Fig.~\ref{f:doms}b shows {\tt tri.plot} output for this domain.%
+  \footnote{Notice that periodic quadrature would now be inappropriate:
+    in fact $M=20$ point Clenshaw-Curtis is used by default for open
+    segments}
 
-corners in domains.
+Let's discuss corners: their angles are indicated by the solid black
+`fans' in the plot (before now these have had angle $\pi$, hence semicircles).
+A black fan at the junction of two segments indicates that a corner
+linkage was made (warnings will be given if any segment ends are left
+dangling), and shows the angle range pointing {\em into} the domain.
+%The data is stored in the domain properties as {\tt tri.
+%and their start and end angles
 
-The small black semicircle at angle $\theta=0$ illustrates that \mpspack\
-has connected the start and end of the segment to form a `corner'.
-Although we did not discuss it, this also happens when a segment
-is connected to itself as in Sec.~\ref{s:lap}.
+Segment lists may also be sent to the excluded arguments of the
+domain constructor, for instance to create the domain exterior
+to the triangle,
+\co{exttri = domain([], [], s(end:-1:1), -1);}
+where it was important to reverse the order of the segment list,
+since each was 
+or to create the domain exterior to two nearby triangles,
+\begin{verbatim}
+   ss = s.translate(2);
+   exttwotri = domain([], [], {s(end:-1:1), ss(end:-1:1)}, {-1, -1});
+\end{verbatim}
+We remind the reader that to create the above domains
+using the existing segment array {\tt s}, each time a {\tt s.disconnect}
+would be needed beforehand (this acts on all segments in the list).%
+  \footnote{Also note that the domains previously linked to the segments, such
+    as {\tt tri}, would be left `dangling' since {\tt s} no longer is linked
+    back to them. Attempts to use {\tt tri} in a BVP would now be doomed
+    unless the data {\tt s(:).dom} were manually rewritten to point to
+    the domain (see manual). When in doubt, disconnect segments then remake
+    all domains.}
+A universal rule is that
+\begin{center}\framebox{\mbox{Each side of a segment may be associated with
+at most one domain}}\end{center}
+
+Say we want to solve an interior Helmholtz BVP on the original triangle
+of this section, and {\tt s} and {\tt tri} have been set up as with the
+first two commands of this section but with $M=50$ quadrature points.
+Say we want constant boundary data 1.
+We may use a Fourier-Bessel basis set, solve, and
+plot error convergence with a simple code,
+\begin{verbatim}
+   s.setbc(-1, 'd', [], @(t) 1);
+   tri.addregfbbasis(0, []); tri.bas{1}.rescale_rad = 1.0; % improves stability
+   p = bvp(tri);
+   tri.k = 5;                                              % wavenumber
+   Ns = 2:2:30; for i=1:numel(Ns)
+     tri.bas{1}.N = Ns(i); p.solvecoeffs; r(i) = p.bcresidualnorm;
+   end
+   figure; loglog(Ns, r, '+-'); xlabel('N'); ylabel('bdry err norm');
+\end{verbatim}
+This produces the algebraic convergence%
+  \footnote{The power law for convergence is related to the largest corner
+angles and is discussed in \cite{Ei74}.}
+shown in Fig.~\ref{f:triconv}a.
+
+We now show how corner-adapted basis sets may be substituted for
+the above basis set to achieve superior convergence and hence
+more efficiency.
+%super-algebraic
+
 
 
 
 % ----------------------------------------------------------------------------
 \section{Scattering and transmission problems}
 
-% ----------------------------------------------------------------------------
-\section{Corner basis sets}
+{\tt scattering} class.
+
+Incident wave.
+
+(change showsolution to handle air vs non-air domains).
+
+Refractive indices, overall wavenumber.
 
 % ----------------------------------------------------------------------------
 \section{Layer potentials}
