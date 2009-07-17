@@ -22,7 +22,7 @@ classdef regfbbasis < handle & basis
     %   opts.besselcode: math library to use for J Bessel evaluation (k>0)
     %              = 'r' use downwards-recurrence in Matlab, fast, but
     %                        relative accuracy not guaranteed (default).
-    %              = 'm' use Matlab's built-in besselj, is slow.
+    %              = 'm' use Matlab's built-in besselj, is slower.
     %              = 'g' use GNU Scientific Library via MEX interface, fast.
     %
     % Issues/notes:
@@ -79,7 +79,7 @@ classdef regfbbasis < handle & basis
         %    derivatives in the x- and y-directions. That is, Ax has ij'th
         %    entry d/dx Phi_j(z_i) while Ay has ij'th entry d/dy Phi_j(z_i)
         %
-        % Also see: POINTSET
+        % Also see: POINTSET, REGFBBASIS
             resc = (regfb.rescale_rad>0); % whether to rescale or not
             N = regfb.N;
             k = regfb.k;                  % NB this is now a method not property
@@ -105,11 +105,7 @@ classdef regfbbasis < handle & basis
             % stack cos funcs 0...N then sin funcs 1...N :
             A = [bes(:,1), bes(:,2:end-1).*c, bes(:,2:end-1).*s];
             if resc                                    % rescale by orders
-              if k==0
-                scfac = 1./regfb.rescale_rad.^(0:N);   % values at fixed dist
-              else
-                scfac = 1./regfb.Jrescalefactors(0:N);   % uses rescale_arg
-              end
+              scfac = 1./regfb.Jrescalefactors(0:N);   % uses rescale_arg
               A = A .* repmat([scfac scfac(2:end)], [np 1]);
             end
             
@@ -193,7 +189,7 @@ classdef regfbbasis < handle & basis
         %  Also now works for k=0, ie harmonic polynomials.
           k = regfb.k;
           if k==0                   % polynomial case
-            sc = rescale_rad.^n;
+            sc = regfb.rescale_rad.^n;
           else                      % Bessel case
             sc = abs(besselj(n, min(n, k*regfb.rescale_rad))); % n can be list.
             % The min here stops the J from getting to osc region (it stays 
