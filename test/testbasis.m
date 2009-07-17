@@ -2,9 +2,9 @@
 % barnett 7/10/08, MFS added 7/20/08, fast hankel and bessel 9/5/08
 % adapted from ~/bdry/inclus/test_evalbasis.m
 % Now creates a `whole plane' domain for each basis to affect.
+% nufbbasis added barnett 7/17/09
 %
 % To Do:
-% * fix |x|=0 problem for nufbbasis.
 % * make the below test eval nargout=2 and =3. (switch by hand line 55)
 % * validate regfbbasis besselcode options against each other
 
@@ -15,10 +15,10 @@ dx = 0.01; g = -1:dx:1;              % plotting region, -1:.01:1 default
 [xx yy] = meshgrid(g, g);
 M = numel(xx); o = [];
 p = pointset([xx(:) + 1i*yy(:)], ones(size(xx(:)))); % set up n for x-derivs
-k = 10;                              % wavenumber for tests (may be 0)
+k = 5;                              % wavenumber for tests (may be 0)
 d = domain(); d.k = k;               % create R^2 domain
 
-for type = 1:5              % select the cases you want to test here
+for type = 11:13              % select the cases you want to test here
   switch type
    case {1,2,3}             % ................. Reg FB: real/cmplx, rescl
     N = 10;
@@ -51,11 +51,19 @@ for type = 1:5              % select the cases you want to test here
     b = layerpot(s, lp, o); if type==10, lp = 'SLP+D'; end % hack for text
     b.doms = d; js = 7; %b.Nf; % 1 is off the region, b.Nf is in the region
     fprintf('evaluating {S,D}LP basis... %sLP\n', lp), o.close = 0.4;
+   
+   case {11,12,13}          % ................. corner FB, types s,c,cs
+    N = 10; types = {'s', 'c', 'cs'}; opts.type = types{type-10};
+    opts.rescale_rad = 0; c = 0.5 + (k==0);
+    % here, to check derivs use origin=-1.5-1i, or to see singularity use 0:
+    b = nufbbasis(-1.5-1i, 2/3, exp(-2i*pi/8), exp(4i*pi/3), N, opts);
+    b.doms = d; js = 1:b.Nf;
+    fprintf('evaluating nu-FB basis... type=''%s''\n', opts.type)
   end
   
-  tic; [A Ax Ay] = b.eval(p, o); t=toc;  % test nargout=3 case
-  %tic; p.nx = ones(size(xx(:))); [A Ax] = b.eval(p, o);  % or test nargout=2
-  %  p.nx = 1i*p.nx; [A Ay] = b.eval(p, o); t=toc;
+  tic; [A Ax Ay] = b.eval(p, o); t=toc;                 % test nargout=3 case
+ %tic; p.nx = ones(size(xx(:))); [A Ax] = b.eval(p, o); % or test nargout=2
+ %   p.nx = 1i*p.nx; [A Ay] = b.eval(p, o); t=toc;      % (also for nargout=2)
   
   fprintf('\t%d evals (w/ x,y derivs) in %.2g secs = %.2g us per eval\n',...
           numel(A), t, 1e6*t/numel(A))
