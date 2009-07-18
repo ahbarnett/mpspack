@@ -48,11 +48,15 @@ classdef regfbbasis < handle & basis
             if ~isfield(opts,'rescale_rad'), opts.rescale_rad=0; end
             if ~isfield(opts,'besselcode'), opts.besselcode='r'; end
             if ~isfield(opts,'fastang'), opts.fastang=0; end
+            if ~isfield(opts,nmultiplier), opts.nmultiplier=1; end
 
-            regfb.N=N; regfb.origin=origin;        % copy opts to properties
+            regfb.nmultiplier=opts.nmultiplier;
+            regfb.N=N*regfb.nmultiplier; 
+            regfb.origin=origin;
             regfb.real=opts.real; regfb.besselcode=opts.besselcode;
             regfb.rescale_rad = opts.rescale_rad;
             regfb.fastang = opts.fastang;
+            
             
             if isempty(strfind('rmg', regfb.besselcode))  % usage check
               error('opts.besselcode must be one of ''r'',''m'',''g''!');
@@ -182,6 +186,11 @@ classdef regfbbasis < handle & basis
             text(real(regfb.origin), imag(regfb.origin), opts.label);
           end
         end % func
+        
+        function updateN(regfb,N)
+        % UPDATEN - Update degree N of Fourier-Bessel basis functions
+            regfb.N=regfb.nmultiplier*N;
+        end
         
         function sc = Jrescalefactors(regfb, n) % ... used to effect rescale_rad
         % JRESCALEFACTORS - given list of orders, return FB J-rescaling factors

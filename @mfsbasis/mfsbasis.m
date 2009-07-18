@@ -38,7 +38,7 @@ properties
       function b = mfsbasis(varargin) % Constructor
           if nargin==0, return; end
           if nargin>3, error('Two many arguments'); end
-          defaultopts=struct('eta',inf,'fast',0,'real',0);
+          defaultopts=struct('eta',inf,'fast',0,'real',0,'nmultiplier',1);
           % Now evaluate the options array
           if isstruct(varargin{end}),
               opts=utils.merge(varargin{end},defaultopts);
@@ -48,6 +48,7 @@ properties
           b.fast=opts.fast;
           b.realflag=opts.real;
           b.eta=opts.eta;
+          b.nmultiplier=opts.nmultiplier;
 
           % Evaluate the input arguments
           
@@ -66,7 +67,7 @@ properties
               % First argument is cell array
               if length(varargin{1})~=2, error('Wrong argument'); end
               b.Z=varargin{1}{1};
-              b.N=varargin{2};
+              b.N=varargin{2}*b.nmultiplier;
               b.t=(1:b.N)/b.N;
               b.y=b.Z(b.t); 
               b.Zp=varargin{1}{2}; 
@@ -74,7 +75,7 @@ properties
           elseif isa(varargin{1},'function_handle'),
               % First argument is function handle
               b.Z=varargin{1};
-              b.N=varargin{2};
+              b.N=varargin{2}*b.nmultiplier;
               b.t=(1:b.N)/b.N;
               b.y=b.Z(b.t);
               if ~isinf(b.eta), 
@@ -160,6 +161,21 @@ properties
       Nf = b.N;
     end
     
+    function updateN(b,N)
+    % UPDATEN - Update number N of MFS basis functions
+        
+        % Only possible if charge curve was given as function Z
+        if isempty(b.Z), 
+            warning('Cannot update number of MFS basis functions if charge curve Z is not given');
+            return
+        end        
+        b.N=N*b.nmultiplier;
+        % Recreate charge points
+        b.t=(1:b.N)/b.N;
+        b.y=b.Z(b.t);
+        if ~isempty(b.Zp), b.ny=b.Zp(b.t); end
+    end
+        
 
     function showgeom(bas, opts) % .................. crude show MFS pts, etc
       if nargin<2, opts = []; end

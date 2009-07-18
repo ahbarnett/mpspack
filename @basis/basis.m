@@ -26,6 +26,10 @@ classdef basis < handle
   
     function updateNf(b) % ................ dummy for all but layerpot bases
     end
+
+    function updateN(b,N) % Reimplemented by basis objects to change
+                        % number of basis functions
+    end
     
     function k = k(b, opts) % .................... looks up the basis wavenumber
     % K - look up a basis set's wavenumber from the domain(s) it affects

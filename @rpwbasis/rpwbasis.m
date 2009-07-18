@@ -30,8 +30,11 @@ classdef rpwbasis < handle & basis
       if nargin<1, N = 20; end        % Default degree
       if nargin<2, opts = []; end
       if ~isfield(opts,'real'), opts.real = 1; end   % default is real
-      b.N = N; b.real = opts.real;
-      b.dirs = exp(1i*pi*(1:N)/N);    % uniform in angle, for now
+      if ~isfield(opts,'nmultiplier'), opts.nmultiplier=1; end
+      b.nmultiplier=opts.nmultiplier;
+      b.N = N*b.nmultiplier; b.real = opts.real;
+      b.dirs = exp(1i*pi*(1:b.N)/b.N);    % uniform in angle, for now
+      
     end
  
     function Nf = Nf(b)
@@ -91,16 +94,24 @@ classdef rpwbasis < handle & basis
       end
     end % func
     
-    function showgeom(bas, opts) % .................. crude show directions
+    function showgeom(b, opts) % .................. crude show directions
     % SHOWGEOM - plot real plane wave basis set geometry information
       if nargin<2, opts = []; end
-      ze = zeros(size(bas.dirs));
-      plot([ze; real(bas.dirs)], [ze; imag(bas.dirs)], 'r-');
+      ze = zeros(size(b.dirs));
+      plot([ze; real(b.dirs)], [ze; imag(b.dirs)], 'r-');
       if isfield(opts, 'label')
-        n = ceil(numel(bas.dirs)/2);
-        text(real(bas.dirs(n)), imag(bas.dirs(n)), opts.label);
+        n = ceil(numel(b.dirs)/2);
+        text(real(b.dirs(n)), imag(b.dirs(n)), opts.label);
       end
     end % func
+    
+    function updateN(b,N)
+        % UPDATEN - Update degree N of Fourier-Bessel basis functions
+        b.N=b.nmultiplier*N;
+        b.dirs = exp(1i*pi*(1:b.N)/b.N);
+
+    end
+    
     
   end % methods
 end
