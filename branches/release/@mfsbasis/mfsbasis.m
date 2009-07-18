@@ -85,7 +85,7 @@ properties
           end
       end
       
-      function [A B C] = eval(b, pts)
+      function [A B C] = eval(b, pts,opts)
       % EVAL - evaluate MFS basis values, and maybe 
       % derivatives, at set of points
       
