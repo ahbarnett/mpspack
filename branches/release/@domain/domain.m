@@ -225,6 +225,7 @@ classdef domain < handle
       h = plot(d, o)                     % domain plot: o is plot opts struct
       addregfbbasis(d, origin, N, opts) % add reg FB basis object
       addnufbbasis(d,origin,nu,offset,branch,N,opts) % add irreg. FB basis
+      addcornerbases(d, N, opts)  % add multiple nu-FB's at corners
       addrpwbasis(d, N, opts)           % add real PW basis
       addmfsbasis(d, Z, tau, N, opts)   % add MFS basis
       b = addlayerpotbasis(d, a, segs, opts) % add layer-potential basis

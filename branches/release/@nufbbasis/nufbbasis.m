@@ -203,12 +203,16 @@ classdef nufbbasis < handle & basis
             end
         end  % func
 
-        function showgeom(b, opts) % .............. plotting of nufb basis geom
+        function h = showgeom(b, opts) % .......... plotting of nufb basis geom
           if nargin<2, opts = []; end
-          plot(real(nufb.origin), imag(nufb.origin), 'ro');
+          x = real(b.origin); y = imag(b.origin); h = plot(x,y,'ro');
           str = sprintf('(nu=%.2g) ', b.nu);
           if isfield(opts, 'label'), str = [str opts.label]; end
-          text(real(nufb.origin), imag(nufb.origin), str);
+          h = [h; text(x,y, str)]; hold on;
+          angfrac = 0:.05:1;
+          t = b.offset * exp(1i*pi/b.nu).^angfrac;   % angles are on unit circle
+          l = 0.3; % filled polygon patch...
+          h = [h; patch([x+l*real(t) x], [y+l*imag(t) y], 'r')];
         end % func
         
         function sc = Jrescalefactors(nufb, n) % ... used to effect rescale_rad

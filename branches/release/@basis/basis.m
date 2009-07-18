@@ -8,6 +8,7 @@ classdef basis < handle
                             %     (added 7/14/09, required)
     N                       % Degree of basis set: interpretation depends on
                             %     type of basis (see basis.Nf method)
+    nmultiplier             % can be used by problem class to choose N degree
   end
   
   methods (Abstract)

@@ -108,7 +108,7 @@ if verb  % generate f:doms b
   figure; opts.gridinside=0.05; tri.plot(opts); axis off; print -depsc2 tri.eps
 end
 
-s.disconnect;
+s.disconnect;                      % play with some domains
 exttri = domain([], [], s, -1]);
 s.disconnect; 
 ss = s.translate(2);
@@ -117,27 +117,54 @@ exttwotri = domain([], [], {s(end:-1:1), ss(end:-1:1)}, {-1, -1});
 %  figure; exttwotri.plot(opts); axis off; print -depsc2 exttwotri.eps
 %end
 
-% Helmholtz triangle BVP...
-clear all classes
-s = segment.polyseglist([], [1, 1i, exp(4i*pi/3)]); s.requadrature(50);
+% Helmholtz triangle BVP w/regfb...  (may start code afresh here)
+clear all classes; verb = 1;
+s = segment.polyseglist(50, [1, 1i, exp(4i*pi/3)]);
 tri = domain(s, 1);
 s.setbc(-1, 'd', [], @(t) 1+0*t);
 tri.addregfbbasis(0, []); tri.bas{1}.rescale_rad = 1.0;
 p = bvp(tri);
-tri.k = 5;
-Ns = 2:2:30; for i=1:numel(Ns)
+tri.k = 10;
+Ns = 2:2:40; for i=1:numel(Ns)
   tri.bas{1}.N = Ns(i); p.solvecoeffs; r(i) = p.bcresidualnorm;
-  %nm(i) = norm(p.co);
+  p.pointsolution(pointset(0)), %nm(i) = norm(p.co); % check convergence
 end
-figure; loglog(Ns, r, '+-'); xlabel('N'); ylabel('bdry err norm');
-%figure; loglog(Ns, nm, '+-'); xlabel('N'); ylabel('coeff norm');
+figure; loglog(2*Ns, r, '+-'); xlabel('# degrees of freedom'); ylabel('bdry err norm');
 
 if verb  % generate f:triconv a
-  figure;loglog(Ns, r, '+-'); set(gca,'fontsize', 20); axis tight;
-  xlabel('N'); ylabel('bdry err norm'); print -depsc2 triFB.eps
+  g = gcf;
+  f = figure; fb = loglog(2*Ns, r, '+-'); set(gca,'fontsize', 20); axis tight;
+  xlabel('# degrees of freedom'); ylabel('bdry err norm');
+  print -depsc2 triFB.eps
+  figure(g);
 end
 
+% Helmholtz triangle BVP w/regfb...
+tri.clearbases;
+opts = []; opts.rescale_rad = 1.9; % err < 1e-8 is way too dependent on this!
+opts.cornerflags = [1 1 0];
+tri.addcornerbases(50, opts);
+Ns = 1:20; for i=1:numel(Ns)
+  for j=1:numel(tri.bas), tri.bas{j}.N=Ns(i); end
+  p.solvecoeffs; r(i) = p.bcresidualnorm; nm(i) = norm(p.co);
+  p.pointsolution(pointset(0)) %converges to -3.98718419
+end
+% add to previous figure...        (check norm w/ loglog(Ns, [r;nm], 'r+-');)
+hold on; loglog(4*Ns, r, 'r+-'); xlabel('N'); ylabel('bdry err norm');
+% notice with two corner expansions there are 4N dofs in total
 
+if verb, % generate f:triconv a and b
+  figure(f); hold on; nufb = loglog(4*Ns, r, 'r+-'); axis tight;
+  legend([fb nufb], {'regular FB at origin', 'fractional FB at corners'},...
+         'location', 'southwest');
+  print -depsc2 triFB.eps
+  figure; p.showsolution; axis off; h=colorbar; set(h,'fontsize',20);
+  print -depsc2 -painters triu.eps
+end
 
+figure; tri.plot; tri.showbasesgeom;   % check corner bases correct
+
+% above we notive value at z=0 converges to roughly same # correct digits as
+% the boundary error norm.
 
 % end
