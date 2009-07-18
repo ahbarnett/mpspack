@@ -51,8 +51,11 @@ classdef nufbbasis < handle & basis
             if nargin<6, opts=[]; end;
             if ~isfield(opts,'type'), opts.type='cs'; end;
             if ~isfield(opts,'rescale_rad'), opts.rescale_rad=0; end
+            if ~isfield(opts,'nmultiplier'), opts.nmultiplier=1; end
 
-            nufb.N=N; nufb.branch=branch; nufb.offset=offset;
+            nufb.nmultiplier=opts.nmultiplier;
+            nufb.N=N*opts.nmultiplier; 
+            nufb.branch=branch; nufb.offset=offset;
             nufb.nu=nu; nufb.origin=origin;
             nufb.type=opts.type; nufb.rescale_rad=opts.rescale_rad;
             nufb.Nf;                 % raises an error if unknown type
@@ -203,14 +206,20 @@ classdef nufbbasis < handle & basis
             end
         end  % func
 
-        function h = showgeom(b, opts) % .......... plotting of nufb basis geom
+        function updateN(nufb,N)
+        % UPDATEN - Update degree N of Fourier-Bessel basis functions
+            nufb.N=nufb.nmultiplier*N;
+        end
+        
+        
+        function h = showgeom(nufb, opts) % .......... plotting of nufb basis geom
           if nargin<2, opts = []; end
-          x = real(b.origin); y = imag(b.origin); h = plot(x,y,'ro');
-          str = sprintf('(nu=%.2g) ', b.nu);
+          x = real(nufb.origin); y = imag(nufb.origin); h = plot(x,y,'ro');
+          str = sprintf('(nu=%.2g) ', nufb.nu);
           if isfield(opts, 'label'), str = [str opts.label]; end
           h = [h; text(x,y, str)]; hold on;
           angfrac = 0:.05:1;
-          t = b.offset * exp(1i*pi/b.nu).^angfrac;   % angles are on unit circle
+          t = nufb.offset * exp(1i*pi/nufb.nu).^angfrac;   % angles are on unit circle
           l = 0.3; % filled polygon patch...
           h = [h; patch([x+l*real(t) x], [y+l*imag(t) y], 'r')];
         end % func
