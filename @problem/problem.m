@@ -237,8 +237,6 @@ classdef problem < handle
       pr.k = k;
       for d=pr.doms
         d.k = d.refr_ind * k;
-         % do basis sets, if any, in each domain...
-        for i=1:numel(d.bas), d.bas{i}.k = d.k; end
       end
     end
     
