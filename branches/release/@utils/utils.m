@@ -5,7 +5,7 @@ classdef utils
     [res,err]=gslbesselj(nmin,nmax,x);
     [res,err]=gslbesseljnu(v,x);
     J=recursivebessel(M,x);
-    A = fundsol(r, k)
+    [F0 F1 F2] = fundsol(r, k, orders, fast)
     [B radderivs] = fundsol_deriv(r, cosphi, k, radderivs)
     [H0 H1] = greengardrokhlinhank103(z);
     [H0 H1] = greengardrokhlinhank106(z);
@@ -14,6 +14,7 @@ classdef utils
     monochrome(h, c)
     u = unique(c)
     i = isin(b, c)
+    s = merge(s1,s2);
   end
 
 end

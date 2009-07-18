@@ -122,8 +122,10 @@ classdef scattering < bvp & handle
     
       o = pr.gridboundingbox(o);
       gx = o.bb(1):o.dx:o.bb(2); gy = o.bb(3):o.dx:o.bb(4);  % plotting region
-      [xx yy] = meshgrid(gx, gy); zz = xx + 1i*yy;  % keep zz rect array
+      [xx yy] = meshgrid(gx, gy); zz = xx(:) + 1i*yy(:);  % keep zz rect array
       [u di] = pr.pointincidentwave(pointset(zz),o);
+      u=reshape(u,size(xx,1),size(xx,2));
+      di=reshape(di,size(xx,1),size(xx,2));      
     end % func
     
     function showthreefields(pr, o)
