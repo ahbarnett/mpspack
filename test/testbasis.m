@@ -39,7 +39,7 @@ for type = 11:13              % select the cases you want to test here
    case {6,7}              % ................. MFS: real/cmplx
     N = 10;
     opts.real = (type==6);
-    opts.fast = 2;       % about 10x faster than o.fast=0 (matlab hankel)!
+    opts.fast = 1;       % about 10x faster than o.fast=0 (matlab hankel)!
     b = mfsbasis(@(t) exp(1i*t), -0.4, N, opts);  % tau keeps them outside
     b.doms = d; c = 0.2; js = 1:b.Nf;
     fprintf('evaluating MFS basis... real=%d\n', opts.real)

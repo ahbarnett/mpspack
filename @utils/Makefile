@@ -27,10 +27,10 @@ greengardrokhlinhank106.mexglx: greengardrokhlinhank106.c hank103.o hank106.o
 	mex greengardrokhlinhank106.c hank103.o hank106.o LD=$(FC)
 
 hank103.o: hank103.f
-	$(FC) -c hank103.f -O3
+	$(FC) -fPIC -c hank103.f -O3
 
 hank106.o: hank106.f
-	$(FC) -c hank106.f -O3
+	$(FC) -fPIC -c hank106.f -O3
 
 clean:
 	rm *.o *.mexglx
