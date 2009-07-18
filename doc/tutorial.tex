@@ -348,15 +348,6 @@ the {\em left}. (The black semicircles will be explained in the next section.)
 
 
 
-\bfi % ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-a)\raisebox{-0.3\textwidth}{\ig{height=0.35\textwidth}{triFB.eps}}
-%b)\raisebox{-0.4\textwidth}{\ig{height=0.45\textwidth}{tri.eps}}
-\ca{a) Slow convergence of boundary error for Fourier-Bessel basis
-in a triangle with unity Dirichlet boundary data, on log-log axes.
-b) Convergence with corner-adapted basis set.}{f:triconv}
-\efi
-
-
 
 % ----------------------------------------------------------------------------
 \section{Polygons, corners, and corner-adapted bases}
@@ -411,9 +402,18 @@ would be needed beforehand (this acts on all segments in the list).%
     unless the data {\tt s(:).dom} were manually rewritten to point to
     the domain (see manual). When in doubt, disconnect segments then remake
     all domains.}
-A universal rule is that
+A universal rule is:
 \begin{center}\framebox{\mbox{Each side of a segment may be associated with
 at most one domain}}\end{center}
+
+\bfi % ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+a)\raisebox{-0.35\textwidth}{\ig{height=0.4\textwidth}{triFB.eps}}
+b)\raisebox{-0.35\textwidth}{\ig{height=0.4\textwidth}{triu.eps}}
+\ca{a) Comparing convergence of boundary error norm for Fourier Bessel
+vs corner-adapted fractional-order Fourier Bessel basis sets
+in a triangle with unity Dirichlet boundary data, for Helmholtz
+BVP with $k=10$, on log-log axes. b) The solution function.}{f:triconv}
+\efi
 
 Say we want to solve an interior Helmholtz BVP on the original triangle
 of this section, and {\tt s} and {\tt tri} have been set up as with the
@@ -422,26 +422,52 @@ Say we want constant boundary data 1.
 We may use a Fourier-Bessel basis set, solve, and
 plot error convergence with a simple code,
 \begin{verbatim}
-   s.setbc(-1, 'd', [], @(t) 1);
-   tri.addregfbbasis(0, []); tri.bas{1}.rescale_rad = 1.0; % improves stability
+   s.setbc(-1, 'd', [], @(t) 1);             % note inline "1" function
+   tri.addregfbbasis(0, []); tri.bas{1}.rescale_rad = 1.0; % for stability
    p = bvp(tri);
-   tri.k = 5;                                              % wavenumber
-   Ns = 2:2:30; for i=1:numel(Ns)
+   tri.k = 10;                               % set wavenumber
+   Ns = 2:2:40; for i=1:numel(Ns)
      tri.bas{1}.N = Ns(i); p.solvecoeffs; r(i) = p.bcresidualnorm;
    end
-   figure; loglog(Ns, r, '+-'); xlabel('N'); ylabel('bdry err norm');
+   figure; loglog(2*Ns, r, '+-'); xlabel('# dofs'); ylabel('bdry err norm');
 \end{verbatim}
 This produces the algebraic convergence%
   \footnote{The power law for convergence is related to the largest corner
 angles and is discussed in \cite{Ei74}.}
-shown in Fig.~\ref{f:triconv}a.
+shown in blue in Fig.~\ref{f:triconv}a.
 
 We now show how corner-adapted basis sets may be substituted for
 the above basis set to achieve superior convergence and hence
-more efficiency.
-%super-algebraic
-
-
+more efficiency. We clear the previous basis set from the domain
+and add fractional-order (i.e. `wedge' expansion) Fourier Bessel bases
+at two of the corners, of both cos and sin type.%
+  \footnote{Since only one of the corners is
+    singular, it is possible to omit a corner
+    expansion from one of the other corners, for instance the 3rd one.
+    This done with the options {\tt opts.cornerflags = [1 1 0];}.}
+Repeating the convergence
+study and comparing against the previous data is easy,
+%super-algebraic ?
+\begin{verbatim}
+tri.clearbases; opts.rescale_rad = 1.9; opts.cornerflags = [1 1 0];
+tri.addcornerbases([], opts);
+Ns = 1:20; for i=1:numel(Ns)
+  for j=1:3, tri.bas{j}.N=Ns(i); end            % sets each order to N
+  p.solvecoeffs; r(i) = p.bcresidualnorm;
+end
+hold on; loglog(4*Ns, r, 'r+-');                % total # dofs is 4N
+\end{verbatim}
+The new convergence data is shown in red in Fig.~\ref{f:triconv}a;
+initially it is superalgebraic.
+[WHY IS IT NOT SUPER-ALGEBRAIC, TIMO? IT IS ALSO too SENSITIVE to rescalerad - WHY?]
+The solution field is Fig.~\ref{f:triconv}b, and its large values
+shows that we are close to a Dirichlet resonance of the domain.
+Since only one of the corners is singular, it is possible to omit a corner
+expansion from one of the other corners, for instance the 3rd one, by
+using {\tt opts.cornerflags = [1 1 0];}.
+Finally the basis sets geometry in the domain can be visualized by
+{\tt tri.showbasesgeom;} which shows the wedges implied by the corner
+expansions.
 
 
 % ----------------------------------------------------------------------------

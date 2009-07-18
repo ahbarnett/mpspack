@@ -9,7 +9,8 @@
 %
 %   Also all options in SHOWSEGMENTS have effect.
 %
-% To do: filled patch for domain (somehow handle non-simply connected patch?)
+% Issues/notes:
+%  * show filled patch for domain (somehow handle non-simply connected patch?)
 
 function h = plot(d, o)
 
