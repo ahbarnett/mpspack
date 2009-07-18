@@ -19,7 +19,7 @@ d=domain([],[],seg,-1);
 
 % Add basis functions
 
-x0=0; y0=0; opts.fast=0; opts.eta=k;
+opts.fast=1; opts.eta=k;
 Z=@(w) Rmfs*exp(2i*pi*w);
 Zp=@(w) 2i*pi*Z(w);
 d.addmfsbasis({Z,Zp},N,opts);

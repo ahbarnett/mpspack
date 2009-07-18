@@ -1,4 +1,4 @@
-function [F0 F1 F2] = fundsol(r, k,orders, fast)
+function [F0 F1 F2] = fundsol(r, k,orders, opts)
 % FUNDSOL - Compute fundamental solutions
 %
 %  [F0 F1 F2] = FUNDSOL(r, k, orders, fast) computes given a wavenumber k
@@ -8,9 +8,10 @@ function [F0 F1 F2] = fundsol(r, k,orders, fast)
 %  If k>0 then F0=(1i/4)*besselh(0,k*r).
 %  If k=0 then F0=-(1/2/pi)*log(r).
 %
-%  If fast>0 the function tries to use a fast routine by Greengard and
-%  Rhoklin for Hankel computations if available. Otherwise, the built-in
-%  Matlab function is used.
+%  opts is a structure that can contain various options. Currently
+%  supported is o.fast. If o.fast>0 use fast Hankel routines by Rokhlin and
+%  Greengard.
+%
 %
 %  The string orders can take the following values:
 %
@@ -21,10 +22,12 @@ function [F0 F1 F2] = fundsol(r, k,orders, fast)
 %    orders = '12'  - Evaluate F1 and F2
 %
 
+fast=opts.fast;
 
 % Check if fast mex implementation exists and downgrade speed if not
 if fast>0 && exist('@utils/greengardrokhlinhank103','file')~=3
    fast = 0; % downgrade the speed if 103 not available
+   warning('Could not use fast routines. Please recompile mex file');
 end
 
 F0=[]; F1=[]; F2=[];
