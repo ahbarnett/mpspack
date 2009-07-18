@@ -85,12 +85,18 @@ properties
           end
       end
       
-      function [A B C] = eval(b, pts,opts)
+      function [A B C] = eval(b, pts, opts)
       % EVAL - evaluate MFS basis values, and maybe 
       % derivatives, at set of points
       
-      % Find out what derivatives are needed
-      
+      o=struct('fast',b.fast);
+     
+      if nargin==3,
+          opts=utils.merge(opts,o);
+      else
+          opts=o;
+      end
+            
       N = b.N; M = numel(pts.x); k = b.k; eta=b.eta;  %#ok<*PROP>
       ny = repmat(b.ny, [M 1]);
       d = repmat(pts.x, [1 N]) - repmat(b.y, [M 1]); % displacement matrix
@@ -99,12 +105,12 @@ properties
       if nargout==1,
           if eta==inf,
               % No derivatives
-              A=utils.fundsol(r,k,'0',b.fast);
+              A=utils.fundsol(r,k,'0',opts);
               if b.realflag, A=real(A); end;
               return              
           elseif eta==0,
               % Only first derivative
-              [F0 A]=utils.fundsol(r,k,'1',b.fast);
+              [F0 A]=utils.fundsol(r,k,'1',opts);
               cosphi = -real(conj(ny).*d);
               A=A.*cosphi./r;
               if b.realflag, A=real(A); end;
@@ -112,7 +118,7 @@ properties
           else
               % Fun and first derivative
               cosphi = -real(conj(ny).*d);
-              [F0 F1]=utils.fundsol(r,k,'01',b.fast);
+              [F0 F1]=utils.fundsol(r,k,'01',opts);
               A=F1.*cosphi./r+1i*eta*F0;
               if b.realflag, A=real(A); end;
               return
@@ -121,12 +127,12 @@ properties
           rinv=1./r; dr=d.*rinv;
           if eta==inf,
               % Fun and first derivative
-              [A F1]=utils.fundsol(r,k,'01',b.fast);
+              [A F1]=utils.fundsol(r,k,'01',opts);
               B=F1.*real(dr); C=F1.*imag(dr);
           elseif eta==0,
               % First and second derivative
               cosphi = -real(conj(ny).*d);
-              [F0 F1 F2]=utils.fundsol(r,k,'12',b.fast);
+              [F0 F1 F2]=utils.fundsol(r,k,'12',opts);
               drr=dr.*rinv;
               A=F1.*rinv.*cosphi;
               B=F2.*real(drr).*cosphi-F1.*rinv.*(real(ny)+cosphi.*real(drr));
@@ -134,7 +140,7 @@ properties
           else
               % Fun, first and second derivative
               cosphi = -real(conj(ny).*d); drr=dr.*rinv;
-              [F0 F1 F2]=utils.fundsol(r,k,'012',b.fast);
+              [F0 F1 F2]=utils.fundsol(r,k,'012',opts);
               A=F1.*cosphi.*rinv+1i*eta*F0;
               B=F2.*real(drr).*cosphi-F1.*rinv.*(real(ny)+cosphi.*real(drr))+...
                   1i*eta*F1.*rinv.*real(d);
