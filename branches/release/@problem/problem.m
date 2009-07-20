@@ -252,6 +252,7 @@ classdef problem < handle
                 d.bas{j}.updateN(N); 
             end
         end
+        pr.setupbasisdofs;       % refreshes pr.N and pr.basnoff
     end
     
     

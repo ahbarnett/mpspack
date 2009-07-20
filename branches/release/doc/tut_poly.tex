@@ -95,27 +95,26 @@ at two of the corners, of both cos and sin type.%
   \footnote{Since only one of the corners is
     singular, it is possible to omit a corner
     expansion from one of the other corners, for instance the 3rd one.
-    This done with the options {\tt opts.cornerflags = [1 1 0];}.}
+    This done with the options {\tt opts.cornermultipliers = [1 1 0];}.}
 Repeating the convergence
 study and comparing against the previous data is easy,
 %super-algebraic ?
 \begin{verbatim}
-tri.clearbases; opts.rescale_rad = 1.9; opts.cornerflags = [1 1 0];
+tri.clearbases; opts.rescale_rad = 2.0; opts.cornermultipliers = [1 1 0];
 tri.addcornerbases([], opts);
 Ns = 1:20; for i=1:numel(Ns)
   p.updateN(Ns(i)); nn(i) = p.N; p.solvecoeffs; r(i) = p.bcresidualnorm;
 end
-hold on; loglog(4*Ns, r, 'r+-');                % total # dofs is 4N
+hold on; loglog(nn, r, 'r+-');              % plot error vs total # dofs
 \end{verbatim}
-The new convergence data is shown in red in Fig.~\ref{f:triconv}a;
-initially it is superalgebraic.
-[WHY IS IT NOT SUPER-ALGEBRAIC, TIMO? IT IS ALSO too SENSITIVE to rescalerad - WHY?]
+The new convergence data is shown in red in Fig.~\ref{f:triconv}a,
+and is much faster.
+[initially it is superalgebraic.
+TIMO: WHY IS IT NOT SUPER-ALGEBRAIC ALL THE WAY DOWN?
+IT IS ALSO too SENSITIVE to rescalerad - WHY?]
 The solution field is Fig.~\ref{f:triconv}b, and its large values
-shows that we are close to a Dirichlet resonance of the domain.
-Since only one of the corners is singular, it is possible to omit a corner
-expansion from one of the other corners, for instance the 3rd one, by
-using {\tt opts.cornerflags = [1 1 0];}.
-Finally the basis sets geometry in the domain can be visualized by
-{\tt tri.showbasesgeom;} which shows the wedges implied by the corner
+shows that we are quite close to a Dirichlet resonance of the domain.
+The basis set geometry in the domain can be visualized by
+{\tt tri.showbasesgeom} which shows the wedges implied by the corner
 expansions.
 

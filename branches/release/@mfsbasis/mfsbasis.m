@@ -1,24 +1,32 @@
 classdef mfsbasis < handle & basis
 % MFSBASIS - create a fundamental solutions (MFS) basis set
 %
-%  b = MFSBASIS(Z, N, opts) creates an MFS basis using charge points
-%  at Z(t), where t are equally distributed in [0,1]. Z is a handle
-%  to a given [0,1]-periodic analytic function.
+% b = MFSBASIS(Z, N, opts) creates an MFS basis using charge points
+%   at Z(t), where t are equally distributed in [0,1]. Z is a handle
+%   to a function. If the charge curve is to be closed, then Z must be
+%   1-periodic. N may be empty.
 %
-%  b = MFSBASIS({Z, Zp}, N, opts) is as above. But Zp additionally specifies
-%  the derivative of Z. This is necessary if double layer potentials are
-%  used.
+% b = MFSBASIS({Z, Zp}, N, opts) is as above. But Zp additionally specifies
+%   the derivative of Z. This is necessary if dipole-type charges (double
+%   layer potentials) are used. N may be empty.
 %
-%  b = MFSBASIS(p, opts) describes MFS charge points in terms of a point
-%  set object p. If double layer potentials are used then p also needs to
-%  contain normal directions.
+% b = MFSBASIS(p, opts) describes MFS charge points in terms of a point
+%   set object p. If double layer potentials are used then p also needs to
+%   contain normal directions.
 %
-%  opts is an optional structure containing optional fields:
+% b = MFSBASIS(s, N, opts) uses the function handles from segment s to choose
+%   N charge points. It is equivalent to b = MFSBASIS({s.Z, s.Zp}, N, opts).
+%
+%  In each of the above, opts is an optional structure with optional fields:
 %  opts.eta   - (inf) If eta=inf use single layer potential MFS basis. For
 %               eta neq inf use linear combination of double and single layer
 %               potential MFS basis
 %  opts.fast  - (0) Hankel evaluation method (0=matlab; 1,2=faster)
-%  opts.real  - (false) If true, use real part of Hankel functions only 
+%  opts.real  - (false) If true, use real part of Hankel functions only
+%  opts.tau   - (0) Creates charge curve Z(t+i.tau) rather than Z(t)
+
+% Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
+
 properties
     Z                     % function handle for charge curve
     Zp                    % function handle for derivative
@@ -36,14 +44,16 @@ properties
   methods
       function b = mfsbasis(varargin) % Constructor
           if nargin==0, return; end
-          if nargin>3, error('Two many arguments'); end
-          defaultopts=struct('eta',inf,'fast',2,'real',0,'nmultiplier',1);
+          if nargin>3, error('Too many arguments'); end
+          defaultopts=struct('eta',inf,'fast',2,'real',0,'nmultiplier',1,...
+                             'tau',0);
           % Now evaluate the options array
           if isstruct(varargin{end}),
               opts=utils.merge(varargin{end},defaultopts);
           else
               opts=defaultopts;
           end
+          % make hankel library code decisions here at creation time...
           if opts.fast==2 & exist('@utils/greengardrokhlinhank106.mexglx')~=3
             opts.fast = 1;    % downgrade the speed 2->1 if 106 not available
           end
@@ -56,9 +66,10 @@ properties
           b.nmultiplier=opts.nmultiplier;
 
           % Evaluate the input arguments
-          
-          if isa(varargin{1},'pointset'),
-              % First argument pointset
+          if isa(varargin{1},'segment')      % must come before pointset since
+              s = varargin{1};               % a segment is also a pointset
+              b = mfsbasis({s.Z, s.Zp}, varargin{2:end}); % recursive
+          elseif isa(varargin{1},'pointset')     % First argument pointset
               if nargin>1 && ~isstruct(varargin{2}), 
                   error('Wrong arguments'); 
               end
@@ -68,19 +79,28 @@ properties
               if isempty(b.ny) && ~isinf(b.eta),
                   error('Normal directions not supplied');
               end
-          elseif iscell(varargin{1}),
-              % First argument is cell array
-              if length(varargin{1})~=2, error('Wrong argument'); end
-              b.Z=varargin{1}{1};
-              b.Zp=varargin{1}{2}; 
-              b.updateN(varargin{2});   % set up charge pts and normals
-          elseif isa(varargin{1},'function_handle'),
-              % First argument is function handle
-              b.Z=varargin{1};
-              b.updateN(varargin{2});   % set up charge pts
-              if ~isinf(b.eta), 
-                  error('Derivative of Z needed for eta<inf');
+          elseif iscell(varargin{1}) | isa(varargin{1},'function_handle')
+              % case of Z or {Z, Zp} ...
+              havederiv = iscell(varargin{1});        % Zp is available
+              if havederiv && length(varargin{1})~=2,
+                error('Wrong size of cell array in first argument');
               end
+              if havederiv
+                Z=varargin{1}{1}; Zp=varargin{1}{2};
+                if opts.tau~=0
+                  b.Z = @(t) Z(t+1i*opts.tau); b.Zp = @(t) Zp(t+1i*opts.tau); 
+                else, b.Z = Z; b.Zp = b.Zp; end
+              else
+                b.Z=varargin{1};
+                if opts.tau~=0
+                  b.Z = @(t) Z(t+1i*opts.tau);
+                else, b.Z = Z; end
+                if ~isinf(b.eta), 
+                  error('Derivative of Z needed for eta<inf');
+                end
+              end
+              N = varargin{2}; if isempty(N), N = 20; end   % choose default N
+              b.updateN(N);            % set up charge pts and maybe normals
           else
               error('Wrong arguments');
           end
