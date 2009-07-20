@@ -182,7 +182,7 @@ properties
             warning('Cannot update number of MFS basis functions since charge curve Z is not given');
             return
         end        
-        b.N=N*b.nmultiplier;
+        b.N=ceil(N*b.nmultiplier);
         % Create charge points, and if needed, outward-pointing unit normals...
         b.t=(1:b.N)/b.N;
         b.y=b.Z(b.t);

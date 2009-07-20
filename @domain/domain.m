@@ -208,7 +208,7 @@ classdef domain < handle
       
       function clearbases(d) % .............. removes all basis sets from domain
       % CLEARBASES - remove all basis set associations from a domain
-        d.bas = {};
+        d.bas = {};    % possibly we should also kill any d.bas{:}.doms == d
       end
       
       function showbasesgeom(d) % ................. show geometry of basis objs

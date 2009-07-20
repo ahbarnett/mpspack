@@ -32,11 +32,16 @@ classdef rpwbasis < handle & basis
       if ~isfield(opts,'real'), opts.real = 1; end   % default is real
       if ~isfield(opts,'nmultiplier'), opts.nmultiplier=1; end
       b.nmultiplier=opts.nmultiplier;
-      b.N = N*b.nmultiplier; b.real = opts.real;
-      b.dirs = exp(1i*pi*(1:b.N)/b.N);    % uniform in angle, for now
-      
+      b.real = opts.real;
+      b.updateN(N);           % sets up overall N, and PW angles
     end
  
+    function updateN(b,N)
+        % UPDATEN - Update degree N of real plane wave basis function set
+        b.N=ceil(b.nmultiplier*N);
+        b.dirs = exp(1i*pi*(1:b.N)/b.N);    % uniform in angle, for now
+    end
+        
     function Nf = Nf(b)
       Nf = 2*b.N;                     % since two funcs per direction
     end
@@ -104,14 +109,6 @@ classdef rpwbasis < handle & basis
         text(real(b.dirs(n)), imag(b.dirs(n)), opts.label);
       end
     end % func
-    
-    function updateN(b,N)
-        % UPDATEN - Update degree N of Fourier-Bessel basis functions
-        b.N=b.nmultiplier*N;
-        b.dirs = exp(1i*pi*(1:b.N)/b.N);
-
-    end
-    
     
   end % methods
 end

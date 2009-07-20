@@ -6,8 +6,9 @@ function addcornerbases(d, N, opts)
 %    of freedom is 2*N). Degree of each corner is proportional to angle.
 %
 %  ADDCORNERBASES(d, N, opts) is as above, but allows options to be chosen:
-%    opts.cornerflags = list of numbers, either false or true, specifying which
-%                       corners are to be added (default is all true)
+%    opts.cornermultipliers = nmultipliers (basis size proportions) for each
+%                       corner. If zero for a corner, no basis is added there.
+%                       (default is all equal to 1 for valid corners)
 %    opts.type = 's', 'c', or 'cs', chooses angular sin/cos type as in nufbbasis
 %                       (default is 'cs')
 %    Other opts fields are passed to nufbbasis.
@@ -18,14 +19,17 @@ function addcornerbases(d, N, opts)
 
 
   if nargin<3, opts = []; end
-  if ~isfield(opts, 'cornerflags'), opts.cornerflags = ones(size(d.cloc)); end
+  if ~isfield(opts, 'cornermultipliers')   % default: 1 for each valid corner...
+    opts.cornermultipliers = ones(size(d.cloc)) .* ~isnan(d.cloc);
+  end
+  %  ...might be better with d.cang/pi instead of 1 ?
   
   for j=1:numel(d.cloc)
     bra = -d.cangoff(j) - d.cang(j)/2;  % choose branch cut facing away
-    if opts.cornerflags(j)
+    if opts.cornermultipliers(j)>0
+      opts.nmultiplier = opts.cornermultipliers(j);
       d.addnufbbasis(d.cloc(j), pi/d.cang(j), d.cangoff(j), bra, ...
                      ceil(N*d.cang(j)/pi), opts);
-      d.bas{end}.nmultiplier = d.cang(j)/pi;    % hack idea now - TIMO FIX
     end
   end
 
