@@ -240,6 +240,20 @@ classdef problem < handle
       end
     end
     
+    function updateN(pr,N)
+    % UPDATEN - Update the number of basis functions in each domain
+    %
+    %  updateN(pr,N) defines the degree/number of basis functions in each
+    %  domain d to be N*d.nmultiplier.
+    
+        for d=pr.doms,
+            for j=1:length(d.bas),
+                d.bas{j}.updateN(N); 
+            end
+        end
+    end
+    
+    
     function [u gx gy di h] = showsolution(pr, o) % ............. plot solution
     % SHOWSOLUTION - plot figure with solution Re u over all domains in problem
     %

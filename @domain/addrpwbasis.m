@@ -1,3 +1,4 @@
+function addrpwbasis(d, varargin)
 % ADDRPWBASIS - create a real plane wave basis object in a domain
 %
 %  ADDRPWBASIS(d, N, opts) creates a real-valued plane wave basis
@@ -5,8 +6,9 @@
 %   The rest of the argument list is discussed in RPWBASIS
 %
 % See also: RPWBASIS
+%
+% Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
 
-function addrpwbasis(d, varargin)
 
 d.bas  = {d.bas{:}, rpwbasis(varargin{:})}; % append cell arr of basis handles
 

@@ -16,10 +16,10 @@
 %  nx (interpreted in the same way). The Euclidean lengths of the vectors in
 %  nx are not required to be, nor changed to, unity.
 % 
-% Notes / issues:
-% extra size checks added, Barnett 2/25/09, 5/1/09 (removed), 7/13/09 (added)
-%
 % See also: POINTSET/plot, SEGMENT which builds on POINTSET
+%
+% Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
+
 
 classdef pointset < handle
 

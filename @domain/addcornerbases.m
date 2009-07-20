@@ -1,3 +1,4 @@
+function addcornerbases(d, N, opts)
 % ADDCORNERBASES - add irreg Fourier-Bessel basis to each corner of a domain
 %
 %  ADDCORNERBASES(d, N) adds one irregular fractional-order wedge FB basis
@@ -11,12 +12,10 @@
 %                       (default is 'cs')
 %    Other opts fields are passed to nufbbasis.
 %
-% Issues/notes:
-%  * currently total N is not 2*N. We need to decide what to set this to.
-%
 % See also: NUFBBASIS, ADDNUFBBASIS
+%
+% Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
 
-function addcornerbases(d, N, opts)
 
   if nargin<3, opts = []; end
   if ~isfield(opts, 'cornerflags'), opts.cornerflags = ones(size(d.cloc)); end
