@@ -1,7 +1,6 @@
 % Example codes from MPSpack tutorial, also generates EPS figures for this doc
 % SECTION 2: LAPLACE
 
-cd ../doc                             % so figures write out to doc/ directory
 clear all classes; verb = 0;          % if verb>0, generates EPS figures
 
 s = segment([], [0 1 0 2*pi]);
@@ -21,16 +20,16 @@ figure; opts.comparefunc = f; p.showsolution(opts);
 
 if verb, % generate f:sd
   figure; set(gca,'fontsize', 14); s.plot;
-  print -depsc2 seg.eps
+  print -depsc2 ../doc/seg.eps
   figure; set(gca,'fontsize', 14); opts.gridinside=0.05; d.plot(opts); axis off
-  print -depsc2 dom.eps
+  print -depsc2 ../doc/dom.eps
   % generate f:u
   figure; set(gca,'fontsize', 14); p.showsolution; axis off;
   h=colorbar; set(h,'fontsize',20);
-  print -depsc2 -painters u.eps
+  print -depsc2 -painters ../doc/u.eps
   figure; set(gca,'fontsize', 14); p.showsolution(opts); axis off
   h=colorbar; set(h,'fontsize',20);
-  print -depsc2 -painters uerr.eps
+  print -depsc2 -painters ../doc/uerr.eps
   % problem: -painters stops the transparency being correctly rendered.
   close all
 end

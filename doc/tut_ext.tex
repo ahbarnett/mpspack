@@ -1,3 +1,11 @@
+\bfi % ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+a)\raisebox{-0.4\textwidth}{\ig{height=0.45\textwidth}{extconv.eps}}
+b)\raisebox{-0.4\textwidth}{\ig{height=0.45\textwidth}{extgeom.eps}}
+\ca{a) Convergence of exterior Helmholtz BVP with MFS basis,
+b) Domain boundary and MFS charge curve geometry, and
+(real part of) the solution field outside the domain.}{f:ext}
+\efi
+
 % ----------------------------------------------------------------------------
 \section{Helmholtz equation, exterior and multiply connected domains}
 
@@ -13,35 +21,43 @@ One may check that its area {\tt d.area} is $\infty$.
 Exterior domains can be created by excluding a closed segment, for instance
 the trefoil segment introduced above,
 \begin{verbatim}
-   tref = segment.radialfunc(50, {@(q) 1 + 0.3*cos(3*q), @(q) -0.9*sin(3*q)});
+   tref = segment.radialfunc(100, {@(q) 1 + 0.3*cos(3*q), @(q) -0.9*sin(3*q)});
    d = domain([], [], tref, -1);                    % overwrites previous d
 \end{verbatim}
 Note the choice $-1$ for the direction argument, which states that
 the domain lies on the `nonstandard' side of the segment, i.e.\
 to the right side as the segment is traversed in its natural sense,
 with the segment normals pointing {\em into} the exterior domain.
-
-
-
-
-
-
-[TIMO insert mfsbasis, solve exterior smooth domain Helmholtz Dirichlet
-BVP. Add your code to examples/tutorial.m]
-
-\vspace{10ex}
-
-
-
-
-
-
-
-
-
-
-
-
+As before, we set up Dirichlet boundary data corresponding to a known
+radiative solution (a point source lying in the segment interior),
+\begin{verbatim}
+d.k = 10; f = @(z) besselh(0,d.k * abs(z-0.3-0.2i));  % a radiative Helm soln
+tref.setbc(1, 'd', [], @(t) f(tref.Z(t)));            % exterior Dirichlet data
+\end{verbatim}
+A convenient basis set for radiative solutions is a set of fundamental
+solutions (`MFS basis') lying on a closed curve interior to the segment.
+We set this up and plot convergence of boundary error norm,
+\begin{verbatim}
+opts.tau = 0.06; d.addmfsbasis(tref, [], opts);
+p = bvp(d);
+for N=5:5:80,
+  p.updateN(N); p.solvecoeffs; r(N) = p.bcresidualnorm;
+end
+figure; semilogy(r, '+-'); xlabel('N'); ylabel('bdry err norm');
+\end{verbatim}
+This gives the convergence plot Fig.~\ref{f:ext}a, and
+executing {\tt d.plot; p.showbasesgeom; p.showsolution;} gives
+Fig.~\ref{f:ext}b. Notice that the MFS charges lie some distance interior
+to the curve---this is controlled by the {\tt opts.tau} parameter which
+makes use of the fact that the segment is specified as an analytic function.%
+  \footnote{A general rule is that for good spectral convergence
+    the MFS curve should be
+    as far as possible from the solution domain boundary, while still
+    `shielding' this boundary from singularities in the analytic continuation
+    of the solution field. See~\cite{mfs}.}
+Plotting pointwise error with
+\co{opts.comparefunc = f; figure; p.showsolution(opts);}
+shows that is it around $10^{-13}$.
 
 
 \bfi % ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
