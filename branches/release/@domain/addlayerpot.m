@@ -15,8 +15,8 @@ function bas = addlayerpot(d, seg, varargin)
 %
 % See also LAYERPOT
 %
-%  Notes/issues:
-%  * change to add images, or multiple segs as one basis object?
+% Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
+
 
 if isempty(seg), seg = d.seg; end
 bas = {};

@@ -1,11 +1,11 @@
+function h = plot(pts)
 % PLOT - plot a pointset
 %
 %  h = PLOT(pts) plots a pointset with normals, on current figure, returning
-%   the graphics handle.
+%  the graphics handle.
 %
 % See also: POINTSET
-
-function h = plot(pts)
+% Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
 
 g = gcf;
 figure(g); hold on;

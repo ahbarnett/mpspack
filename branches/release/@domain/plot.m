@@ -1,3 +1,4 @@
+function h = plot(d, o)
 % PLOT - show domain on current figure
 %
 %  h = PLOT(d) draws many geometry features of a domain onto the current figure.
@@ -9,10 +10,8 @@
 %
 %   Also all options in SHOWSEGMENTS have effect.
 %
-% Issues/notes:
-%  * show filled patch for domain (somehow handle non-simply connected patch?)
+% Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
 
-function h = plot(d, o)
 
 if nargin<2, o = []; end
 if ~isfield(o, 'gridinside'), o.gridinside=0; end  % default no grid

@@ -26,12 +26,10 @@
 %  d = DOMAIN(s, pm, si, pmi) combines the above features, creating a bounded
 %   domain with excluded region(s).
 %
-% Notes / issues:
-%  1) should diam, center, x, w, boundingbox, etc, be precomputed on
-%     construction, only recomputed if a segment changes? Currently not.
-%     Not a big deal.
-%
 % See also: SEGMENT, domain/PLOT
+%
+% Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
+
 
 classdef domain < handle
     properties

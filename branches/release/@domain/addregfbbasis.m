@@ -1,3 +1,4 @@
+function addregfbbasis(d, varargin)
 % ADDREGFBBASIS - create a regular Fourier-Bessel basis object in a domain
 %
 %  ADDREGFBBASIS(d, origin, N, opts) creates a regular FB basis
@@ -5,8 +6,9 @@
 %   The rest of the argument list is discussed in REGFBBASIS
 %
 % See also: REGFBBASIS
+%
+% Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
 
-function addregfbbasis(d, varargin)
 
 d.bas  = {d.bas{:}, regfbbasis(varargin{:})}; % append cell arr of basis handles
 
