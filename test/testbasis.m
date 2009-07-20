@@ -18,7 +18,7 @@ p = pointset([xx(:) + 1i*yy(:)], ones(size(xx(:)))); % set up n for x-derivs
 k = 5;                              % wavenumber for tests (may be 0)
 d = domain(); d.k = k;               % create R^2 domain
 
-for type = 11:13              % select the cases you want to test here
+for type = 8              % select the cases you want to test here
   switch type
    case {1,2,3}             % ................. Reg FB: real/cmplx, rescl
     N = 10;
@@ -36,15 +36,15 @@ for type = 11:13              % select the cases you want to test here
     c = 2.0; js = 1:b.Nf;
     fprintf('evaluating real plane wave basis... real=%d\n', opts.real)
    
-   case {6,7}              % ................. MFS: real/cmplx
+   case {6,7,8}              % ................. MFS: SLP, DLP, SLP+DLP
     N = 10;
-    opts.real = (type==6);
-    opts.fast = 1;       % about 10x faster than o.fast=0 (matlab hankel)!
-    b = mfsbasis(@(t) exp(1i*t), -0.4, N, opts);  % tau keeps them outside
-    b.doms = d; c = 0.2; js = 1:b.Nf;
-    fprintf('evaluating MFS basis... real=%d\n', opts.real)
+    etas = [inf, 0, -k]; opts.eta = etas(type-5); % -k wave beams outwards
+    opts.fast = 2;       % about 10x faster than o.fast=0 (matlab hankel)!
+    a=0.6; b = mfsbasis({@(t)a*exp(2i*pi*t),@(t)2i*pi*a*exp(2i*pi*t)}, N, opts);
+    b.doms = d; c = 0.2*(1+(k-1)*(opts.eta<inf)); js = 1:b.Nf;
+    fprintf('evaluating MFS basis... eta=%g\n', opts.eta)
    
-   case {8,9,10}            % ................. SLP, DLP, SLP+DLP
+   case {9,10,11}            % ................. layerpot: SLP, DLP, SLP+DLP
     N = 10; s = segment(N, [-1.5+.5i, .5i]); c = 0.03;
     lp = 'S'; if type==9, lp = 'D'; c=c*k; elseif type==10, lp = [1 1i]; end
     o.fast = 2;       % about 5x faster than o.fast=0 (matlab hankel)!
@@ -52,7 +52,7 @@ for type = 11:13              % select the cases you want to test here
     b.doms = d; js = 7; %b.Nf; % 1 is off the region, b.Nf is in the region
     fprintf('evaluating {S,D}LP basis... %sLP\n', lp), o.close = 0.4;
    
-   case {11,12,13}          % ................. corner FB, types s,c,cs
+   case {12,13,14}          % ................. corner FB, types s,c,cs
     N = 10; types = {'s', 'c', 'cs'}; opts.type = types{type-10};
     opts.rescale_rad = 0; c = 0.5 + (k==0);
     % here, to check derivs use origin=-1.5-1i, or to see singularity use 0:

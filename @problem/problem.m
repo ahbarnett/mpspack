@@ -241,11 +241,12 @@ classdef problem < handle
     end
     
     function updateN(pr,N)
-    % UPDATEN - Update the number of basis functions in each domain
+    % UPDATEN - Update the number of basis functions in each basis set
     %
-    %  updateN(pr,N) defines the degree/number of basis functions in each
-    %  domain d to be N*d.nmultiplier.
-    
+    % updateN(pr,N) sets the degree/number of basis functions in each
+    %   basis set of the problem pr to be N times the basis set's nmultiplier
+    %   property. This is useful for convergence studies when all basis degrees
+    %   should be changed in proportion.
         for d=pr.doms,
             for j=1:length(d.bas),
                 d.bas{j}.updateN(N); 
