@@ -7,7 +7,7 @@ k=10; % Wavenumber
 
 M=300; % Number of points on circle
 NN=1:60;  % List for the numbers of basis functions
-Rmfs=0.8; % Radius of fundamental solutions inside circle
+Rmfs=0.7; % Radius of fundamental solutions inside circle
 
 x0=0; y0=0;
 seg=segment(M,[0 r 0 2*pi],'p');
@@ -17,12 +17,10 @@ d=domain([],[],seg,-1);
 
 % Add basis functions
 
-N=1;
-
-opts.fast=1; opts.eta=k;
+opts.eta=k;
 Z=@(w) Rmfs*exp(2i*pi*w);
 Zp=@(w) 2i*pi*Z(w);
-d.addmfsbasis({Z,Zp},N,opts);
+d.addmfsbasis({Z,Zp},[],opts);
 
 pr=scattering(d,[]);
 pr.setoverallwavenumber(k);
@@ -52,9 +50,14 @@ o.bb=[-1.5 1.5 -1.5 1.5];
 o.dx=0.01;
 o.sepfigs=0;
 
-pr.showthreefields(o);
+tic; pr.showthreefields(o);toc
 
 figure; semilogy(NN,resvec,'k-'); hold on;
 convrate=Rmfs/r;
 semilogy(NN,convrate.^(NN),'r--');
 legend('Measured convergence','Expected convergence');
+
+if 0  % debugging
+  pr.co = 0*pr.co; pr.co(1) = 1;                   % look at mfs basis func #1
+  figure; pr.showsolution; pr.bas{1}.showgeom;
+end

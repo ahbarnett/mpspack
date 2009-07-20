@@ -48,7 +48,7 @@ classdef regfbbasis < handle & basis
             if ~isfield(opts,'rescale_rad'), opts.rescale_rad=0; end
             if ~isfield(opts,'besselcode'), opts.besselcode='r'; end
             if ~isfield(opts,'fastang'), opts.fastang=0; end
-            if ~isfield(opts,nmultiplier), opts.nmultiplier=1; end
+            if ~isfield(opts,'nmultiplier'), opts.nmultiplier=1; end
 
             regfb.nmultiplier=opts.nmultiplier;
             regfb.N=N*regfb.nmultiplier; 

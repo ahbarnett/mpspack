@@ -23,19 +23,13 @@ function [F0 F1 F2] = fundsol(r, k,orders, opts)
 %
 
 fast=opts.fast;
-
-% Check if fast mex implementation exists and downgrade speed if not
-if fast>0 && exist('@utils/greengardrokhlinhank103','file')~=3
-   fast = 0; % downgrade the speed if 103 not available
-   warning('Could not use fast routines. Please recompile mex file');
-end
-
 F0=[]; F1=[]; F2=[];
-
 
 if abs(k)>0,
     % Helmholtz case
-    if fast,
+    if fast==2
+        [F0 F1]=utils.greengardrokhlinhank106(k*r);
+    elseif fast==1
         [F0 F1]=utils.greengardrokhlinhank103(k*r);
     else
         if strcmp(orders,'0'), 

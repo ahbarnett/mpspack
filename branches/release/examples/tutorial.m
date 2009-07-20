@@ -118,7 +118,7 @@ exttwotri = domain([], [], {s(end:-1:1), ss(end:-1:1)}, {-1, -1});
 %end
 
 % Helmholtz triangle BVP w/regfb...  (may start code afresh here)
-clear all classes; verb = 1;
+clear all classes; verb = 0;
 s = segment.polyseglist(50, [1, 1i, exp(4i*pi/3)]);
 tri = domain(s, 1);
 s.setbc(-1, 'd', [], @(t) 1+0*t);
@@ -139,18 +139,19 @@ if verb  % generate f:triconv a
   figure(g);
 end
 
-% Helmholtz triangle BVP w/regfb...
+% Helmholtz triangle BVP w/nufb...          trying various basis corner combos
 tri.clearbases;
 opts = []; opts.rescale_rad = 1.9; % err < 1e-8 is way too dependent on this!
-opts.cornerflags = [1 1 0];
-tri.addcornerbases(50, opts);
-Ns = 1:20; for i=1:numel(Ns)
-  for j=1:numel(tri.bas), tri.bas{j}.N=Ns(i); end
+opts.cornerflags = [1 0 0]; opts.type = 's';  % 'cs' not needed if reg FB used
+tri.addcornerbases([], opts);
+opts = []; opts.rescale_rad = 1.0; tri.addregfbbasis(0, [], opts); % reg FB too
+Ns = 1:30; for i=1:numel(Ns)
+  for j=1:numel(tri.bas), tri.bas{j}.N=Ns(i); end; nn(i) = p.N; % # dofs
   p.solvecoeffs; r(i) = p.bcresidualnorm; nm(i) = norm(p.co);
-  p.pointsolution(pointset(0)) %converges to -3.98718419
+  p.pointsolution(pointset(0)) %converges to -3.9871841923
 end
 % add to previous figure...        (check norm w/ loglog(Ns, [r;nm], 'r+-');)
-hold on; loglog(4*Ns, r, 'r+-'); xlabel('N'); ylabel('bdry err norm');
+hold on; loglog(nn, r, 'r+-'); xlabel('N'); ylabel('bdry err norm');
 % notice with two corner expansions there are 4N dofs in total
 
 if verb, % generate f:triconv a and b
