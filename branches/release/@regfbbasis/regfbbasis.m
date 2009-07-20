@@ -187,11 +187,6 @@ classdef regfbbasis < handle & basis
           end
         end % func
         
-        function updateN(regfb,N)
-        % UPDATEN - Update degree N of Fourier-Bessel basis functions
-            regfb.N=regfb.nmultiplier*N;
-        end
-        
         function sc = Jrescalefactors(regfb, n) % ... used to effect rescale_rad
         % JRESCALEFACTORS - given list of orders, return FB J-rescaling factors
         %

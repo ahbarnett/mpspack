@@ -47,6 +47,7 @@ classdef scattering < bvp & handle
       if nargin==2
         if isempty(pr.k), error('scattering problem must have wavenumber set'); end
         kvec = pr.k*exp(1i*t);                % set up a plane-wave field
+        pr.incang = t;
         ui = @(x) exp(1i*real(conj(kvec) .* x));
         uix = @(x) 1i*real(kvec)*ui(x); uiy = @(x) 1i*imag(kvec)*ui(x);
       end

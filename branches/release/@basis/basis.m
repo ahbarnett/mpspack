@@ -27,8 +27,9 @@ classdef basis < handle
     function updateNf(b) % ................ dummy for all but layerpot bases
     end
 
-    function updateN(b,N) % Reimplemented by basis objects to change
-                        % number of basis functions
+    function updateN(b,N) % ................ overloaded in some basis objects
+    % UPDATEN - Change basis set degree in proportion to an overall N.
+      b.N = ceil(N * b.nmultiplier);
     end
     
     function k = k(b, opts) % .................... looks up the basis wavenumber

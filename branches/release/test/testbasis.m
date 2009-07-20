@@ -18,7 +18,7 @@ p = pointset([xx(:) + 1i*yy(:)], ones(size(xx(:)))); % set up n for x-derivs
 k = 5;                              % wavenumber for tests (may be 0)
 d = domain(); d.k = k;               % create R^2 domain
 
-for type = 8              % select the cases you want to test here
+for type = 6:8              % select the cases you want to test here
   switch type
    case {1,2,3}             % ................. Reg FB: real/cmplx, rescl
     N = 10;
@@ -40,7 +40,7 @@ for type = 8              % select the cases you want to test here
     N = 10;
     etas = [inf, 0, -k]; opts.eta = etas(type-5); % -k wave beams outwards
     opts.fast = 2;       % about 10x faster than o.fast=0 (matlab hankel)!
-    a=0.6; b = mfsbasis({@(t)a*exp(2i*pi*t),@(t)2i*pi*a*exp(2i*pi*t)}, N, opts);
+    a=1.6; b = mfsbasis({@(t)a*exp(2i*pi*t),@(t)2i*pi*a*exp(2i*pi*t)}, N, opts);
     b.doms = d; c = 0.2*(1+(k-1)*(opts.eta<inf)); js = 1:b.Nf;
     fprintf('evaluating MFS basis... eta=%g\n', opts.eta)
    

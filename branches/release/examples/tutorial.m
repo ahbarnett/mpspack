@@ -1,8 +1,9 @@
 % Example codes from tutorial document, also generates EPS figures for this doc
+% Sections of this script may be started at points labeled STARTPOINT
 % Barnett 7/14/09
 
 cd ../doc                  % so figures write out write tutorial.tex is
-clear all classes
+clear all classes          % STARTPOINT
 verb = 0;                  % if verb>0, generates EPS figures
 
 % ------------- 2.. Laplace BVP ----------------
@@ -77,6 +78,7 @@ figure; s.plot;  % kill the arrow maybe
 
 % ------------- 4. Helmholtz, exterior -----------------------------------
 
+clear all classes                           % STARTPOINT
 % exterior domain
 tref = segment.radialfunc(50, {@(q) 1 + 0.3*cos(3*q), @(q) -0.9*sin(3*q)});
 d = domain([], [], tref, -1);
@@ -101,6 +103,7 @@ end
   
 % ----------------------- 5. Corners -------------------------------------
 
+clear all classes                           % STARTPOINT
 % triangle interior...
 s = segment.polyseglist([], [1, 1i, exp(4i*pi/3)]);
 tri = domain(s, 1);
@@ -117,8 +120,8 @@ exttwotri = domain([], [], {s(end:-1:1), ss(end:-1:1)}, {-1, -1});
 %  figure; exttwotri.plot(opts); axis off; print -depsc2 exttwotri.eps
 %end
 
-% Helmholtz triangle BVP w/regfb...  (may start code afresh here)
-clear all classes; verb = 0;
+% Helmholtz triangle BVP w/regfb...
+clear all classes; verb = 0;                            % STARTPOINT
 s = segment.polyseglist(50, [1, 1i, exp(4i*pi/3)]);
 tri = domain(s, 1);
 s.setbc(-1, 'd', [], @(t) 1+0*t);
@@ -127,9 +130,10 @@ p = bvp(tri);
 tri.k = 10;
 Ns = 2:2:40; for i=1:numel(Ns)
   tri.bas{1}.N = Ns(i); p.solvecoeffs; r(i) = p.bcresidualnorm;
-  p.pointsolution(pointset(0)), %nm(i) = norm(p.co); % check convergence
+  %p.pointsolution(pointset(0)), nm(i) = norm(p.co); % check convergence
 end
 figure; loglog(2*Ns, r, '+-'); xlabel('# degrees of freedom'); ylabel('bdry err norm');
+% figure; loglog(2*Ns, [r; nm], '+-');   % also plot coeff norm
 
 if verb  % generate f:triconv a
   g = gcf;
@@ -140,13 +144,11 @@ if verb  % generate f:triconv a
 end
 
 % Helmholtz triangle BVP w/nufb...          trying various basis corner combos
-tri.clearbases;
 opts = []; opts.rescale_rad = 1.9; % err < 1e-8 is way too dependent on this!
-opts.cornerflags = [1 0 0]; opts.type = 's';  % 'cs' not needed if reg FB used
+opts.cornermultipliers = [1 0 0]; opts.type = 's';  % 'cs' not needed w/ reg FB
 tri.addcornerbases([], opts);
-opts = []; opts.rescale_rad = 1.0; tri.addregfbbasis(0, [], opts); % reg FB too
 Ns = 1:30; for i=1:numel(Ns)
-  for j=1:numel(tri.bas), tri.bas{j}.N=Ns(i); end; nn(i) = p.N; % # dofs
+  p.updateN(Ns(i)); nn(i) = p.N; % save the # dofs the problem used
   p.solvecoeffs; r(i) = p.bcresidualnorm; nm(i) = norm(p.co);
   p.pointsolution(pointset(0)) %converges to -3.9871841923
 end
@@ -155,8 +157,8 @@ hold on; loglog(nn, r, 'r+-'); xlabel('N'); ylabel('bdry err norm');
 % notice with two corner expansions there are 4N dofs in total
 
 if verb, % generate f:triconv a and b
-  figure(f); hold on; nufb = loglog(4*Ns, r, 'r+-'); axis tight;
-  legend([fb nufb], {'regular FB at origin', 'fractional FB at corners'},...
+  figure(f); hold on; nufb = loglog(nn, r, 'r+-'); axis tight;
+  legend([fb nufb], {'regular FB at origin', 'reg FB + corner nu-FB'},...
          'location', 'southwest');
   print -depsc2 triFB.eps
   figure; p.showsolution; axis off; h=colorbar; set(h,'fontsize',20);

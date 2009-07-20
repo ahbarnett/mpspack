@@ -260,7 +260,7 @@ up, and the domain constructor above will report an error.
 \section{Helmholtz equation, exterior and multiply connected domains}
 
 Changing from the Laplace to Helmholtz equation is as simple
-as setting {\tt d.k} to a different value.
+as setting {\tt d.k} to a positive value.
 We start a fresh example: a exterior Helmholtz BVP
 with Neumann boundary data, and the Sommerfeld radiation
 condition \cite{coltonkress}. This has a unique solution.
@@ -278,6 +278,7 @@ Note the choice $-1$ for the direction argument, which states that
 the domain lies on the `nonstandard' side of the segment, i.e.\
 to the right side as the segment is traversed in its natural sense,
 with the segment normals pointing {\em into} the exterior domain.
+
 
 
 
@@ -436,7 +437,7 @@ This produces the algebraic convergence%
 angles and is discussed in \cite{Ei74}.}
 shown in blue in Fig.~\ref{f:triconv}a.
 
-We now show how corner-adapted basis sets may be substituted for
+We now show how corner-adapted basis sets may enhance
 the above basis set to achieve superior convergence and hence
 more efficiency. We clear the previous basis set from the domain
 and add fractional-order (i.e. `wedge' expansion) Fourier Bessel bases
@@ -452,8 +453,7 @@ study and comparing against the previous data is easy,
 tri.clearbases; opts.rescale_rad = 1.9; opts.cornerflags = [1 1 0];
 tri.addcornerbases([], opts);
 Ns = 1:20; for i=1:numel(Ns)
-  for j=1:3, tri.bas{j}.N=Ns(i); end            % sets each order to N
-  p.solvecoeffs; r(i) = p.bcresidualnorm;
+  p.updateN(Ns(i)); nn(i) = p.N; p.solvecoeffs; r(i) = p.bcresidualnorm;
 end
 hold on; loglog(4*Ns, r, 'r+-');                % total # dofs is 4N
 \end{verbatim}
