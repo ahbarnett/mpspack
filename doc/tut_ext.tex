@@ -1,0 +1,92 @@
+% ----------------------------------------------------------------------------
+\section{Helmholtz equation, exterior and multiply connected domains}
+
+Changing from the Laplace to Helmholtz equation is as simple
+as setting {\tt d.k} to a positive value.
+We start a fresh example: a exterior Helmholtz BVP
+with Neumann boundary data, and the Sommerfeld radiation
+condition \cite{coltonkress}. This has a unique solution.
+
+The simplest unbounded domain is $\mathbb{R}^2$, which is created with
+\co{d = domain();}
+One may check that its area {\tt d.area} is $\infty$.
+Exterior domains can be created by excluding a closed segment, for instance
+the trefoil segment introduced above,
+\begin{verbatim}
+   tref = segment.radialfunc(50, {@(q) 1 + 0.3*cos(3*q), @(q) -0.9*sin(3*q)});
+   d = domain([], [], tref, -1);                    % overwrites previous d
+\end{verbatim}
+Note the choice $-1$ for the direction argument, which states that
+the domain lies on the `nonstandard' side of the segment, i.e.\
+to the right side as the segment is traversed in its natural sense,
+with the segment normals pointing {\em into} the exterior domain.
+
+
+
+
+
+
+[TIMO insert mfsbasis, solve exterior smooth domain Helmholtz Dirichlet
+BVP. Add your code to examples/tutorial.m]
+
+\vspace{10ex}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\bfi % ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+a)\raisebox{-0.4\textwidth}{\ig{height=0.45\textwidth}{twoholes.eps}}
+b)\raisebox{-0.4\textwidth}{\ig{height=0.45\textwidth}{tri.eps}}
+\ca{a) A multiply-connected domain. b) A polygonal domain.}{f:doms}
+\efi
+
+A non-simply connected domain may be built by specifying excluded
+regions from a simply connected bounded domain. For example,
+to remove from an interior trefoil a circular `hole',
+\begin{verbatim}
+   tref.disconnect;                         % clears any domains from segment
+   c = segment([], [0.5 0.4 0 2*pi]);       % new circular segment
+   d = domain(tref, 1, c, -1);
+\end{verbatim}
+Note that segment {\tt tref} had previously
+been `linked' to the old domain {\tt d}
+at the start of this section, hence the need to `disconnect' it
+(or create a fresh segment) before
+building new domains from it. 
+If the direction signs $+1$ and $-1$ are not correct as above, an
+error is reported (check this!)
+We may exclude two regions as follows, where the new region is a smaller copy
+of the trefoil,
+\begin{verbatim}
+   tref.disconnect; c.disconnect;
+   smtref = tref.scale(0.3);                % create new rescaled copy of tref
+   smtref.translate(-0.3+0.4i);             % move the segment smtref
+   d = domain(tref, 1, {c smtref}, {-1 -1});
+\end{verbatim}
+Typing {\tt d.plot} gives Fig.~\ref{f:doms}a. Notice that
+the domain's boundary is the union of three segments. They are labeled
+1, 2, and 3, showing the order in which segment handles
+are stored internally in the domain object {\tt d.seg}.
+The convention for plotting domains is that the normals
+are those of the domain, rather than the normal intrinsic to each segment.
+The figure shows all normals pointing away from the domain, as it should.
+Similarly, the arrow directions are modified by the signs $(1,-1,-1)$ that
+were passed in, so that, following the arrows the domain always lies to
+the {\em left}. (The black semicircles will be explained in the next section.)
+
+
+[MAYBE add mfsbasis example here with three src curves one for each segment?]
+
+\vspace{10ex}
+
+
