@@ -1,7 +1,7 @@
 % SQUAREMETALSCATTDEMO - Exponentially accurate computation of scattering
 % from the unit square.
 
-k = 10; % Wavenumber
+k = 20; % Wavenumber
 r = 2.0; % Radius of outer circle    
 M = 200; % Number of quadrature points on segments
 N=100; % Number of basis fct. in each subdomain
@@ -24,12 +24,11 @@ d(1)=domain(s(1:5),[1 1 1 1 1]);
 d(2)=domain(s([9 6 7 8 1]),[1 1 1 1 -1]);
 d(3)=domain(s([13 10 11 12 6]),[1 1 1 1 -1]);
 d(4)=domain(s([16 4 14 15 10]),[1 -1 1 1 -1]);
-ext = domain([], [], extlist, -1); 
+ext = domain([], [],extlist, -1); 
 
 % Define boundary conditions
 sdecomp.setmatch([k -k],[1 -1]); % Matching conditions for
                                  % artificial boundaries
-extlist.setmatch('diel', 'tm');
 
 
 % Add basis functions
