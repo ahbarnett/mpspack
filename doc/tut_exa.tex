@@ -2,3 +2,186 @@
 In this section we describe in detail some worked out examples and
 give the corresponding code. All examples can also be found in the
 {\texttt{examples}} subdirectory of \mpspack.
+
+\subsection{Acoustic scattering from the unit square}
+
+\subsubsection{Problem description and solution approach}
+
+In this example we solve the problem of time-harmonic 
+acoustic sound-soft scattering from the unit square $\Omega=(-0.5,0.5)^2$.
+The full PDE has the following form.
+\begin{eqnarray}
+\Delta u+k^2u & = & 0  \quad \text{in
+}\mathbb{R}^2\backslash\Omega\label{eq:helm}\\
+u&=&0 \quad \text{on } \pO \label{eq:soundsoft}\\
+\frac{\partial u_s}{\partial r}-iku_s & = & o(r^{-1/2}),\label{eq:sommerfeld}
+\end{eqnarray}
+Here, $u=u_{inc}+u_s$ is the total field, $u_{inc}$ is the incident
+wave, $u_s$ is the scattered field, and $r$ is the radial coordinate.
+The Sommerfeld radiation condition
+\eqref{eq:sommerfeld} is to be understood to hold uniformly in all
+directions. 
+
+\begin{figure}
+\center
+\includegraphics[width=6cm]{geometry}
+\vspace{-.5cm}
+\label{fig:geom}
+\end{figure}
+
+
+To achieve high accuracy we cannot simply use fundamental soluitions
+to approximate the scattered field. The problem is the singularities
+of the solution $u$ at the corners. If these are not represented in
+the basis our approximation error will decay very slowly as the number
+of basis functions increases. To solve this problem we use the domain
+decompositon shown in Figure \ref{fig:geom}. The idea is that each of
+the elements $E_i$ only contains one corner $p_i$ of the square. We can then
+match the corner behavior in each domain by using fractional order
+Bessel functions. Since furthermore, $u=0$ on $\partial\Omega$ it will
+be sufficient to use Fourier-Bessel sine functions that automatically
+satisfy the zero boundary conditions on the sides of the square.
+Hence, the total field $u$ is approximated in each element $E_i$ using
+an approximation of the form
+$$
+u(r,\theta)\approx
+\sum_{j=1}^{N_i}c_j^{(i)}J_{\frac{2}{3}j}(kr)\sin(\frac{2j}{3}\theta).
+$$
+The polar coordinate system in each element $E_i$ is rotated in such a way
+that the basis functions are zero on the sides adjacent to the corner
+at $p_i$.
+
+In the infinite domain $\Omega_e^+$ we use a basis of fundamental
+solutions to represent the scattered field $u_s$. Hence, for
+$\bx\in\Omega^+$ we have
+$$
+u_s(\bx)\approx \sum_{j=1}^{N_e}\frac{i}{4}c_j^{(e)}H_0^{(1)}(|\bx-\by_j|),
+$$
+where $\by_j=r_{mfs}e^{i\phi_j}$ and $\phi_j=\frac{2\pi j}{N_e}$. Note
+that we approximate with the fundamental solutions the scattered field
+$u_s$ while in the finite subdomains $E_i$ we approximate the total
+field $u$. The compatibility conditions between approximations $u^{i}$
+und $u^{j}$ in two neighboring elements $E_i$ and $E_j$ with common
+boundary $\Gamma_{ij}$ are given by
+$$
+u^{(i)}(\bx)\approx u^{(j)}(\bx),\quad \frac{\partial u}{\partial
+  n_i}{u^{(i)}}(\bx)\approx  \frac{\partial u}{\partial
+  n_i}{u^{(j)}}(\bx),
+$$
+where $\bx\in\Gamma_{ij}$ and $\frac{\partial}{\partial\nu_i}$ is the
+outward normal derivative at the boundary of $E_i$.
+On the interface $\Gamma_{ie}$ between an element $E_i$ and the
+exterior domain $\Omega_e^{+}$ we have the compatibility conditions
+$$
+u^{(i)}(\bx)\approx u_{inc}(\bx)+u_s^{(e)}(\bx),\quad \frac{\partial}{\partial
+  n_i}{u^{(i)}}(\bx)\approx  \frac{\partial}{\partial
+  n_i}{(u_s^{(e)}+u_{inc})}(\bx),
+$$
+where $u_s^{(i)}$ is the fundamental solutions approximation to the
+scattered field in $\Omega_e^{+}$. We have to add the incident field
+to the approximate scattered field since we are matching with the
+total field in the elements $E_i$.
+An approximate solution to the whole problem is now 
+computed by minimizing the $L^2$ error of 
+the compatibility conditions on all interfaces.
+
+\subsubsection{Implementation in \mpspack}
+
+Although the setup of the problem seems quite complicated we will see
+that it is very simple to set it up in \mpspack. Indeed, the most part
+of the code will be devoted to creating the mesh structure from
+Figure \ref{fig:geom}.
+
+\paragraph{Initialization of the problem parameters}
+
+We need to define the following problem parameters.
+\begin{verbatim}
+k = 50;      % Wavenumber
+r = 1.0;     % Radius of outer circle    
+M = 200;     % Number of quadrature points on segments
+N=100;       % Number of basis fct. in each subdomain
+a=.5;        % Half-Size of the square
+rmfs=0.8*r;  % Radius of the fundamental solutions curve
+\end{verbatim}
+
+
+\paragraph{Setup of the geometry}
+
+We now need to define the geometry. Fortunately,
+\mpspack gives some support for the construction of the geometry.
+
+First we define the segments of one element ($E_3$ in Figure
+\ref{fig:geom}). This is done with the following three commands.
+
+\begin{verbatim}
+s = segment.polyseglist(M, [1i*r 1i*a a+1i*a a r], 'g');
+s=[s(1:3) segment(2*M, [0 r 0 pi/2])];
+s = [s rotate(s, pi/2) rotate(s, pi) rotate(s, 3*pi/2)];
+\end{verbatim}
+The first command defines all the straight lines that form part of the
+boundary of $E_3$. For this we use {\texttt{polyseglist}}. The command
+{\texttt polyseglist} constructs a closed polygon. We then delete the
+last two segments of the array {\texttt s} and add instead the
+circular line segment. This results in the segments shown in the left
+plot of Figure \ref{fig:elem1}. We now rotate this element three times to
+obtain the segments showin in the right plot of Figure \ref{fig:circelem}.
+\begin{figure}
+\begin{tabular}{cc}
+\includegraphics[width=5cm]{circelem1} &
+\includegraphics[width=5cm]{circelem2}
+\end{tabular}
+\caption{The segments in the right plot are created by rotating the segments
+  shown in the left plot.}
+\label{fig:circelem}
+\end{figure}
+
+For later it is important to have a separate list of all segments not
+belonging to the square and all segments belonging to the outer
+circle.
+
+\begin{verbatim}
+sdecomp=s([1 4 5 8 9 12 13 16]); % All artificial boundaries
+extlist=s([4 8 12 16]);          % Segments forming the outer circle
+\end{verbatim}
+
+We now define the domains. To make the code shorter and use a simple
+for loop we can use the rotational symmetry of the segments in this
+problem.
+
+\begin{verbatim}
+d=domain.empty(4,0);
+for j=1:4, d(j)=domain(s(1+mod(4*(j-1)+[0 1 2 12 3],16)),[1 1 1 -1 1]); end
+ext = domain([], [],extlist(end:-1:1), -1); 
+\end{verbatim}
+The for loop looks slightly complicated. But all it does is pick out
+the right indices for the elements forming a domain and creating it
+together with the right sense of direction. At the end we have an
+array {\texttt d} containing the four fine domains $E_i$. The exterior
+domain {\texttt ext} is created by traversing {\texttt extlist} in
+reverse order with reversed sense $-1$. This is necessary since we now
+have the boundary of an exterior domain, which has a reversed sense of
+direction.
+
+Setting up the compatibility conditions is now trivial. It is done by
+the command
+\begin{verbatim}
+sdecomp.setmatch([k -k],[1 -1]);
+\end{verbatim}
+The matching conditions for the function values are scaled by the
+wavenumber $k$ to balance the different scaling between the $L^2$ error
+in the function and the $L^2$ error in the
+derivative.\footnote{Consider the one dimensional plane wave
+  $e^{ikx}$. The derivative is $ike^{ikx}$. Hence, in general it makes sense to
+  scale the $L^2$ error of function values by $k$ to give it the same
+  dimension as the $L^2$ error of the derivative.}
+
+We can now add the basis functions to the domains. This is done by the
+following two commands.
+
+
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "tutorial"
+%%% End: 
