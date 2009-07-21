@@ -9,7 +9,8 @@ function [B radderivs] = fundsol_deriv(r, cosphi, k, radderivs)
 % (the user is assumed to give correct radderivs of appropriate size, k, etc).
 % Note: there is an overall minus sign due to it being the src n-deriv.
 %
-% barnett 2/6/08, debugged the test for self-int 2/26/08, radderivs 3/22/08
+% Issues/notes:
+%  * barnett 2/6/08, debugged the test for self-int 2/26/08, radderivs 3/22/08
 
 wantrad = nargout>1;
 

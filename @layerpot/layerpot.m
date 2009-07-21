@@ -2,19 +2,22 @@ classdef layerpot < handle & basis
 
 % LAYERPOT - create a layer potential basis set on a segment
 %
-%  b = LAYERPOT(seg, a, k, opts) where a = 'single' or 'double' creates a layer
-%   potential basis object with density on segment seg, with wavenumber k
-%   (which may be [] in which k is not defined), and options:
+%  b = LAYERPOT(seg, a, opts) where a = 'single' or 'double' creates a layer
+%   potential basis object with density on segment seg, with options:
 %    opts.real: if true, real valued (Y_0), otherwise complex (H_0 outgoing).
 %    opts.fast: if 0 use matlab Hankel, 1 use fast fortran Hankel, 2 faster.
 %   If a is instead a 1-by-2 array, then a mixture of a(1) single plus a(2)
 %   double is created, useful for Brakhage, Werner, Leis & Panich type
-%   representations.
+%   combined representations. As usual for basis sets, the wavenumber k is
+%   determined by that of the affected domain.
 %
 %   Note that the discretization of the layerpot is given by that of the seg,
 %    apart from periodic segments where new quadrature weights may be used.
 %
-%  To do: real=1 case? don't bother.
+% Issues/notes:
+%  * real=1 case? don't bother.
+%
+% Also see: DOMAIN/ADDLAYERPOT, LAYERPOT/S, etc
 
   properties
     real                            % true if fund sol is Y_0, false for H_0^1
@@ -26,9 +29,8 @@ classdef layerpot < handle & basis
   end
 
   methods
-    function b = layerpot(seg, a, k, opts) %........................ constructor
-      if nargin<4, opts = []; end
-      if nargin>2 & ~isempty(k), b.k = k; end
+    function b = layerpot(seg, a, opts) %........................ constructor
+      if nargin<3, opts = []; end
       if ~isfield(opts, 'fast'), opts.fast = 2; end
       % TODO: speed up the following check which happens every time created...
       if opts.fast==2 & exist('@utils/greengardrokhlinhank106.mexglx')~=3
@@ -60,8 +62,15 @@ classdef layerpot < handle & basis
       b.a = a;
     end % func
     
-    function updateNf(b)  % ............... Nf property reads segment # quadr
-      b.Nf = numel(b.seg.x);
+    function Nf = Nf(b)  % ............... Nf method reads segment # quadr
+      Nf = numel(b.seg.x);
+      % was this too slow, some reason why Nf was a property ???
+    end
+    
+    function updateN(b,N) % ................ overloaded in some basis objects
+    % UPDATEN - Change N and requadrature segment in proportion to an overall N
+      b.N = ceil(N * b.nmultiplier);
+      b.seg.requadrature(b.N);
     end
     
     function [A Ax Ay] = eval(b, p, o) % .........basis evaluator at points p
@@ -92,7 +101,6 @@ classdef layerpot < handle & basis
 %   Barnett 1/17/09: added Jfilter
       if nargin<3, o = []; end
       if ~isfield(o, 'fast'), o.fast = b.fast; end    % default given in b obj
-      b.updateNf;
       if ~isempty(b.quad), o.quad = b.quad; end % pass quadr type to S,D,T eval
       if ~isempty(b.ord), o.ord = b.ord; end % pass quadr order to S,D,T eval
       self = (p==b.seg); % if true, local eval on segment which carries density
@@ -105,7 +113,7 @@ classdef layerpot < handle & basis
         if o.dom==p.dom{1}, approachside = +1; end  % instead dom on + normal
         p = [];              % tell S, D, etc to use self-interaction
       end
-      k = b.k;                          % could look up from b.doms someday...
+      k = b.k;               % method gets k from affected domain
 
       if isfield(o, 'Jfilter')  % ========== J-expansion filter
         
@@ -114,8 +122,9 @@ classdef layerpot < handle & basis
           Jopts.rescale_rad = o.Jfilter.rescale_rad; % same resc for S2L as J
         end
         xo = 0; if isfield(o.Jfilter, 'origin'), xo=o.Jfilter.origin; end
-        Jopts.real = 0; Jopts.usegsl = 1;      % GSL needed for small J vals
-        Jexp = regfbbasis(xo, o.Jfilter.M, k, Jopts); % make new local exp basis
+        Jopts.real = 0; Jopts.besselcode = 'g';  % GSL needed for small J vals
+        Jexp = regfbbasis(xo, o.Jfilter.M, Jopts); % make new local exp basis
+        Jexp.doms = b.doms;      % FIX to include o.dom ???
                
         % fill S2L matrix (layer potential quadr pts to top level J-expansion):
         if b.a(2)==0             % only SLP
@@ -256,5 +265,7 @@ classdef layerpot < handle & basis
     [A Sker Dker_noang] = T(k, s, t, o)           % d^2Phi/dnxdny matrix    
     A = localfromSLP(k, s, M, o)                  % Jfilter: S2L for SLP
     A = localfromDLP(k, s, M, o)                  % Jfilter: S2L for DLP
+    A = fundsol(r, k)                             % to replace w/ utils.fundsol
+    [B radderivs] = fundsol_deriv(r, cosphi, k, radderivs)
   end % methods
 end

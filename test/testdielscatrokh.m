@@ -9,10 +9,10 @@ n = 1.4;                                          % interior refractive index
 M = 110; s = segment.smoothstar(M, 0.2, 3);        % smooth closed segment
 di = domain(s, 1); di.setrefractiveindex(n);      % interior
 de = domain([], [], s, -1);                       % exterior
-o.quad = 'm';
+o.quad = 'm';                          % Kress spectral quadr
 %o.quad = 'k'; o.ord = 10;             % Kapur-Rokh quadrature for LPs, M=200 ok
-de.addlayerpotbasis(s, 'd', [], o); de.addlayerpotbasis(s, 's', [], o);
-di.addlayerpotbasis(s, 'd', [], o); di.addlayerpotbasis(s, 's', [], o);
+de.addlayerpot(s, 'd', o); de.addlayerpot(s, 's', o);
+di.addlayerpot(s, 'd', o); di.addlayerpot(s, 's', o);
 setmatch(s, 'diel', 'TM');
 pr = scattering(de, di);
 if verb, figure; di.plot; hold on; de.plot; axis equal; end

@@ -226,7 +226,7 @@ classdef domain < handle
       addcornerbases(d, N, opts)  % add multiple nu-FB's at corners
       addrpwbasis(d, N, opts)           % add real PW basis
       addmfsbasis(d, Z, tau, N, opts)   % add MFS basis
-      b = addlayerpotbasis(d, a, segs, opts) % add layer-potential basis
+      b = addlayerpot(d, a, segs, opts) % add layer-potential basis
       [A A1 A2] = evalbases(d, p, opts)    % evaluate all basis funcs in domain
       setrefractiveindex(doms, n)
       

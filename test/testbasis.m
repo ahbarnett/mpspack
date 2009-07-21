@@ -9,7 +9,7 @@
 % * validate regfbbasis besselcode options against each other
 
 clear all classes
-verb = 2;                            % use verb=0, N=50, for more of a test
+verb = 1;                            % use verb=0, N=50, for more of a test
 err = 1;                             % false, show vals / true, show errors
 dx = 0.01; g = -1:dx:1;              % plotting region, -1:.01:1 default
 [xx yy] = meshgrid(g, g);
@@ -18,7 +18,7 @@ p = pointset([xx(:) + 1i*yy(:)], ones(size(xx(:)))); % set up n for x-derivs
 k = 5;                              % wavenumber for tests (may be 0)
 d = domain(); d.k = k;               % create R^2 domain
 
-for type = 6:8              % select the cases you want to test here
+for type = 9:11              % select the cases you want to test here
   switch type
    case {1,2,3}             % ................. Reg FB: real/cmplx, rescl
     N = 10;
@@ -49,8 +49,8 @@ for type = 6:8              % select the cases you want to test here
     lp = 'S'; if type==9, lp = 'D'; c=c*k; elseif type==10, lp = [1 1i]; end
     o.fast = 2;       % about 5x faster than o.fast=0 (matlab hankel)!
     b = layerpot(s, lp, o); if type==10, lp = 'SLP+D'; end % hack for text
-    b.doms = d; js = 7; %b.Nf; % 1 is off the region, b.Nf is in the region
-    fprintf('evaluating {S,D}LP basis... %sLP\n', lp), o.close = 0.4;
+    b.doms = d; js = 1; %b.Nf; % 1 is off the region, b.Nf is in the region
+    fprintf('evaluating {S,D}LP basis... %sLP\n', lp), %o.close = 0.4;
    
    case {12,13,14}          % ................. corner FB, types s,c,cs
     N = 10; types = {'s', 'c', 'cs'}; opts.type = types{type-10};

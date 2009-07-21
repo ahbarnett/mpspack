@@ -44,14 +44,14 @@ sp = s.speed/2/pi; % note: 2pi converts to speed wrt s in [0,2pi] @ src pt
 needA = ~isfield(o, 'Sker');     % true if must compute kernel vals
 if isfield(o, 'rdist'), r = o.rdist; end
 if needA
-  if exist('r', 'var')
+  if ~exist('r', 'var')
     d = repmat(t.x, [1 N]) - repmat(s.x.', [M 1]); % C-# displacements mat
     r = abs(d);                                    % dist matrix R^{MxN}
   end
   if self, r(diagind(r)) = 999; end % dummy nonzero diag values
 end
 if needA
-  A = utils.fundsol(r, k);       % Phi
+  A = layerpot.fundsol(r, k);       % Phi
   Sker = A;                      % make kernel available w/out quadr w
 else
   A = o.Sker; Sker = A;          % pass out Sker even if was passed in
