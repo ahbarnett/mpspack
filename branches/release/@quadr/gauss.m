@@ -4,7 +4,7 @@
   function [x,w] = gauss(N)
   persistent xstore wstore Nstore
   if N==Nstore,
-      x=xstore; w=wstore; N=Nstore;
+      x=xstore; w=wstore;
       return
   end
   if N>100
