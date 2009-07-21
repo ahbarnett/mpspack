@@ -154,6 +154,32 @@ classdef problem < handle
     %   boundary.
     %
     % See also GRIDSOLUTION.
+    
+    % Split up the computation if list of points is longer than nmax=100.
+    % Ensures that not too much memory is eaten up by the computation.
+    nmax=100;
+    if length(p.x)>nmax,
+        Np=length(p.x);
+        itcount=floor(Np/nmax);
+        r=mod(Np,nmax);
+        u=zeros(Np,1); di=zeros(Np,1);
+        for j=1:itcount+1,
+            if j<=itcount,
+                indrange=(j-1)*nmax+1:j*nmax;
+            elseif r>0,
+                indrange=(j-1)*nmax:Np;
+            else break
+            end
+            if ~isempty(p.nx),             
+                ptemp=pointset(p.x(indrange),p.nx(indrange));
+            else
+                ptemp=pointset(p.x(indrange));
+            end
+            [ut,dit]=pr.pointsolution(ptemp);
+            u(indrange)=ut; di(indrange)=dit;
+        end
+        return
+    end
       di = NaN*zeros(size(p.x));                    % NaN indicates in no domain
       u = di;                                       % solution field
       for n=1:numel(pr.doms)
