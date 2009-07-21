@@ -43,7 +43,7 @@ for j=1:4, d(j).addcornerbases(N,nuopts); end
 
 % Fundamental Solutions
 Z=@(t) rmfs*exp(2i*pi*t); Zp=@(t) 2i*pi*rmfs*exp(2i*pi*t);
-opts=struct('eta',k,'fast',1,'nmultiplier',2);
+opts=struct('eta',k,'fast',2,'nmultiplier',2.0);
 ext.addmfsbasis({Z, Zp},N,opts);
 
 
@@ -52,7 +52,7 @@ ext.addmfsbasis({Z, Zp},N,opts);
 
 pr=scattering(ext,d);
 pr.setoverallwavenumber(k);
-pr.setincidentwave(-pi/4);
+pr.setincidentwave(-pi/6);
 
 % Solve and plot solution
 % -----------------------

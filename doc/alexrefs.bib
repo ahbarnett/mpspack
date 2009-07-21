@@ -36,7 +36,6 @@ Note comments don't use % character; anything outside an (AT){...} is a comment
 @STRING{ sirev = "SIAM Review" }
 
 
-
 % ----------------------------------------------- some of my publications
 
 @article{dil,
@@ -125,15 +124,17 @@ for improved inclusion of high-lying {D}irichlet eigenvalues",
 note="{\em in preparation}"
 }
 
+
+%note="{\tt arXiv:0708.3533 [math.NA]}",
 @article{mfs,
 author="Barnett, A. H. and Betcke, T.",
-title="Stability and convergence of the {M}ethod of {F}undamental {S}olutions for
-{H}elmholtz problems on analytic
-domains",
-note="{\tt arXiv:0708.3533 [math.NA]}",
+title="Stability and convergence of the {M}ethod of {F}undamental {S}olutions
+for {H}elmholtz problems on analytic domains",
 year=2008,
 journal=jcp,
-volume="{\it in press}"
+volume="227",
+issue="14",
+pages={7003--7026}
 }
 
 @article{recon,
@@ -433,6 +434,8 @@ author={Zelditch, Steven},
 title={Quantum ergodicity and mixing of eigenfunctions},
 booktitle={Elsevier Encyclopedia of Mathematical Physics},
 publisher={Academic Press},
+pages={183--196},
+volume=1,
 note={{\tt arXiv:math-ph/0503026}},
 year={2006}
 }
@@ -1623,7 +1626,7 @@ MRREVIEWER = {Rainer Hempel},
 
 % -----------------------------------------------------eigenmode applications
 
-@article{tref06,
+@inbook{tref06,
  AUTHOR = {Trefethen, Lloyd N. and Betcke, Timo},
      TITLE = {Computed eigenmodes of planar regions},
  BOOKTITLE = {Recent advances in differential equations and mathematical
@@ -1640,8 +1643,10 @@ MRREVIEWER = {Rainer Hempel},
 author="Saito, N.",
 title="Data analysis and representation on a general domain using eigenfunctions of {L}aplacian", 
 journal="Applied and Computational Harmonic Analysis",
-note="{\it in press}",
-year=2007
+volume="25",
+issue=1,
+pages={68--97},
+year=2008
 }
 
 @article{hakan05,
@@ -2021,7 +2026,6 @@ MRREVIEWER = {L. E. Payne},
     AUTHOR = {Fairweather, Graeme and Karageorghis, Andreas},
      TITLE = {The method of fundamental solutions for elliptic boundary
               value problems},
-      NOTE = {Numerical treatment of boundary integral equations},
    JOURNAL = {Adv. Comput. Math.},
   FJOURNAL = {Advances in Computational Mathematics},
     VOLUME = {9},
@@ -2412,11 +2416,12 @@ pages={172--180}
 }
 
 @book{jobook,
-author="Joannopoulos, J. D. and Meade, R. D. and Winn, J. N.",
-year=1995,
+author="Joannopoulos, J. D. and Johnson, G. S. and Meade, R. D. and Winn, J. N.",
+year=2008,
 title="Photonic Crystals: Molding the Flow of Light",
 publisher="Princeton Univ. Press",
-address="Princeton, NJ"
+address="Princeton, NJ",
+edition="2nd"
 }
 
 @article{yuan08,
@@ -2426,6 +2431,66 @@ journal=jcp,
 title="Modeling photonic crystals by boundary integral equations and {Dirichlet-to-Neumann} maps",
 volume=227,
 pages="4617--4629"
+}
+
+@article{rokh83,
+author="Rokhlin, V.",
+journal="Wave Motion",
+year=1983,
+title="Solution of acoustic scattering problems by means of second kind integral equations",
+volume=5,
+pages={257--272}
+}
+
+@article{otani08,
+author="Otani, Y. and Nishimura, N.",
+title="A periodic {FMM} for {M}axwell's equations in 3D and
+its applications to problems related to photonic crystals",
+journal=jcp,
+year=2008,
+volume=227,
+pages={4630--52}
+}
+
+
+@article{kress91,
+author="Kress, R.",
+title="BOUNDARY INTEGRAL   EQUATIONS   IN TIME-HARMONIC
+             ACOUSTIC  SCATTERING",
+journal="Mathl. Comput. Modelling",
+volume=15,
+issue={3--5},
+year=1991,
+pages={229--243}
+}
+
+@article{tang,
+author="Tang, L. and Yoshie, T.",
+title="Ultra-high-{Q} three-dimensional photonic crystal nano-resonators",
+journal="Opt. Expr.",
+year=2007,
+pages={17254},
+volume=15,
+issue=25
+}
+
+@article{jolyjing,
+author="Joly, P. and Li, J.-R. and Fliss, S.",
+title="Exact Boundary Conditions for Periodic Waveguides
+Containing a Local Perturbation",
+journal="Comm. Comput. Phys.",
+year=2006,
+volume=1,
+issue=6,
+pages={945--973}
+}
+
+@article{fliss,
+author="S. Fliss and Joly, P.",
+title="Exact boundary conditions for time-harmonic wave propagation in locally
+perturbed periodic media",
+journal="Appl. Num. Math.",
+year={2008 ({\it in press})}
 }
 
 
@@ -2970,6 +3035,72 @@ year=2002,
 volume=12,
 issue=6,
 pages={1840--1860}
+}
+
+
+% ---------------------------------------------- image tracking / Gladfelter
+
+@article{sbal,
+author="Sbalzarini, I. F. and Koumoutsakos, P.",
+title="Feature point tracking and trajectory analysis
+for video imaging in cell biology",
+journal="J. Struct. Biol.",
+year=2005,
+volume=151,
+pages={182--195}
+}
+
+@article{chentrack,
+author="Chen, X. and Zhou, W. and Wong, S. T. C.",
+title="Automated Segmentation, Classification, and Tracking of
+Cancer Cell Nuclei in Time-Lapse Microscopy",
+journal="IEEE Trans. Biomed. Eng.",
+year=2006,
+volume=53,
+issue=4,
+pages={762--766}
+}
+
+@article{olsen,
+author="Olsen, M. and Bourdon, C. J.",
+title="Out-of-Plane Motion Effects in
+Microscopic Particle Image
+Velocimetry",
+journal="J. Fluids Eng.",
+year=2003,
+volume=125,
+pages={895--901}
+}
+
+@article{mitotic,
+author="Harder, N. and Mora-Berm\'{u}dez, F. and Godinez, W. J. and Ellenberg, J. and  Eils, R. and Rohr, K.",
+title="DETERMINATION OF MITOTIC DELAYS IN {3D} FLUORESCENCE MICROSCOPY IMAges
+   OF HUMAN CELLS USING AN ERROR-CORRECTING FINITE STATE MACHINE",
+journal="Proc. IEEE Internat. Symp. Biomed. Imaging",
+year=2007,
+pages={1044--47}
+}
+
+@article{gladfelterrev,
+author="Gladfelter, A. S.",
+title="Nuclear anarchy: asynchronous mitosis in multinucleated
+fungal hyphae",
+journal="Curr. Opin. Microbiol.",
+year=2006,
+volume=9,
+issue=6,
+pages={547--552}
+}
+
+
+@article{gladfelter,
+author="Gladfelter, A. S. and Hungerbuehler, A. K. and Philippsen, P.",
+title="Asynchronous mitoses in multinucleated cells",
+journal="J. Cell Biol.",
+year=2006,
+volume=172,
+issue=3,
+pages={347--362}
 }
 
 
