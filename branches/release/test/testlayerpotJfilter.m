@@ -6,11 +6,11 @@ clear
 verb = 1;            % 0 = text only, 1 = couple figs, 2 = lots of figs
 dens = 'd';          % 's' SLP, 'd' DLP
 acc = 'm';           % method for acc field eval: c=close-interp, m=many quadr
-k = 5;                                          % wavenumber
+d = domain(); d.k = 5;                          % wavenumber
 hlen = 1.0;                                     % half-length of src LP line
 y = -1.05; s = segment(70, [-hlen+1i*y hlen+1i*y]);  % line of src pts, fixed y
-lp = layerpot(s, dens, k);
-R = 1.0;                                         % radius
+lp = layerpot(s, dens); lp.doms = d;            % set up dummy domain
+R = 1.0;                                        % radius
 p = segment(52, [0 R, 0, 2*pi], 'p');           % circle of target pts
 if verb>1
   figure; p.plot; hold on; s.plot; axis equal; title('src + targ geom'); end
@@ -39,7 +39,7 @@ unai = A * f(s.x);               % naive LP eval of field at targs p
 ufil = B * f(s.x);               % Jfiltered field eval on targs p
 
 sa = utils.copy(s); sa.requadrature(200); % create >> # src quadr for LP
-lpa = layerpot(sa, dens, k);             % make a new LP for later 
+lpa = layerpot(sa, dens); lpa.doms = d;            % make a new LP for later 
 if acc=='c'
   uacc = C * f(s.x);
 elseif acc=='m'
@@ -53,7 +53,7 @@ fprintf('rel L-infty targ field err (Jfiltered - true) = %g\n', ...
 
 x = -2:0.02:2; [xx yy] = meshgrid(x); g = pointset(xx(:)+1i*yy(:));
 po.arrow=0; po.normals=0;
-c = (.3+(dens=='d'))/sqrt(k); % plot segment opts, color axis
+c = (.3+(dens=='d'))/sqrt(d.k); % plot segment opts, color axis
 if verb>0
   u = reshape(lp.eval(g) * f(s.x), size(xx));
   uf = reshape(lp.eval(g, o) * f(s.x), size(xx));

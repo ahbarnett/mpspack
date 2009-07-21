@@ -8,6 +8,7 @@ b) Domain boundary and MFS charge curve geometry, and
 
 % ----------------------------------------------------------------------------
 \section{Helmholtz equation, exterior and multiply connected domains}
+\label{s:ext}
 
 Changing from the Laplace to Helmholtz equation is as simple
 as setting {\tt d.k} to a positive value.
@@ -35,7 +36,16 @@ d.k = 10; f = @(z) besselh(0,d.k * abs(z-0.3-0.2i));  % a radiative Helm soln
 tref.setbc(1, 'd', [], @(t) f(tref.Z(t)));            % exterior Dirichlet data
 \end{verbatim}
 A convenient basis set for radiative solutions is a set of fundamental
-solutions (`MFS basis') lying on a closed curve interior to the segment.
+solutions (`MFS basis') with origins $\by_j$
+lying on a closed curve interior to the segment.
+The formula for the $j$th basis function at location
+$\bx\in\mathbb{R}^2\setminus \by_j$
+is $\Phi(|\bx-\by_j|)$, where
+the fundamental solution for the Helmholtz equation at wavenumber $k$ is
+\be
+        \Phi(\bx) = \frac{i}{4}H_0^{(1)} (k|\bx|)
+\label{e:fund}
+\ee
 We set this up and plot convergence of boundary error norm,
 \begin{verbatim}
 opts.tau = 0.06; d.addmfsbasis(tref, [], opts);

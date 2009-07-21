@@ -15,7 +15,7 @@ function A = localfromDLP(s, Jexp)
 
   M = Jexp.N;                       % get max order from regFB object
   sc = Jexp.Jrescalefactors(0:M);   % rescaling factors from regFB obj
-  if ~Jexp.realflag
+  if ~Jexp.real
     sc = [sc(end:-1:2) sc];         % ordering for complex exp basis, -M<=m<=M
   else
     warning 'localfromSLP not implemented for real regFB basis yet!'

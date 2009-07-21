@@ -2,6 +2,7 @@
 % Also see * testlpquad for more low-level tests of layerpot.S etc.
 %          * testbvp.m for GRF test on interior values
 % barnett 7/30/08, GRF test 8/4/08. Needs generalizing to interior & close evals
+% changed to new interface, 7/21/09
 
 clear classes
 sh = 's';                    % 't' or 's' for triangle or smooth curve
@@ -11,13 +12,13 @@ elseif sh=='t', s = segment.polyseglist([], [1 1i exp(4i*pi/3)], 'g');  % tri
   Ms = 20:20:100;
 end
 d = domain(s, 1);                    % interior domain
-if 0       % --------- do a Laplace eqn (k=0) visual test of known tau=1 DLP
-k = 0;                     % otherwise tau=1 test cannot work
+if 1       % --------- do a Laplace eqn (k=0) visual test of known tau=1 DLP
+d.k = 0;                     % otherwise tau=1 test cannot work
 [g.x g.ii g.gx g.gy] = d.grid(0.05);                     % some interior points
 for m = 1:numel(Ms)
   M = Ms(m); s.requadrature(ceil(M/numel(s))); % can also try 'g', better
   numel(vertcat(s.w))          % show # quad pts total
-  d.clearbases; d.addlayerpotbasis([], 'd', k); D = d.evalbases(g);
+  d.clearbases; d.addlayerpot([], 'd'); D = d.evalbases(g);
   tau = ones(size(D,2),1);      % unity col vec
   ug = D * tau;                 % field on interior grid pts
   figure; d.plot; axis equal; u = NaN*zeros(size(g.ii)); u(g.ii)=ug;
@@ -30,8 +31,8 @@ end
 k = 20;  M = 220;  % k & size for Kress to get 4e-15
 o = []; o.fast = 2; % M = 1000; o.quad = 'k'; o.ord = 10; % test Kapur-Rokhlin
 if sh=='t', o.quad = 'a'; end % not default Kress, rather, crude.
-d.clearbases;
-d.addlayerpotbasis([], 's', k, o); d.addlayerpotbasis([], 'd', k, o);
+d.clearbases; d.k = k;
+d.addlayerpot([], 's', o); d.addlayerpot([], 'd', o);
 s.requadrature(M);                   % note you can requad after defining LPs
 xsing = 2 + 1i;                        % location of singularity in a Helm soln
 u = @(x) bessely(0, k*abs(x - xsing)); % an exact Helmholtz soln in domain

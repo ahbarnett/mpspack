@@ -60,9 +60,9 @@ else                              % dPhi(x,y)/dny
 end
 cosker = real(conj(nx).*d) ./ r;  % dot prod <normal, displacement>
 if needA
-  [A Dker_noang] = utils.fundsol_deriv(r, cosker, k); % n-deriv of Phi
+  [A Dker_noang] = layerpot.fundsol_deriv(r, cosker, k); % n-deriv of Phi
 else
-  [A Dker_noang] = utils.fundsol_deriv(r, cosker, k, o.Dker_noang);
+  [A Dker_noang] = layerpot.fundsol_deriv(r, cosker, k, o.Dker_noang);
 end                               % A is now the kernel value matrix
 
 if self % ........... source curve = target curve; can be singular kernel

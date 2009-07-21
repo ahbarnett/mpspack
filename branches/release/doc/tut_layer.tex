@@ -1,2 +1,25 @@
 % ----------------------------------------------------------------------------
 \section{Layer potentials}
+
+Layer potentials are representations of Helmholtz solutions
+involving an integral over a surface, i.e. a boundary segment
+\cite{coltonkress}.
+It is easy to set up in a domain a single-layer potential (SLP) density
+\be
+u(\bx) = {\cal S}\sigma := \int_\Gamma \Phi(\bx-\by) \sigma(\by) ds_\by
+\ee
+where $ds$ is arclength, or double-layer potential (DLP) density
+\be
+u(\bx) = {\cal D}\tau := \int_\Gamma \frac{\partial \Phi(\bx-\by)}{\partial n_\by} \tau(\by) ds_\by
+\ee
+where $\Gamma$ is a segment, and $\sigma$ and $\tau$ are functions on $\Gamma$.
+For example, using as $\Gamma$ the
+trefoil segment {\tt tref} defined in Sec.~\ref{s:ext}, a DLP is set up
+by
+\begin{verbatim}
+  d = domain([], [], tref, -1); d.k = 10;    % external domain, wavenumber k
+  d.addlayerpot([], 'd');                    % adds DLP to bdry of d
+\end{verbatim}
+
+The coefficients in {\tt p.co} represent density function values
+at the quadrature points.
