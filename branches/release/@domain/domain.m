@@ -99,18 +99,26 @@ classdef domain < handle
       
       function i = inside(d, p) % .................................... inside
       % INSIDE - return true (false) for points inside (outside) a domain
+      %
+      % i = INSIDE(d, p) returns a logical array of values specifying if
+      %   each point in the list of complex numbers p is inside (1) or outside
+      %   (0) the domain d. The output i is the same shape as input p.
+      %
+      % Issues/notes:
+      %  * Uses fast inpolygon implementations in inpolywrapper
         if d.exterior
-          i = logical(ones(size(p)));
+          i = logical(ones(size(p(:))));
         else                                % interior domain
           js = find(d.spiece==0);           % indices of segs outer bdry piece
           v = domain.approxpolygon(d.seg(js), d.pm(js));
-          i = inpolygon(real(p), imag(p), real(v), imag(v));
+          i = utils.inpolywrapper(p(:), v);
         end
         for piece=1:max(d.spiece)         % kill pts from each interior piece
           js = find(d.spiece==piece);
           v = domain.approxpolygon(d.seg(js), d.pm(js));
-          i = i & ~inpolygon(real(p), imag(p), real(v), imag(v)); % NB logical
+          i = i & ~utils.inpolywrapper(p(:), v);
         end
+        i = reshape(i, size(p));
       end
 
       function x = x(d) % ................. get all quadr pts assoc w/ domain

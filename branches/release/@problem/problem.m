@@ -155,9 +155,9 @@ classdef problem < handle
     %
     % See also GRIDSOLUTION.
     
-    % Split up the computation if list of points is longer than nmax=100.
+    % Split up the computation if list of points is longer than nmax.
     % Ensures that not too much memory is eaten up by the computation.
-    nmax=100;
+    nmax=1e4;          % since nmax=100 had big 20% speed hit
     if length(p.x)>nmax,
         Np=length(p.x);
         itcount=floor(Np/nmax);

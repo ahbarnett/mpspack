@@ -9,7 +9,7 @@ FC = gfortran
 
 default: all
 
-all: gslbesselj.mexglx gslbesseljnu.mexglx greengardrokhlinhank103.mexglx
+all: gslbesselj.mexglx gslbesseljnu.mexglx greengardrokhlinhank103.mexglx inpolyc.mexglx
 special: greengardrokhlinhank106.mexglx
 
 .PHONY: all special clean
@@ -31,6 +31,9 @@ hank103.o: hank103.f
 
 hank106.o: hank106.f
 	$(FC) -fPIC -c hank106.f -O3
+
+inpolyc.mexglx: inpolyc.c
+	mex inpolyc.c
 
 clean:
 	rm *.o *.mexglx
