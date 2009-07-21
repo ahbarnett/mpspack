@@ -115,9 +115,6 @@ classdef segment < handle & pointset
             quadrule = @quadr.clencurt;
            case 'g',
             quadrule = @quadr.gauss;  % note via eig returns increasing x order
-            if M>100
-              fprintf('warning: finding >100 gauss quadr pts slow O(M^3)!\n');
-            end
            otherwise,
             error(sprintf('requadrature: unknown quadrature type %s!', qtype));
           end
