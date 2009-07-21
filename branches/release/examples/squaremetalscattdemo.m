@@ -38,21 +38,12 @@ sdecomp.setmatch([k -k],[1 -1]);
 % Define the basis functions
 % --------------------------
 
-% Fractional Bessel functions
-nuopts=struct('type','s','rescale_rad',1);
-for j=1:4, 
-    d(j).addnufbbasis((1i)^(j-1)*(a+1i*a),2/3,(1i)^(j-1)*(-1i),(1i)^(j-1)*(-1-1i),N,nuopts);
-end
-
-% 
-% d(1).addnufbbasis(a+1i*a,2/3,-1i,-1-1i,N,nuopts);
-% d(2).addnufbbasis(-a+1i*a,2/3,1,1-1i,N,nuopts);
-% d(3).addnufbbasis(-a-1i*a,2/3,1i,1+1i,N,nuopts);
-% d(4).addnufbbasis(a-1i*a,2/3,-1,-1+1i,N,nuopts);
+nuopts=struct('type','s','cornermultipliers',[0 0 1 0 0],'rescale_rad',1);
+for j=1:4, d(j).addcornerbases(N,nuopts); end
 
 % Fundamental Solutions
 Z=@(t) rmfs*exp(2i*pi*t); Zp=@(t) 2i*pi*rmfs*exp(2i*pi*t);
-opts=struct('eta','k','fast',1,'nmultiplier',2);
+opts=struct('eta',k,'fast',1,'nmultiplier',2);
 ext.addmfsbasis({Z, Zp},N,opts);
 
 
@@ -70,13 +61,13 @@ tic; pr.solvecoeffs; fprintf('\tcoeffs done in %.2g sec\n', toc)
 fprintf('\tL2 bdry error norm = %g, coeff norm = %g\n', ...
         pr.bcresidualnorm, norm(pr.co))
 o.bb=[-1.5 1.5 -1.5 1.5];
-o.dx=0.01;
+o.dx=0.02;
 
 [ui gx gy] = pr.gridincidentwave(o);
-us = pr.gridsolution(o);
+u = pr.gridsolution(o);
 
 figure;
-imagesc(gx, gy, real(ui+us)); title('Full Field (Real Part)');
+imagesc(gx, gy, real(ui+u)); title('Full Field (Real Part)');
 c = caxis; caxis([-1 1]*max(c));
 axis equal tight;
 colorbar;
