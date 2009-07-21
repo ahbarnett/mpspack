@@ -138,8 +138,6 @@ classdef scattering < bvp & handle
     %   opts.bdry = true, shows boundary too
     %   opts.sepfigs: if true, make three separate figures
     %
-    %  Need to * make a real/complex flag
-    %          * store Ad eval matrices for later access (expensive to fill)?
       if nargin<2, o = []; end
       if ~isfield(o, 'imag'), o.imag = 0; end
       if ~isfield(o, 'bdry'), o.bdry = 0; end

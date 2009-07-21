@@ -30,7 +30,6 @@ ext = domain([], [],extlist, -1);
 sdecomp.setmatch([k -k],[1 -1]); % Matching conditions for
                                  % artificial boundaries
 
-
 % Add basis functions
 nuopts.type='s';
 d(1).addnufbbasis(a+1i*a,2/3,-1i,-1-1i,N,nuopts);
@@ -53,5 +52,5 @@ tic; pr.solvecoeffs; fprintf('\tcoeffs done in %.2g sec\n', toc)
 fprintf('\tL2 bdry error norm = %g, coeff norm = %g\n', ...
         pr.bcresidualnorm, norm(pr.co))
 o.bb=[-3 3 -3 3];
-o.dx=0.05;
+o.dx=0.01;
 pr.showthreefields(o);
