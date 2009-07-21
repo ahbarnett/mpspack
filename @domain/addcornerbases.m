@@ -11,6 +11,8 @@ function addcornerbases(d, N, opts)
 %                       (default is all equal to 1 for valid corners)
 %    opts.type = 's', 'c', or 'cs', chooses angular sin/cos type as in nufbbasis
 %                       (default is 'cs')
+%    opts.nproportional={0,1} If 1 then N is scaled proportional to the
+%                             angle of the corner (default 0)
 %    Other opts fields are passed to nufbbasis.
 %
 % See also: NUFBBASIS, ADDNUFBBASIS
@@ -23,13 +25,27 @@ function addcornerbases(d, N, opts)
     opts.cornermultipliers = ones(size(d.cloc)) .* ~isnan(d.cloc);
   end
   %  ...might be better with d.cang/pi instead of 1 ?
+  if ~isfield(opts,'nproportional'),
+      nproportional=0;
+  else
+      nproportional=opts.nproportional;
+  end
+  
   
   for j=1:numel(d.cloc)
-    bra = -d.cangoff(j) - d.cang(j)/2;  % choose branch cut facing away
+    %bra = -d.cangoff(j) - d.cang(j)/2;  % choose branch cut facing away
+    bra=d.cangoff(j)*sqrt(exp(1i*d.cang(j)));
+    if d.inside(d.cloc+1E-12*bra), bra=-bra; end
     if opts.cornermultipliers(j)>0
       opts.nmultiplier = opts.cornermultipliers(j);
+      if nproportional,
+          np=ceil(N*d.cang(j)/pi);
+      else
+          np=N;
+      end
       d.addnufbbasis(d.cloc(j), pi/d.cang(j), d.cangoff(j), bra, ...
-                     ceil(N*d.cang(j)/pi), opts);
+                     np, opts);
+                 
     end
   end
 

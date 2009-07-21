@@ -144,9 +144,8 @@ sdecomp=s([1 4 5 8 9 12 13 16]); % All artificial boundaries
 extlist=s([4 8 12 16]);          % Segments forming the outer circle
 \end{verbatim}
 
-We now define the domains. To make the code shorter and use a simple
-for loop we can use the rotational symmetry of the segments in this
-problem.
+We now define the domains. By taking the rotational symmetry into
+account we can do this in a simple for loop.
 
 \begin{verbatim}
 d=domain.empty(4,0);
@@ -175,11 +174,104 @@ derivative.\footnote{Consider the one dimensional plane wave
   scale the $L^2$ error of function values by $k$ to give it the same
   dimension as the $L^2$ error of the derivative.}
 
-We can now add the basis functions to the domains. This is done by the
-following two commands.
+We can now add the basis functions to the domains. The fractional
+Bessel functions are added to the interior domains by the following
+command.
+\begin{verbatim}
+nuopts=struct('type','s','cornermultipliers',[0 0 1 0 0],'rescale_rad',1);
+for j=1:4, d(j).addcornerbases(N,nuopts); end
+\end{verbatim}
+The options structure {\texttt nuoopts} specifies that we only want
+Fourier-Bessel sine functions at the third corner of each domain. This
+is the corner belonging to the square. The option {\texttt
+  'rescale\_rad'} specifies that the basis functions are rescaled to
+balance out the bad scaling of Bessel functions. The method {\texttt
+  addcornerbases} automatically finds out the right fractional orders,
+offsets and suitable branch vectors.
 
+The exterior fundamental solutions are added with the following command.
+\begin{verbatim}
+Z=@(t) rmfs*exp(2i*pi*t); Zp=@(t) 2i*pi*rmfs*exp(2i*pi*t);
+opts=struct('eta','k','fast',1,'nmultiplier',2);
+ext.addmfsbasis({Z, Zp},N,opts);
+\end{verbatim}
+Note that now {\texttt nmultiplier} is set to $2$. It turns out to be
+effective for this problem to use twice as many fundamental solutions
+as there are Fourier-Bessel sine functions in each domain.
 
+We now have everything together to setup the problem class and solve
+the scattering problem. The following commands setup the scattering
+problem and define an incident plane wave.
+\begin{verbatim}
+pr=scattering(ext,d);
+pr.setoverallwavenumber(k);
+pr.setincidentwave(-pi/4);
+\end{verbatim}
+There is one small specialty here. In the first line we have 
+defined {\texttt ext} to be an air-domain and the array {\texttt d} to
+be a non-air domain. This tells \mpspack~to add the incident field to
+the exterior basis functions in assembling the least-squares problem.
 
+The following commands now solve the problem and plot the solution
+$u$.
+\begin{verbatim}
+tic; pr.solvecoeffs; fprintf('\tcoeffs done in %.2g sec\n', toc)
+fprintf('\tL2 bdry error norm = %g, coeff norm = %g\n', ...
+        pr.bcresidualnorm, norm(pr.co))
+o.bb=[-1.5 1.5 -1.5 1.5];
+o.dx=0.02;
+
+[ui gx gy] = pr.gridincidentwave(o);
+u = pr.gridsolution(o);
+
+figure;
+imagesc(gx, gy, real(ui+u)); title('Full Field (Real Part)');
+c = caxis; caxis([-1 1]*max(c));
+axis equal tight;
+colorbar;
+set(gca,'ydir','normal'); 
+\end{verbatim}
+The incident field {\texttt ui} 
+is automatically evaluated only in air-domains. If
+we want to evaluate it in all domains we have to set {\texttt
+  o.all=1}. But here the default behavior is fine for us. The sum
+{\texttt ui+u} is now the total field in all domains (remember that
+{\texttt u} approximates the total field in the interior domains
+and the scattered field in the exterior domain). The {\texttt
+  scattering} class also provides a routine {\texttt showthreefields}
+to plot the incident wave, scattered field and total field. However,
+the routine assumes that the computed solution is the scattered field,
+which is not correct for the way we have set up this problem.
+
+The output of the example problem is shown in Figure \ref{fig:squareplot}.
+\begin{figure}
+\center
+\includegraphics[width=8cm]{squareplot}
+\caption{The solution of the scattering problem on the unit
+  square with sound-soft boundary conditions.}
+\label{fig:squareplot}
+\end{figure}
+The $L^2$ boundary error of the solution is approximately $1.5\cdot
+10^{-10}$. On a standard laptop with Intel Core 2 Duo processor the
+solution vector is computed in around $11$ seconds. The plot takes
+slightly longer.
+
+A wonderful feature of this approach is that we can trivially switch
+to a sound-hard scattering problem, that is instead of requiring $u=0$
+on $\partial\Omega$ we require $\frac{\partial}{\partial n} u=0$ on
+$\partial\Omega$. All we have to do is switch to Fourier-Bessel cosine
+functions. These automatically satisfy the required condition for the
+normal derivative. The solution to this problem is shown in Figure
+\ref{fig:squareplot2}.
+\begin{figure}
+\center
+\includegraphics[width=8cm]{squareplot2}
+\caption{The solution of the scattering problem on the unit
+  square with sound-hard boundary conditions.}
+\label{fig:squareplot2}
+\end{figure}
+The accuracy and solution time are comparable to the sound-soft
+scattering place.
 
 %%% Local Variables: 
 %%% mode: latex
