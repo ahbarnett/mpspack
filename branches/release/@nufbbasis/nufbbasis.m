@@ -32,6 +32,9 @@ classdef nufbbasis < handle & basis
 %  * for slit domains nu=1/2, user needs to jiggle the branch cut either side?
 %
 % Also see: DOMAIN.ADDNUFBBASIS
+
+% Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
+
     properties
         origin   % Origin of the Fourier-Bessel fct.
         nu       % Real parameter that determines the fractional order of
@@ -206,15 +209,18 @@ classdef nufbbasis < handle & basis
         end  % func
 
         function h = showgeom(nufb, opts) % ....... plotting of nufb basis geom
+        % SHOWGEOM - show corner wedge location, geometry and branch cut
           if nargin<2, opts = []; end
           x = real(nufb.origin); y = imag(nufb.origin); h = plot(x,y,'ro');
           str = sprintf('(nu=%.2g) ', nufb.nu);
           if isfield(opts, 'label'), str = [str opts.label]; end
           h = [h; text(x,y, str)]; hold on;
-          angfrac = 0:.05:1;
-          t = nufb.offset * exp(1i*pi/nufb.nu).^angfrac; % angles on unit circle
+          angfrac = 0:.05:1;            % see code in domain.plot corners:
+          t = nufb.offset * exp(1i*pi/nufb.nu.*angfrac); % angles on unit circle
           l = 0.3; % filled polygon patch...
           h = [h; patch([x+l*real(t) x], [y+l*imag(t) y], 'r')];
+          h = [h; plot([x+l*real(nufb.branch) x], [y+l*imag(nufb.branch) y],...
+                       'r--', 'linewidth', 5)];
         end % func
         
         function sc = Jrescalefactors(nufb, n) % ... used to effect rescale_rad

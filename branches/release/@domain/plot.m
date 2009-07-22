@@ -9,9 +9,8 @@ function h = plot(d, o)
 %   opts.gridinside: only if >0, show gridpoints inside domain (default 0)
 %
 %   Also all options in SHOWSEGMENTS have effect.
-%
-% Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
 
+% Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
 
 if nargin<2, o = []; end
 if ~isfield(o, 'gridinside'), o.gridinside=0; end  % default no grid

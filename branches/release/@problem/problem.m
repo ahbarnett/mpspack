@@ -1,5 +1,6 @@
 % PROBLEM - abstract class defining interfaces for Helmholtz/Laplace BVPs/EVPs
 
+% Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
 classdef problem < handle
   properties
     segs                    % array of handles of segments in problem
@@ -247,11 +248,18 @@ classdef problem < handle
     end
     
     function h = showbasesgeom(pr)   % ................ crude plot bases geom
+    % SHOWBASESGEOM - plot geometry of all basis objects in a problem object
+      h = [];   % dummy graphics handle for now
       pr.setupbasisdofs;
       for i=1:numel(pr.bas)
         opts.label = sprintf('%d', i);              % label by problem's bas #
         pr.bas{i}.showgeom(opts);
       end
+    end
+    
+    function h = plot(pr)
+    % PLOT - show all geometry in a problem object: segments, basis geoms...
+      h = [pr.showbdry; pr.showbasesgeom];
     end
     
     function setoverallwavenumber(pr, k) % ................. overall k
@@ -332,7 +340,6 @@ classdef problem < handle
       set(gca,'ydir','normal'); hold on;
       if o.bdry, pr.showbdry; end
     end % func
-    
     
     % *** Methods to be written ........... ****
     [u un] = bdrysolution(pr, seg, pm) % ........... evaluate soln on a bdry
