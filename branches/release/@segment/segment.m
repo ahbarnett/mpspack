@@ -50,7 +50,7 @@ classdef segment < handle & pointset
     methods
       function s = segment(M, p, qtype)
         if nargin==0, return; end               % empty constructor (for copy)
-        if nargin<3, qtype='c'; end             % default quadrature type
+        if nargin<3, qtype='g'; end             % default quadrature type
       
         % convert different types of input format all to an analytic curve...
         if iscell(p)         % ------------ analytic function (cell array)

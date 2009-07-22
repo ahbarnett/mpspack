@@ -1,8 +1,8 @@
 % Timo's attempt to handle the cavity...
 
-M=40;
-k=2;
-N=40;
+M=90;
+k=10;
+N=90;
 rmfs=7;
 
 
@@ -109,7 +109,7 @@ s(89)=segment(3*M,[3+3i rmfs 7*pi/4 9*pi/4]);
 % Now define all domains
 
 
-d=domain.empty(25,0);
+d=domain.empty(29,0);
 
 d(1)=domain(s([1 5 13 4]),[1 1 -1 -1]);
 d(2)=domain(s([2 6 10 12 5]),[1 1 -1 -1 -1]);
@@ -138,9 +138,12 @@ d(24)=domain(s([78 79 57 77]),[1 1 -1 -1]);
 d(25)=domain(s([57 58 59 46 38 81 56]),[1 1 -1 -1 -1 1 -1]);
 d(26)=domain(s([55 47 48 49 50 59 82 86 83]),[1 1 1 1 1 1 1 1 -1]);
 d(27)=domain(s([84 66 63 60 54 83 87]),[-1 1 1 1 1 1 1]);
+d(28)=domain(s([88 85 70 68 84]),[1 -1 -1 -1 1]);
+d(29)=domain(s([89 82 58 79 76 71 85]),[1 -1 -1 -1 -1 -1 1]);
 
-ext=domain([],[],s([66 63 60 54 55 47 48 49 50 59 58 79 76 71 70 68]),...
-    [1 1 1 1 1 1 1 1 1 1 -1 -1 -1 -1 -1 -1]);
+
+
+ext=domain([],[],s([86 89 88 87]),-1);
 
 
 
@@ -148,7 +151,7 @@ ext=domain([],[],s([66 63 60 54 55 47 48 49 50 59 58 79 76 71 70 68]),...
 
 bndindices=[1 2 3 4 14 15 24 25 7 8 19 20 28 ...
             29 39 51 52 61 65 67 69 72 73 74 77 81 40 31 56];
-decompindices=setdiff(1:81,bndindices);
+decompindices=setdiff(1:89,bndindices);
 sbnd=s(bndindices);
 sdecomp=s(decompindices);
 
@@ -156,7 +159,7 @@ sdecomp=s(decompindices);
 
 % First the singular corners
 
-sopts.type='s'; sopts.cornermultipliers=[1 0 0 0]; sopts.rescale_rad=1;
+sopts.type='s'; sopts.cornermultipliers=[1 0 0 0]; sopts.rescale_rad=0;
 d(1).addcornerbases(N,sopts);
 sopts.cornermultipliers=[0 1 0 0 ];
 d(3).addcornerbases(N,sopts);
@@ -175,21 +178,19 @@ d(25).addcornerbases(N,sopts);
 
 % Now add regular Bessel functions to the rest
 
-dsing=[1 3 10 11 18 21 22];
-dnonsing=setdiff(1:25,dsing);
+dsing=[1 3 10 11 18 21 22 25];
+dnonsing=setdiff(1:29,dsing);
 
-opts=struct('rescale_rad',1);
+opts=struct('rescale_rad',0);
 for j=1:length(dnonsing),
     dt=d(dnonsing(j));
     dt.addregfbbasis(dt.cloc(1),N,opts);
 end
 
-% Now create the exterior conformal map with the SC Toolbox
-
-m=extermap(polygon([0 6 6+6i 6i]));
-Z=@(t) m(rmfs*exp(2i*pi*t));
-mfsopts=struct('fast',1);
-ext.addmfsbasis(Z,N,mfsopts);
+Z=@(t) 3+3i+3.2*sqrt(2)*exp(2i*pi*t);
+Zp=@(t) 3.2*sqrt(2)*2i*pi*exp(2i*pi*t);
+mfsopts=struct('fast',1,'nmultiplier',2,'eta',k);
+ext.addmfsbasis({Z,Zp},N,mfsopts);
 
 % Add the boundary conditions.
 
