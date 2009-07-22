@@ -15,8 +15,8 @@ h = [];
 i = 0;
 for d=dlist
   hd = d.plot(opts);
-  % use binary RGB sequence...
+  % use binary RGB sequence (repeats after 7)...
   utils.monochrome(hd, [mod(floor(i/4),2), mod(floor(i/2),2), mod(i,2)]);
+  i = mod(i+1,7);
   h = [h; hd];
-  i = i+1;
 end
