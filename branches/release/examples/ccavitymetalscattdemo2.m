@@ -3,16 +3,15 @@
 M=40;
 k=2;
 N=40;
-rmfs=0.99;
+rmfs=7;
 
-close all
 
 % Now define all 81 segments...
 
 l1=2+6i-(1+2i); l2=4+6i-(5+2i);
 
 
-s=segment.empty(81,0);
+s=segment.empty(89,0);
 
 s(1)=segment(M,[1+2i 2+2i]);
 s(2)=segment(M,[2+2i 4+2i]);
@@ -79,12 +78,12 @@ s(62)=segment(M,[-1.5+4.5i 0+4.5i]);
 s(63)=segment(M,[-1.5+3i -1.5+4.5i]);
 s(64)=segment(M,[-1.5+3i 0+3i]);
 s(65)=segment(M,[0+3i 0+4.5i]);
-s(66)=segment(3*M,[-1.5-1i -1.5+3i]);
+s(66)=segment(3*M,[-1.5-1.5i -1.5+3i]);
 s(67)=segment(2*M,[0 3i]);
-s(68)=segment(3*M,[-1.5-1i 3-1i]);
+s(68)=segment(3*M,[-1.5-1.5i 3-1.5i]);
 s(69)=segment(2*M,[0 3]);
-s(70)=segment(3*M,[3-1i 7.5-1i]);
-s(71)=segment(3*M,[7.5-1i 7.5+3i]);
+s(70)=segment(3*M,[3-1.5i 7.5-1.5i]);
+s(71)=segment(3*M,[7.5-1.5i 7.5+3i]);
 s(72)=segment(2*M,[3 6]);
 s(73)=segment(2*M,[6 6+3i]);
 s(74)=segment(M,[6+3i 6+4.5i]);
@@ -93,8 +92,19 @@ s(76)=segment(M,[7.5+3i 7.5+4.5i]);
 s(77)=segment(M,[6+4.5i 6+5.5i]);
 s(78)=segment(M,[6+4.5i 7.5+4.5i]);
 s(79)=segment(M,[7.5+4.5i  7.5+5.5i]);
-s(80)=segment(M,[3-1i 3]);
+s(80)=segment(M,[3-1.5i 3]);
 s(81)=segment(M,[5.5+6i 6+6i]);
+s(82)=segment(M,3+3i+[4.5*sqrt(2)*exp(1i*pi/4) rmfs*exp(1i*pi/4)]);
+s(83)=segment(M,3+3i+[4.5*sqrt(2)*exp(3i*pi/4) rmfs*exp(3i*pi/4)]);
+s(84)=segment(M,3+3i+[4.5*sqrt(2)*exp(5i*pi/4) rmfs*exp(5i*pi/4)]);
+s(85)=segment(M,3+3i+[4.5*sqrt(2)*exp(-1i*pi/4) rmfs*exp(-1i*pi/4)]);
+s(86)=segment(3*M,[3+3i rmfs pi/4 3*pi/4]);
+s(87)=segment(3*M,[3+3i rmfs 3*pi/4 5*pi/4]);
+s(88)=segment(3*M,[3+3i rmfs 5*pi/4 7*pi/4]);
+s(89)=segment(3*M,[3+3i rmfs 7*pi/4 9*pi/4]);
+
+
+
 
 % Now define all domains
 
@@ -126,6 +136,8 @@ d(22)=domain(s([70 71 75  73 72 80]),[1 1 -1 -1 -1 -1]);
 d(23)=domain(s([75 76 78 74]),[1 1 -1 -1]);
 d(24)=domain(s([78 79 57 77]),[1 1 -1 -1]);
 d(25)=domain(s([57 58 59 46 38 81 56]),[1 1 -1 -1 -1 1 -1]);
+d(26)=domain(s([55 47 48 49 50 59 82 86 83]),[1 1 1 1 1 1 1 1 -1]);
+d(27)=domain(s([84 66 63 60 54 83 87]),[-1 1 1 1 1 1 1]);
 
 ext=domain([],[],s([66 63 60 54 55 47 48 49 50 59 58 79 76 71 70 68]),...
     [1 1 1 1 1 1 1 1 1 1 -1 -1 -1 -1 -1 -1]);
