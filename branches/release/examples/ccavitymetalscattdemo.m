@@ -31,8 +31,8 @@ s = [s s.reflect segment(M, [.5 r]) segment(M, [-.5+c real(ic)]) ...
 sdecomp=s([9:16 25:numel(s)]);   % All artificial boundaries (Gamma_ij)
 sq=s([1:8 16+(1:8)]);            % All segments that are part of the square
 sext=s([12:14 30 29 28]);           % ext bdry, Gamma_ie in CCW linking order
-%figure; s.plot; figure; sdecomp.plot;  % plot three types of segments in colors
-%h=sq.plot; set(h,'color', 'g'); h=sext.plot;set(h,'color', 'r'); 
+figure; s.plot; figure; sdecomp.plot;  % plot three types of segments in colors
+h=sq.plot; set(h,'color', 'g'); h=sext.plot;set(h,'color', 'r'); 
 
 ext = domain([], [], sext(end:-1:1), [1 1 1 -1 -1 -1]); % the exterior domain
 d(1) = domain(s([33 12 9 2 1]),[1 1 -1 -1 -1]);    % 8 subdomains in CCW sense
