@@ -20,14 +20,14 @@ if ~isfield(o,'normals'), o.normals=1; end % default is show normals
 lt = '.-';                                 % default is show quad pt blobs
 if isfield(o,'blobs') && ~o.blobs, lt='-'; end % switch off blobs
 if numel(s)==1, 
-    closed = (abs(s.Z(0)-s.Z(1))<1e-15);       % hack to tell if segment is closed
+    closed = (abs(s.Z(0)-s.Z(1))<1e-15);  % hack to tell if segment is closed
 end
     
 g = gcf;
 figure(g); hold on;
 
 if numel(s)>1                       % vectorize using domain routine
-  domain.showsegments(s, pm, o);
+  h = domain.showsegments(s, pm, o);
 else                                % just one seg, plot it!
   if closed, h = plot(real([s.x; s.x(1)]), imag([s.x; s.x(1)]), lt);
   else h = plot(real(s.x), imag(s.x), lt);

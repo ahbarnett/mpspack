@@ -322,6 +322,42 @@ classdef segment < handle & pointset
         end
       end % func
       
+     function newseg = reflect(seg, ax)  % ............. reflect a segment
+      % REFLECT - reflect a segment (or list of segments) about x or y axis
+      %
+      % reflect(seg, ax) changes the segment (or array of segments) seg by
+      %   reflecting through either ax='x' (default if ax empty or not given)
+      %   or 'y' axis.
+      %
+      % newseg = reflect(seg, ax) instead returns a new segment (or list)
+      %   obtained by reflecting the segment (or list) seg.
+        if nargin<2 || isempty(ax), ax='x'; end              % default
+        if nargout>0                             % make a duplicate
+          newseg = [];
+          for s=seg; newseg = [newseg utils.copy(s)]; end
+        else
+          newseg = seg;                          % copy handle, modify original
+        end
+        for s=newseg
+          if ax=='x'
+          s.x = conj(s.x); s.nx = -conj(s.nx);    % note sense change!
+          Z = s.Z; Zp = s.Zp; Zn = s.Zn;
+          s.Z = @(t) conj(Z(t));
+          s.Zp = @(t) conj(Zp(t)); s.Zn = @(t) -conj(Zn(t));  % note sense!
+          if ~isempty(s.Zpp)
+            Zpp = s.Zpp;
+            s.Zpp = @(t) conj(Zpp(t));
+          end
+          s.eloc = conj(s.eloc); s.eang = conj(s.eang);
+          s.approxv = conj(s.approxv);
+          elseif ax=='y'
+            error('y-reflection not yet implemented');
+          else
+            error('unknown reflection axis!');
+          end
+        end
+      end % func
+      
      function disconnect(segs)  % ...... disconnect a seg list from any domains
      % DISCONNECT - disconnect a segment or segment list from any domains
         for s=segs

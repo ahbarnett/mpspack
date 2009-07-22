@@ -24,18 +24,15 @@ function addcornerbases(d, N, opts)
   if ~isfield(opts, 'cornermultipliers')   % default: 1 for each valid corner...
     opts.cornermultipliers = ones(size(d.cloc)) .* ~isnan(d.cloc);
   end
-  %  ...might be better with d.cang/pi instead of 1 ?
-  if ~isfield(opts,'nproportional'),
+  %  ...as default, might be better with d.cang/pi instead of 1 ?
+  if ~isfield(opts,'nproportional')
       nproportional=0;
   else
       nproportional=opts.nproportional;
   end
-  
-  
+ 
   for j=1:numel(d.cloc)
-    %bra = -d.cangoff(j) - d.cang(j)/2;  % choose branch cut facing away
-    bra=d.cangoff(j)*sqrt(exp(1i*d.cang(j)));
-    if d.inside(d.cloc+1E-12*bra), bra=-bra; end
+    bra = -d.cangoff(j) * exp(1i*d.cang(j)/2); % choose branch cut facing away
     if opts.cornermultipliers(j)>0
       opts.nmultiplier = opts.cornermultipliers(j);
       if nproportional,
@@ -43,9 +40,7 @@ function addcornerbases(d, N, opts)
       else
           np=N;
       end
-      d.addnufbbasis(d.cloc(j), pi/d.cang(j), d.cangoff(j), bra, ...
-                     np, opts);
-                 
+      d.addnufbbasis(d.cloc(j), pi/d.cang(j), d.cangoff(j), bra, np, opts);
     end
   end
 
