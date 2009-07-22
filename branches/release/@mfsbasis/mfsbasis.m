@@ -89,12 +89,12 @@ properties
                 Z=varargin{1}{1}; Zp=varargin{1}{2};
                 if opts.tau~=0
                   b.Z = @(t) Z(t+1i*opts.tau); b.Zp = @(t) Zp(t+1i*opts.tau); 
-                else, b.Z = Z; b.Zp = Zp; end
+                else b.Z = Z; b.Zp = Zp; end
               else
-                b.Z=varargin{1};
+                Z=varargin{1};
                 if opts.tau~=0
                   b.Z = @(t) Z(t+1i*opts.tau);
-                else, b.Z = Z; end
+                else b.Z = Z; end
                 if ~isinf(b.eta), 
                   error('Derivative of Z needed for eta<inf');
                 end
