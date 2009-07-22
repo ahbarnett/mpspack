@@ -41,7 +41,7 @@ i = (1-pm)/2+1;
 % now make shifted versions of the above 3 lists, for the previous segment...
 prevs = circshift(s, [0 1]); prevpm = circshift(pm, [0 1]);
 previ = (1+prevpm)/2+1; % ind (1 or 2) for segment behind each corner
-eps = 1e-15;                     % max allowed corner position error
+eps = 1e-14;                     % max allowed corner position error
 for j=1:length(s)                          % loop over possible corners in list
   d.cloc = [d.cloc s(j).eloc(i(j))];       % append to corner loc list
   if abs(d.cloc(end) - prevs(j).eloc(previ(j))) > eps
