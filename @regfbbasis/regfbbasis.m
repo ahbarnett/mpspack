@@ -21,8 +21,8 @@ classdef regfbbasis < handle & basis
     %              rescale_rad is O(1). (default is 0, giving no rescaling)
     %   opts.besselcode: math library to use for J Bessel evaluation (k>0)
     %              = 'r' use downwards-recurrence in Matlab, fast, but
-    %                        relative accuracy not guaranteed (default).
-    %              = 'm' use Matlab's built-in besselj, is slower.
+    %                        relative accuracy not guaranteed.
+    %              = 'm' use Matlab's built-in besselj, is slower (default).
     %              = 'g' use GNU Scientific Library via MEX interface, fast.
     %
     % Issues/notes:
@@ -46,7 +46,7 @@ classdef regfbbasis < handle & basis
             if nargin<1 | isempty(origin), origin=0; end; % default origin
             if ~isfield(opts,'real'), opts.real = 1; end  % default opts...
             if ~isfield(opts,'rescale_rad'), opts.rescale_rad=0; end
-            if ~isfield(opts,'besselcode'), opts.besselcode='r'; end
+            if ~isfield(opts,'besselcode'), opts.besselcode='m'; end
             if ~isfield(opts,'fastang'), opts.fastang=0; end
             if ~isfield(opts,'nmultiplier'), opts.nmultiplier=1; end
 
