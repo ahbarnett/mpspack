@@ -5,7 +5,7 @@
 \begin{document}
 \title{\mpspack\ user manual}
 \author{Alex Barnett\footnote{Department of Mathematics, Dartmouth College, Hanover, NH, 03755, USA}
-and Timo Betcke\footnote{Department of Mathematics,
+\ and Timo Betcke\footnote{Department of Mathematics,
 University of Reading, Berkshire, RG6 6AX, UK}}
 \date{\today}   % how pipe from getrevisionnumber + 1?
 
@@ -14,7 +14,7 @@ University of Reading, Berkshire, RG6 6AX, UK}}
 \mpspack\ is a fully object-oriented \matlab\ toolbox for
 solving Laplace, Helmholtz, wave scattering, and related PDE boundary-value
 problems
-on piecewise-homogeneous 2D domains.
+on piecewise-homogeneous 2D domains, including those with corners.
 The philosophy is to
 %represent solutions using
 use basis functions
@@ -25,63 +25,107 @@ This idea is known as the Method of Particular Solutions, or as Trefftz,
 ultra-weak, or non-polynomial 
 methods in the FEM community.
 Basis functions include plane-wave, Fourier-Bessel,
-corner-adapted expansions,
+corner-adapted expansions, and
 fundamental solutions.
 Layer potential representations and associated
-singular quadrature schemes are also integrated into this framework.
+singular quadrature schemes are also available.
 It is designed to
 be simple to use, and to enable highly-accurate solutions.  This is
-the user manual; for a more hands-on approach try the accompanying tutorial.
+the user manual; for a more hands-on approach and worked examples
+see the accompanying tutorial.
 \end{abstract}
+
+
+\bfi % ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+\ig{width=\textwidth}{hard.eps}
+\ca{Sound-hard (homogeneous Neumann boundary condition) scattering from a smooth
+obstacle using a fundamental solutions basis.
+Left: incident wave. Center: scattered wave.
+Right: total solution field.}{f:hard}
+\efi
+
 
 \section{Overview}
 
-In numerical analysis there has been a recent flurry of activity
-on methods for solving PDEs where solutions are approximated by
-linear combinations of particular solutions to the PDE with
-good convergence properties.
+In numerical analysis there has been recent excitement
+in methods for solving linear PDEs where solutions are approximated by
+linear combinations of {\em particular solutions} to the PDE.
 These methods are high-order (often exponentially convergent),
 efficient at high frequencies (the number of degrees of freedom
 scales linearly with wavenumber, in 2D),
 and are quite simple to implement.
 When geometries become more complicated, the domain needs to be split
 up into multiple subdomains, e.g.\ one for each corner, and the
-implementation becomes cumbersome.
-The goal of this software toolbox is to make such an implementation simple
+implementation may become cumbersome.
+The goal of this software toolbox is to make implementation of
+these methods simple
 and transparent, and create an intuitive, unifying framework in which many
-types of BVP, basis sets, boundary conditions, and domain geometries
-may be solved, explored and graphed with ease.
-Since in these methods, the number of subdomains is small and fixed,
-we leave the job of specifying subdomains, i.e.\ `meshing',
-to the user (this contrasts with the philosophy of the large number of
-finite-element packages already in existence.)
+types of boundary-value problems,
+boundary conditions, and domain geometries
+may be solved, explored and visualized with ease.
+In these methods there is either no mesh (as in
+fundamental solutions methods), or
+the number of subdomains is small and fixed
+(so-called $p$-FEM).
+Thus we leave the job of specifying subdomains, i.e.\ `meshing',
+to the user---this contrasts with the large number of
+finite-element packages already in existence.
+The benefit of such methods is their rapid convergence and efficiency.
 
-We are most interested in the scalar Helmholtz equation in the plane,
+We focus on the scalar homogeneous
+Helmholtz equation in the plane,
 \bea
 (\Delta+k^2)u& =& 0 \qquad \mbox{in } \Omega~,
 \eea
 where $\Omega \subset \mathbb{R}^2$ is an interior or exterior
-domain, $k$ is the wavenumber, and certain
-imhomogeneous boundary conditions are imposed.
+domain, $k\ge 0$ is the wavenumber, and certain
+%imhomogeneous
+linear boundary conditions are imposed.
 Such problems arise in wave scattering and cavity resonances.
+In \mpspack\ we use the (recently-acquired)
+power of \matlab\ \cite{matlab} {\em object-oriented}
+programming to represent the 
+mathematical objects such as segments, domains,
+basis sets, and BVPs, by software objects that may be manipulated
+just like variables.
+The result is that complicated problems may be set up and solved in
+a few lines of quite-readable code.
+For example, to solve and plot the scattering
+of plane-wave incident upon a smooth sound-hard (Neumann) domain
+10 wavelengths in size, we can type,
+\begin{verbatim}
+s = segment.radialfunc(250, {@(q) 1 + 0.3*cos(3*q), @(q) -0.9*sin(3*q)});
+d = domain([], [], s, -1);
+s.setbc(1, 'N', []);
+opts.tau = 0.04; d.addmfsbasis(s, 210, opts);
+p = scattering(d, []);
+p.setoverallwavenumber(30);
+p.setincidentwave(pi/6);
+p.solvecoeffs;
+p.showthreefields;
+\end{verbatim}
+which produces Fig.~\ref{f:hard} in about 1 sec of CPU time,
+to an accuracy of $10^{-9}$ (boundary condition $L^2$-norm).
+
 More generally we may have multiple domains with different
 wavenumbers connected by homogeneous or inhomogeneous boundary conditions,
 as in transmission, dielectric-coated, or photonic crystal problems.
 With $k=0$ we have Laplace's equation, with applications to
 electrostatics, steady-state heat flow, and probability.
-
-In this release we discuss BVPs.
-It is a small extension to compute
-eigenvalue problems and periodic problems; we will document these in
-future releases.
+In this release we discuss only boundary-value problems (BVPs).
+Extensions to eigenvalue and periodic problems are already in progress;
+we will document these in future releases.
 %We believe the object-oriented framework we have set up generalizes
 %gracefully to 
 
-Fig.~\ref{f:relat} shows how a geometry is built up from objects, and the
-relationships between them.
-
-Our influences include Driscoll's SC Toolbox, and the {\tt chebfun} system
-by Trefethen et al.
+The accompanying tutorial is the best way to leap right in to using
+the package.
+The rest of this rather brief manual is more of a `top-down' document,
+describing installation, the PDEs that may be solved,
+our data structures and design choices, limitations, and acknowledgments.
+As usual you
+may also get help on any \mpspack\ command by typing {\tt help} followed
+by the command name at the \matlab\ prompt.
 
 
 \bfi % fffffffffffffffffffffffffff
@@ -99,45 +143,41 @@ are referenced. A basis set may influence more than one domain.}{f:relat}
 
 \subsection{Installation}
 
-Requirements:
-\bi
-\item \matlab\ version 7.6 (2008a) or newer is needed,
+Requirements: \matlab\ version 7.6 (2008a) or newer is needed,
 since we make heavy use of recent object-oriented programming features.
-\ei
+No other \matlab\ toolboxes are needed.
 
-The project is hosted at
+The project is hosted at the repository
 \co{http://code.google.com/p/mpspack}
 There are two alternative methods to download and unpack:
 \ben
 \item
-Get a gzip-compressed tar archive from
-\co{http://code.google.com/p/mpspack/downloads/list}
-In a UNIX environment you may now
-unpack this with
-\co{tar zxvf mpspack-r*.tar.gz}
-This creates the directory {\tt mpspack-r*} containing the toolbox,
-where {\tt *} represents the revision (version) number.
-
-\item
-First install the {\tt subversion} (SVN) version
-control software from
-\co{http://subversion.tigris.org}
-Anonymous check out of {\tt MPSpack} is then via the subversion command:
+Ensure you have {\tt subversion} (svn) installed.
+This is available from {\tt http://subversion.tigris.org}.
+Anonymous check out (download) of \mpspack\ is then via the subversion
+command:
 \co{svn checkout http://mpspack.googlecode.com/svn/trunk/ mpspack}
 This creates a directory {\tt mpspack} containing the toolbox.
 
 You might prefer a more user-friendly graphical
 subversion client such as those listed at
 \co{http://subversion.tigris.org/links.html\#clients}
-\een
 
-There are some optional fast basis evaluation routines
+\item
+Get a gzip-compressed tar archive from
+\co{http://code.google.com/p/mpspack/downloads/list}
+In a UNIX environment you may now
+unpack this with
+\co{tar zxvf mpspack.tar.gz}
+This creates the directory {\tt mpspack} containing the toolbox.
+\een
+There are some optional fast basis and other libraries
 (C and Fortran with MEX interfaces), which should be compiled
 in a UNIX environment as follows:
 from the {\tt mpspack} directory type {\tt make}
 
 You should now add the {\tt mpspack}
-subdirectory to your MATLAB path, for instance by adding the line
+subdirectory to your \matlab\ path, for instance by adding the line
 \co{addpath 'path/to/mpspack';}
 to your MATLAB {\tt startup.m} file.
 You are now ready to use \mpspack\ !
@@ -187,7 +227,9 @@ data structures, organized by topic such as sements, domains, etc.
 
 \section{Representing geometry}
 
-Fig ** outlines the objects.
+Fig.~\ref{f:relat} shows how an example problem
+geometry is built up from such objects, and some of the most important
+relationships between them.
 
 A segment is specified as a parametrized function $z(t)$ for $0\le t\le 1$,
 and $z'(t)$ is also needed.
@@ -260,57 +302,165 @@ such as dielectric corner and transmission layer potential objects;
 their handles will appear in the {\tt bas} cell array of more than one domain.
 
 
-\section{In-depth examples}
+\section{Tweaks and test routines}
 
-\section{Test routines}
+By default \mpspack\ uses robust rather than fast math libraries.
+It is simple 
 
-The code {\tt testbvp.m} shows the main steps for solution of a BVP on
+In the {\tt test/} directory you will find some routines that
+we use to validate \mpspack. These are of variable quality,
+but contain coding examples that you may find useful.
+\bi
+\item {\tt testbvp.m} shows the main steps for solution of a BVP on
 a variety of domains.
-
-\section{Limitations}
-
-\bi
-\item Checking of whether inside a domain is approximate, based on approximating
-polygons.
+\item
 \ei
 
-\section{List of improvements to make}
 
-List to be prioritized:
+\section{Known bugs and limitations}
 
-\bi
-\item make {\tt segment.bdryfunc} which creates $u$, $u_n$ data given a
-field function and its gradient field function, useful for choosing BC
-data corresponding to exact fields. DONE - see tutorial.
-Vectorize it over s?
-
-\item make {\tt domain.setbc} which uses one BC data function on all segments
-\item eigenvalue problems: MPS, scaling method
-\item segment methods to create analytic interpolant function from boundary
-point data, enabling user to specify a segment using points on a curve,
-as in Greengard.
-\item add better automated ways to choose MFS charge points, based on JCP paper
-\item write {\tt segment.bdrysolution} which evaluates $u$, $u_n$ on one
-or other side of a boundary. For layer potentials this would take into account
-jump relations. This should then be used in {\tt problem.fillbcmatrix}
-\item keep discrepancy and evaluation matrices, for efficiency in multiple
-right-hand sides.
-\item classes which symmetrize basis sets for single reflection, $C_4$, etc
-symmetry, by wrapping the calls to basis evaluations using reflection
-points. This is only needed for eigenvalue problems.
-\item periodic boundary conditions connecting values and derivatives
-on given sides of two different segments, needed for photonic crystals
-\item make better addnufbbasis which attaches to a requested corner.
-\item basisgeom for nufbbasis, split off utils.plotfan from domain.plot and
-use.
-\ei
-
-\section{Known bugs}
-
-Please alert the authors to any bugs you discover, including a description
-of how to reproduce the behavior, using the interface at
+Current bugs and issues are listed at the repository site,
 
 {\tt http://code.google.com/p/mpspack/issues/list}
+
+Please alert the authors to any new
+bugs that you discover, including a description
+of how to reproduce the behavior, using this interface.
+
+You may also contact the authors with suggestions
+via their email addresses
+given on the source page {\tt http://code.google.com/p/mpspack}
+
+Limitations of, and planned future improvements to, the software include:
+
+\bi
+\item Two dimensions. Quadrature, decomposition into subdomains, and
+corner singularities, the
+main ideas upon which this toolbox is based, become much more complicated
+in three dimensions. 
+Implementing 3D problems would be a major undertaking.
+
+\item Eigenvalue problems, one of the main reasons the authors became
+interested in particular solutions methods, are not yet implemented.
+For efficiency in symmetric domains, such as Bunimovich's stadium,
+this would include
+classes which symmetrize basis sets for single reflection, $C_4$, etc
+symmetry, by wrapping the calls to basis evaluations using reflection
+points.
+
+\item The necessity to purchase commercial \matlab\ software.
+However, there are no free mathematical environments that we know of
+of comparable numerical versatility, plotting, and object-oriented capability.
+One idea would be to port to the promising-looking {\tt SAGE} and {\tt python}
+environment; get in touch if you would like to be involved.
+
+\item Some better tools for problem set-up are needed, such as:
+\bi
+  \item Automatic meshing, based on complex approximation theory
+  \item make {\tt domain.setbc} which uses one BC data function on all segments
+  \item segment methods to create analytic interpolant function from boundary
+point data, enabling user to specify a segment using points on a curve,
+as in {\tt FMMToolbox}.
+\ei
+
+\item Checking of whether a point is inside a domain is approximate,
+currently based on an approximating polygon of typically 50-100 sides
+per segment object.
+Better would be to use the segment parametrization function in
+an iterative scheme, since this could give machine precision.
+
+\item We have not tested complex wavenumber problems, which have
+applications to conductive media. We expect that some of the
+methods, such as layer potentials and fundamental solutions,
+will carry over without modification.
+
+\item Graded-index media problems, using Airy and other particular
+solutions.
+
+\item Better automated ways to choose MFS charge points given a domain,
+based on \cite{mfs}.
+
+\item Solution evaluation on boundary segments via {\tt segment.bdrysolution}
+ which evaluates $u$, $u_n$ on one
+or other side of a boundary.
+This should then be used by {\tt problem.fillbcmatrix}
+
+\item Incorporation of Fast Multipole Methods for evaluation with MFS and
+layer potentials, and iterative
+methods for second-kind layer potential formulations.
+
+\item Saving
+evaluation matrices for use with multiple right-hand sides.
+Using QR factors of {\tt problem.A} matrix
+for rapid solution with multiple right-hand sides.
+
+\item Computation of far-field distribution in a scattering problem
+from MFS or layer potential
+representation of a radiating solution. This needs a variant of a
+multipole-to-local matrix of regular bessel functions.
+\ei
+
+Please contact the authors if you implement any of these and/or want
+to join the project!
+
+
+
+\section{Acknowledgments and credits}
+
+Almost all the code in \mpspack\ is written by 
+Alex Barnett and Timo Betcke.
+The concept and need for the package came out of our work in eigenvalue
+and scattering problems, using global basis methods.
+We have been influenced by, and learned useful tricks from,
+the Schwarz-Christoffel toolbox by Toby Driscoll,
+the {\tt FMMToolbox} by MadMax Optics, Inc.,
+and the {\tt chebfun} system
+by L. N. Trefethen, Z. Battles, T. Driscoll, R. Pach\'{o}n, and R. Platte.
+Alex Barnett's work is supported by National Science Foundation
+grants DMS-0507614 and DMS-0811005.
+Timo Betcke's work is supported by XXX.
+
+\mpspack\ is released under the GNU Public License, as follows:
+\begin{verbatim}
+Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
+
+MPSpack is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+
+MPSpack is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with MPSpack; if not, see <http://www.gnu.org/licenses>
+\end{verbatim}
+
+As part of the distribution (sometimes in order to
+improve performance over native \matlab\ libraries),
+we include codes written by others, as follows:
+\bi
+\item {\tt hank103.f} fast Hankel function computation, by
+V.~Rokhlin and L.~Greengard.
+\item {\tt kapurtrap.m} Kapur-Rokhlin periodic quadrature weights,
+by Z.~Gambutas.
+\item {\tt clencurt.m} and {\tt gauss.m}, quadrature nodes and weights,
+by L.~N.~Trefethen \cite{tref}.
+\item {\tt polypn.c} algorithm to check if a point is in a polygon,
+Copyright (C) 1970-2003, Wm.~Randolph Franklin.
+\item {\tt inpoly.m} algorithm to check if a point is in a polygon,
+Darren Engwirda, 2005-2007.
+\item {\tt copy.m} makes deep copy of \matlab\ handle object,
+Doug M.~Schwarz, 6/16/08.
+\ei
+
+\matlab\ is commercial software Copyright (C) 1984-2009 The MathWorks Inc.
+We also optionally interface to the GNU Scientific Library,
+Copyright © 2008 Free Software Foundation, Inc.
+
+
 
 \bibliographystyle{siam} 
 \bibliography{alexrefs}
