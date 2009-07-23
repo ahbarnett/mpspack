@@ -33,7 +33,7 @@ As before, we set up Dirichlet boundary data corresponding to a known
 radiative solution (a point source lying in the segment interior),
 \begin{verbatim}
 d.k = 10; f = @(z) besselh(0,d.k * abs(z-0.3-0.2i));  % a radiative Helm soln
-tref.setbc(1, 'd', [], @(t) f(tref.Z(t)));            % exterior Dirichlet data
+tref.setbc(1, 'D', [], @(t) f(tref.Z(t)));            % exterior Dirichlet data
 \end{verbatim}
 A convenient basis set for radiative solutions is a set of fundamental
 solutions (`MFS basis') with origins $\by_j$
@@ -59,12 +59,15 @@ This gives the convergence plot Fig.~\ref{f:ext}a, and
 executing {\tt d.plot; p.showbasesgeom; p.showsolution;} gives
 Fig.~\ref{f:ext}b. Notice that the MFS charges lie some distance interior
 to the curve---this is controlled by the {\tt opts.tau} parameter which
-makes use of the fact that the segment is specified as an analytic function.%
+makes use of the fact that the segment is specified as an analytic function
+and hence generates a new curve when the parameter $t$ is displaced
+by $\tau$ in the imaginary direction.%
   \footnote{A general rule is that for good spectral convergence
     the MFS curve should be
     as far as possible from the solution domain boundary, while still
     `shielding' this boundary from singularities in the analytic continuation
-    of the solution field. See~\cite{mfs}.}
+    of the solution field. The user will have to adjust this parameter.
+    See~\cite{mfs}.}
 Plotting pointwise error with
 \co{opts.comparefunc = f; figure; p.showsolution(opts);}
 shows that is it around $10^{-13}$.
@@ -110,8 +113,9 @@ Similarly, the arrow directions are modified by the signs $(1,-1,-1)$ that
 were passed in, so that, following the arrows the domain always lies to
 the {\em left}. (The black semicircles will be explained in the next section.)
 
-
-[MAYBE add mfsbasis example here with three src curves one for each segment?]
+More complicated domains similar to the above will be demonstrated later in
+Sec.~\ref{s:exa}.
+%[MAYBE add mfsbasis example here with three src curves one for each segment?]
 
 \vspace{10ex}
 

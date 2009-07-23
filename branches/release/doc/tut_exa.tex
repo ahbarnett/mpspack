@@ -1,11 +1,29 @@
 \section{Examples}
-In this section we describe in detail some worked out examples and
-give the corresponding code. All examples can also be found in the
+\label{s:exa}
+
+In this section we describe in detail some work examples and
+give the corresponding code.
+All examples can also be found in the
 {\texttt{examples}} subdirectory of \mpspack.
 
+\subsection{Transmission scattering with metallic inclusions and air holes}
+\label{s:dielhole}
+
+DO THE LAST CASE IN test/testscattering.m
+
+NOT HARD.
+
+
+
 \subsection{Acoustic scattering from the unit square}
+\label{s:square}
+
+This example introduces a new feature: the use of decomposition
+of a region with constant wavenumber into subdomains connected
+by fictitious boundaries.
 
 \subsubsection{Problem description and solution approach}
+\label{s:scatbvp}
 
 In this example we solve the problem of time-harmonic 
 acoustic sound-soft scattering from the unit square $\Omega=(-0.5,0.5)^2$.
@@ -123,7 +141,7 @@ boundary of $E_3$. For this we use {\texttt{polyseglist}}. The command
 {\texttt polyseglist} constructs a closed polygon. We then delete the
 last two segments of the array {\texttt s} and add instead the
 circular line segment. This results in the segments shown in the left
-plot of Figure \ref{fig:elem1}. We now rotate this element three times to
+plot of Figure \ref{fig:circelem}. We now rotate this element three times to
 obtain the segments showin in the right plot of Figure \ref{fig:circelem}.
 \begin{figure}
 \begin{tabular}{cc}
@@ -272,6 +290,11 @@ normal derivative. The solution to this problem is shown in Figure
 \end{figure}
 The accuracy and solution time are comparable to the sound-soft
 scattering place.
+
+
+\subsection{Transmission scattering from multiple dielectric discs}
+
+TIMO TO DO ?
 
 %%% Local Variables: 
 %%% mode: latex
