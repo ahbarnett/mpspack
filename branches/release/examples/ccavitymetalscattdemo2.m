@@ -1,8 +1,8 @@
 % Timo's attempt to handle the cavity...
 
-M=90;
-k=10;
-N=90;
+M=15;
+k=1;
+N=15;
 rmfs=7;
 
 
@@ -181,7 +181,7 @@ d(25).addcornerbases(N,sopts);
 dsing=[1 3 10 11 18 21 22 25];
 dnonsing=setdiff(1:29,dsing);
 
-opts=struct('rescale_rad',0);
+opts=struct('rescale_rad',0,'besselcode','m');
 for j=1:length(dnonsing),
     dt=d(dnonsing(j));
     dt.addregfbbasis(dt.cloc(1),N,opts);
@@ -208,23 +208,23 @@ s(pseglist).setbc(1,'D');
 
 pr=scattering(ext,d);
 pr.setoverallwavenumber(k);
-pr.setincidentwave(-pi/6);
+pr.setincidentwave(-pi/2);
 
 tic; pr.solvecoeffs; fprintf('\tcoeffs done in %.2g sec\n', toc)
 fprintf('\tL2 bdry error norm = %g, coeff norm = %g\n', ...
         pr.bcresidualnorm, norm(pr.co))
-o.bb=[-1.5 1.5 -1.5 1.5];
-o.dx=0.02;
+o.bb=[-5 11 -5 11];
+o.dx=0.05;
 
-% [ui gx gy] = pr.gridincidentwave(o);
-% u = pr.gridsolution(o);
-% 
-% figure;
-% imagesc(gx, gy, real(ui+u)); title('Full Field (Real Part)');
-% c = caxis; caxis([-1 1]*max(c));
-% axis equal tight;
-% colorbar;
-% set(gca,'ydir','normal'); 
+[ui gx gy] = pr.gridincidentwave(o);
+u = pr.gridsolution(o);
+
+figure;
+imagesc(gx, gy, real(ui+u)); title('Full Field (Real Part)');
+c = caxis; caxis([-1 1]*max(c));
+axis equal tight;
+colorbar;
+set(gca,'ydir','normal'); 
 
 
 
