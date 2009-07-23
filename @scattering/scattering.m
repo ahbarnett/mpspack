@@ -177,14 +177,14 @@ classdef scattering < bvp & handle
         uiR = pr.ui(zz);                  % u_i eval over whole R^2
         uerr = ui+us-uiR;
         if o.imag
-          imagesc(gx, gy, imag(uerr));title('Im[u_{err}] = Im[u_t - u_i(R^2)]');
+          imagesc(gx, gy, imag(uerr));title('Im[u_{err}] = Im[u - u_i(R^2)]');
         else
-          imagesc(gx, gy, real(uerr));title('Re[u_{err}] = Re[u_t - u_i(R^2)]');
+          imagesc(gx, gy, real(uerr));title('Re[u_{err}] = Re[u - u_i(R^2)]');
         end
         fprintf('L2 transparency error est on grid = %g\n', o.dx*norm(uerr))
       else
-        if o.imag, imagesc(gx, gy, imag(ui+us)); title('Im[u_t] = Im[u_i+u_s]');
-        else, imagesc(gx, gy, real(ui+us)); title('Re[u_t] = Re[u_i+u_s]'); end
+        if o.imag, imagesc(gx, gy, imag(ui+us)); title('Im[u] = Im[u_i+u_s]');
+        else, imagesc(gx, gy, real(ui+us)); title('Re[u] = Re[u_i+u_s]'); end
       end
       %c = caxis; caxis([-1 1]*max(c));
       caxis(2*[-1 1]*max(c));                  % choose double caxis hack

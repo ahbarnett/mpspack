@@ -240,6 +240,7 @@ classdef problem < handle
       end
       o.bb(1) = o.dx * floor(o.bb(1)/o.dx);         % quantize to grid through 0
       o.bb(3) = o.dx * floor(o.bb(3)/o.dx);         % ... make this optional?
+      o.bb(1) = o.bb(1) + 1e-12; o.bb(3) = o.bb(3) + 1e-12; % jog grid (inside) 
     end
     
     function h = showbdry(pr)   % ........................ crude plot bdry

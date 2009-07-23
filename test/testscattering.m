@@ -1,12 +1,13 @@
 % scattering class test routine, including dielectrics, metallic bdry, etc
 % barnett 7/27/08
+% NEEDS TO BE CHANGED TO NEW k-FREE BASIS INTERFACE, MFS.
 
 clear classes
 opts = []; verb = 1;  % verbosity: 0 for no figures, 1 for figures (slower)
 k = 8;                % note M,N do not yet adapt to different k
 M = 100; s = segment.smoothstar(M, 0.2, 3);  % a recurring closed segment
 
-for prob=1:7  % ======= scenarios
+for prob=6  % ======= scenarios
   s.disconnect;              % lets us reuse segment s afresh
   opts.testtransparent = 0;
   switch prob
