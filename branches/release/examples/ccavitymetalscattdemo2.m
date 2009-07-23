@@ -1,8 +1,8 @@
 % Timo's attempt to handle the cavity...
 
-M=15;
-k=1;
-N=15;
+M=190;
+k=25;
+N=190;
 rmfs=7;
 
 
@@ -181,7 +181,7 @@ d(25).addcornerbases(N,sopts);
 dsing=[1 3 10 11 18 21 22 25];
 dnonsing=setdiff(1:29,dsing);
 
-opts=struct('rescale_rad',0,'besselcode','m');
+opts=struct('rescale_rad',0);
 for j=1:length(dnonsing),
     dt=d(dnonsing(j));
     dt.addregfbbasis(dt.cloc(1),N,opts);
@@ -210,9 +210,13 @@ pr=scattering(ext,d);
 pr.setoverallwavenumber(k);
 pr.setincidentwave(-pi/2);
 
+size(pr.A)
 tic; pr.solvecoeffs; fprintf('\tcoeffs done in %.2g sec\n', toc)
 fprintf('\tL2 bdry error norm = %g, coeff norm = %g\n', ...
-        pr.bcresidualnorm, norm(pr.co))
+    pr.bcresidualnorm, norm(pr.co))
+resvec=[resvec,pr.bcresidualnorm];
+    
+    
 o.bb=[-5 11 -5 11];
 o.dx=0.05;
 
