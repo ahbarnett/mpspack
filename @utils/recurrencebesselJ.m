@@ -1,32 +1,42 @@
-function J = recursivebessel(M,x)
+function J = recurrencebesselJ(M,x)
 % Computes J bessel at all orders 0<=M for multiple arguments x, using
 % Miller's method of downwards-stable recurrence relations (Num Rec sec 5.4,
 % and 6.5, 3rd Ed). Recurrence is started so absolute errors are around 1e-16.
-% (Relative errors will be unbounded in evanescent region).
+% (Relative errors will be arbitrarily bad in the deep evanescent region).
 % Limited to |x| and M < 1e8 or some huge number. Trick to avoid underflow is by
 % for each x starting the true recurrence only when needed, but before this
 % a fake O(1) recurrence is used.
 %
-% output: J is N-by(M+1), where N is numel(x)     [note changed from Alex code]
+% J = RECURRENCEBESSELJ(M, x) where M>=0 is an integer and x a list of numbers,
+%   returns output matrix of size N-by(M+1), where N is numel(x), whose ij'th
+%   entry is J_{i-1}(x(j)). x may be of any shape, but it will be reshaped to
+%   a column vector before using.
 %
-% barnett 2/28/08
-% Modified for inclusion in mpspack by Timo Betcke 13/07/08
-% debugged nst check at end, barnett 7/27/08
+% Issues/notes:
+%  * originally by barnett 2/28/08
+%  * Modified for inclusion in mpspack by Timo Betcke 13/07/08 [J size differs]
+%  * debugged nst check at end, barnett 7/27/08.
+%  * The choice of eps, nst, and ncutoff are sensitive and if changed may cause
+%    overflow for very small x values. (repeated multiplication by n/x).
+%
+% See also: BESSELJ, REGFBBASIS/BESSELWRAPPER
+
+% Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
 
 if isempty(x), J = []; return; end             % catch trivial input
 if M<0 | M~=ceil(M), error('M must be non-negative integer'); end
 N = numel(x);
 x = reshape(x, [N 1]);                          % make col vec
-d = max(abs(x), 1);           % if arguments small, pretend they go up to 1.
+d = max(abs([x(:); 1]));       % if arguments small, pretend they go up to 1.
 eps = 1e-16;               % roughly e_mach, beneath which J_n=1 (n=0) or 1.
-nz = find(abs(x) >= eps);         % indices of effectively nonzero args
+nz = find(abs(x) >= eps);         % indices of effectively-nonzero args
 z = find(abs(x) < eps);
 x(z) = 1;                  % for these dummy values J is overwritten at end
 nrs = 10;          % how often to rescale, allows n/x<1e20, w/ 1e308 overflow
 % Airy asym exp in trans regions, A&S 9.3.23, Ai(2^(1/3)*z) < 1e-16 for z=12...
 % ...but I bumped it up to z=18 since need rel acc in evan region (rescaled!)
 ncutoff = @(x) ceil(x + 18 * x.^(1/3));  % irrelevant for orders beyond this
-%  ...note in previous line: don't increase this any more or x = 1e-16 breaks!
+%  NB for previous line: don't increase this any more or x = 1e-16 breaks!
 nst = ncutoff(d);                               % starting order (using Airy)
 ncutoffx = ncutoff(x);                          % starting orders for each x
 noff = 1;                                       % order index n offset

@@ -211,8 +211,8 @@ classdef regfbbasis < handle & basis
         % argument list in r. Matrix size is M-by-N+1, where M=numel(r).
             switch regfb.besselcode
              case 'r'
-              ret=utils.recursivebessel(N,r);    % Alex's recurrence code
-              err=0; % No error checking implemented for utils.recursivebessel
+              ret=utils.recurrencebesselJ(N,r);    % Alex's recurrence code
+              err=0; % No error checking implemented for utils.recurrencebesselJ
              case 'g'
               if exist('@utils/gslbesselj.mexglx')==3
                 [ret,err]=utils.gslbesselj(0,N,r); % Timo's MEX interface to GSL
