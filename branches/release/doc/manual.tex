@@ -39,24 +39,25 @@ see the accompanying tutorial.
 \bfi % ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 \ig{width=\textwidth}{hard.eps}
 \ca{Sound-hard (homogeneous Neumann boundary condition) scattering from a smooth
-obstacle using a fundamental solutions basis.
+obstacle using a fundamental solutions basis in \mpspack.
 Left: incident wave. Center: scattered wave.
 Right: total solution field.}{f:hard}
 \efi
 
 
 \section{Overview}
+\label{s:overview}
 
 In numerical analysis there has been recent excitement
 in methods for solving linear PDEs where solutions are approximated by
 linear combinations of {\em particular solutions} to the PDE.
 These methods are high-order (often exponentially convergent),
-efficient at high frequencies (the number of degrees of freedom
+efficient at high frequencies (the number of degrees of freedom $N$
 scales linearly with wavenumber, in 2D),
 and are quite simple to implement.
 When geometries become more complicated, the domain needs to be split
 up into multiple subdomains, e.g.\ one for each corner, and the
-implementation may become cumbersome.
+implementation and matrix construction becomes cumbersome.
 The goal of this software toolbox is to make implementation of
 these methods simple
 and transparent, and create an intuitive, unifying framework in which many
@@ -71,6 +72,9 @@ Thus we leave the job of specifying subdomains, i.e.\ `meshing',
 to the user---this contrasts with the large number of
 finite-element packages already in existence.
 The benefit of such methods is their rapid convergence and efficiency.
+The solution boils down to dense least-squares linear algebra,
+which despite the $O(N^3)$ cost enables some quite high-frequency problems
+to be solved.
 
 We focus on the scalar homogeneous
 Helmholtz equation in the plane,
@@ -91,7 +95,7 @@ just like variables.
 The result is that complicated problems may be set up and solved in
 a few lines of quite-readable code.
 For example, to solve and plot the scattering
-of plane-wave incident upon a smooth sound-hard (Neumann) domain
+of plane-wave incident from a smooth sound-hard (Neumann) domain
 10 wavelengths in size, we can type,
 \begin{verbatim}
 s = segment.radialfunc(250, {@(q) 1 + 0.3*cos(3*q), @(q) -0.9*sin(3*q)});
@@ -109,7 +113,7 @@ to an accuracy of $10^{-9}$ (boundary condition $L^2$-norm).
 
 More generally we may have multiple domains with different
 wavenumbers connected by homogeneous or inhomogeneous boundary conditions,
-as in transmission, dielectric-coated, or photonic crystal problems.
+as in transmission, dielectric-coated, acoustic or photonics problems.
 With $k=0$ we have Laplace's equation, with applications to
 electrostatics, steady-state heat flow, and probability.
 In this release we discuss only boundary-value problems (BVPs).
@@ -128,40 +132,29 @@ may also get help on any \mpspack\ command by typing {\tt help} followed
 by the command name at the \matlab\ prompt.
 
 
-\bfi % fffffffffffffffffffffffffff
-\ig{width=\textwidth}{relat.eps}
-\ca{Relationship of {\tt MPSpack}
-objects used to solve a typical BVP or EVP.
-The physical geometry is shown on the left, and the code structures on the
-right.
-Each segment has a normal direction. Each domain is built from
-segments with a list of signs ($+$ or $-$) which define the sense in which
-the segments are used to form the boundary.
-Basis sets affect the function values inside each domain in which they
-are referenced. A basis set may influence more than one domain.}{f:relat}
-\efi
-
 \subsection{Installation}
 
 Requirements: \matlab\ version 7.6 (2008a) or newer is needed,
 since we make heavy use of recent object-oriented programming features.
 No other \matlab\ toolboxes are needed.
+If you wish to use faster regular Bessel functions you may want to
+install the GNU Scientific Library \cite{GSL}.
 
 The project is hosted at the repository
 \co{http://code.google.com/p/mpspack}
 There are two alternative methods to download and unpack:
 \ben
 \item
-Ensure you have {\tt subversion} (svn) installed.
+Ensure you have subversion ({\tt svn}) installed.
 This is available from {\tt http://subversion.tigris.org}.
 Anonymous check out (download) of \mpspack\ is then via the subversion
 command:
-\co{svn checkout http://mpspack.googlecode.com/svn/trunk/ mpspack}
+\co{svn co http://mpspack.googlecode.com/svn/branches/release mpspack}
 This creates a directory {\tt mpspack} containing the toolbox.
 
 You might prefer a more user-friendly graphical
-subversion client such as those listed at
-\co{http://subversion.tigris.org/links.html\#clients}
+subversion client such as those listed at {\tt
+http://subversion.tigris.org/links.html\#clients}
 
 \item
 Get a gzip-compressed tar archive from
@@ -171,78 +164,154 @@ unpack this with
 \co{tar zxvf mpspack.tar.gz}
 This creates the directory {\tt mpspack} containing the toolbox.
 \een
-There are some optional fast basis and other libraries
+There are some optional fast basis and other math libraries
 (C and Fortran with MEX interfaces), which should be compiled
 in a UNIX environment as follows:
-from the {\tt mpspack} directory type {\tt make}
+from the {\tt mpspack} directory type {\tt make}.
+(If GSL \cite{GSL} is not installed, you will need to remove the
+references to {\tt gsl} codes in {\tt @utils/Makefile} before
+executing {\tt make}).
 
 You should now add the {\tt mpspack}
-subdirectory to your \matlab\ path, for instance by adding the line
+directory to your \matlab\ path, for instance by adding the line
 \co{addpath 'path/to/mpspack';}
 to your MATLAB {\tt startup.m} file.
 You are now ready to use \mpspack\ !
 
 
-\subsection{What kind of problems does \mpspack\ solve?}
+\subsection{What problems can \mpspack\ solve?}
 
-Let $\Omega \subset \mathbb{R}^2$
+Here we give a
+general framework (for examples see \cite{mfs,polygonscatt}). 
+Let $\Omega_j \subset \mathbb{R}^2$, $j=1,\ldots,D$ be a set of
+(possibly multiply connected) domains. One of the domains may
+be an exterior domain.
+The solution domain is $\Omega:=\Omega_1 \cup \dots \cup \Omega_D$,
+and we seek a solution $u:\Omega \to\mathbb{C}$.
+In each domain we have,
+\be
+(\Delta+n_j^2k^2)u\; =\; 0 \qquad \mbox{in } \Omega_j~,
+\ee
+where the `overall wavenumber' (or frequency) $k$ has been scaled by
+$n_j$ for each domain. In the optical application $n_j$ is interpreted
+as a {\em refractive index} (with $n_j=1$ vacuum or air) and we
+will use this name.
 
+For all boundaries $\Gamma_j := \pO_j \cap \pO$
+at the edge of the solution domain we have boundary conditions
+\be
+a_ju + b_j u_n\;=\;f_j\qquad \mbox{on } \Gamma_j~,
+\ee
+where $a_j, b_j \in \mathbb{C}$ are complex numbers (currently; in future they
+may be functions on the boundary), and $f:\Gamma_j \to \mathbb{C}$ 
+are (possibly homogeneous) driving functions.
+$u_n$ is short for $\mbf{n}\cdot \nabla u$, the
+normal derivative on the boundary.
+If there is a nonempty
+common boundary $\Gamma_{ij} := \pO_i \cap \pO_j$
+then it may have value and derivative matching conditions,
 \bea
-(\Delta+k^2)u& =& 0 \qquad \mbox{in } \Omega\\
-au + b u_n&=&f\qquad \mbox{on } \pO
+%\left.\begin{array}{rcl}
+a_{ij}^+ u^+ + a_{ij}^- u^- &=& f_{ij}\qquad \mbox{on } \Gamma_{ij}~,
+\\
+b_{ij}^+ u_n^+ + b_{ij}^- u_n^- &=& g_{ij}\qquad \mbox{on } \Gamma_{ij}~,
 \eea
-
-In our implementation we restrict to functions $a$, $b$ that are
-constant on segments used to define the boundary $\pO$.
-
-If $\Omega$ is an exterior domain, we may wish to impose
+where $a_{ij}^+,a_{ij}^-,b_{ij}^+,b_{ij}^-$ are numbers
+and $f_{ij}, g_{ij}$ are driving functions.
+The notation $u^+$ ($u^-$) means the
+limiting value approaching the boundary $\Gamma_{ij}$
+from its positive (negative) normal side.
+We assume all the boundaries $\Gamma_j$ and $\Gamma_{ij}$
+are piecewise smooth, and each smooth piece we
+will build from one or more {\em segments}.
+If $\Omega_j$ is the exterior domain (with $n_j=1$), we may wish to impose
 additional boundary conditions at infinity, such as Sommerfeld's
-radiation condition.
-This may be achieved by choosing basis sets satisfying this condition.
+radiation condition,
+\be
+iku - \frac{\partial u}{\partial r} = o(r^{1/2})~,
+\ee
+where $r$ is the radial coordinate.
+This occurs in the scattering context, where the unknown satisfying
+the above BVP is now usually renamed $u_s$, and the total field
+is then $u = u_{inc} + u_s$ with $u_{inc}$ the incident wave
+\cite{coltonkress}.
+As is standard with integral equation methods,
+this is achieved by choosing basis sets (MFS, layer potentials, etc.)
+satisfying the radiation condition.
 
-See \cite{mfs} for
-an example of using the Method of Fundamental Solutions to solve
-an interior Helmholtz problem.
-
-To solve a BVP the usual flow is as follows:
-
+To solve a BVP the flow using \mpspack\ is often as follows
+(look back to the code given in Sec.~\ref{s:overview}):
 \ben
-\item define piecewise-analytic segments forming all boundaries
-\item define domains using various of these segments as their boundaries
-\item choose MPS basis set(s) within each domain
-\item set up inhomogeneous boundary or matching conditions on each segment
-\item solve a %least-squares
+\item define piecewise-smooth segments forming all boundaries
+\item build domains using various of these segments as their boundaries
+\item set up (in)homogeneous boundary or matching conditions on each segment
+\item choose basis set(s) within each domain
+\item build then solve a dense least-squares
 linear system to get the basis coefficient vector
-\item evaluate solution on desired points
-\item plot solution or compute error estimates
+\item check residual error in satisfying boundary and matching conditions
+\item evaluate and plot solution on desired points or grid
 \een
-
 The accompanying
-tutorial document is a good way to be taken through these steps
+tutorial document is a good way to explore these steps
 in the context of examples.
-The rest of this manual documents in a more theoretical way the
-data structures, organized by topic such as sements, domains, etc.
+We now discuss how software data structures represent the above objects.
 
-%Eigenvalue problems
 
-\section{Representing geometry}
 
-Fig.~\ref{f:relat} shows how an example problem
-geometry is built up from such objects, and some of the most important
-relationships between them.
+\bfi % fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+\ig{width=\textwidth}{relat.eps}
+\ca{Relationship of \mpspack\
+objects used to solve a typical BVP.
+The physical geometry is shown on the left, corresponding
+code structures on the right.}{f:relat}
+\efi
+
+
+% --------------------------------------------------------------------------
+\section{Objects: segments, domains, and basis sets}
+
+Fig.~\ref{f:relat} overviews how segments, domains and basis sets are
+represented in \mpspack\ in a simple example.
+All coordinates in the plane are stored as complex double-precision
+numbers. In other words the point 
+$(2,3)$ and $2+3i$ represent the same point. This reflects
+that
+
+\subsection{Segments and pointsets}
 
 A segment is specified as a parametrized function $z(t)$ for $0\le t\le 1$,
 and $z'(t)$ is also needed.
-From this all information follows such as locations and normal vectors
-at quadrature points.
+If {\tt s} is a segment, these are stored as the properties
+{\tt s.Z} and {\tt s.Zp} respectively.
+Given a list {\tt s.t} of quadrature points on $[0,1]$
+(and their weights),
+the parametrization $z$ is used to compute quadrature point locations
+{\tt s.x} and weights {\tt s.w}
+for approximating integrals on the segment.
+Unit normals {\tt s.nx} are computed when needed via the expression $iz'/|z'|$.%
+  \footnote{A segment is in fact a
+    subclass of a simpler object called a pointset.
+    A pointset {\tt p} contains only a list of locations {\tt p.x}
+    and possibly corresponding normal directions {\tt p.nx}.}
 Since our focus is on high-order and accurate methods,
 we feel that forcing the user to go to the trouble of providing $z$ and $z'$
 is reasonable.%
   \footnote{In future releases we may allow $z$ and $z'$ to be automatically
-    generated as high-order polynomial fits to a set of boundary points such
+    generated by high-order polynomial fits to a set of boundary points such
     as might be available from an engineering or CAD package.}
-The benefit is that the use may simply switch between quadrature point
-numbers and types.
+The benefit is that highly accurate quadrature is possible, and
+the user may simply switch between quadrature schemes ({\tt s.quadr})
+and numbers of points.
+
+\subsection{Domains}
+
+A domain object {\tt d} contains a list of segments which form its
+outer boundary.
+Each domain is built from
+segments with a list of signs ($+$ or $-$) which define the sense in which
+the segments are used to form the boundary.
+Basis sets affect the function values inside each domain in which they
+are referenced. A basis set may influence more than one domain.
 
 When domains are built from segments, each segment stores information about
 which domain, if any, it is connected to on each side.
@@ -260,20 +329,7 @@ cell element is empty.
 
 \subsection{Boundary conditions}
 
-A segment $\Gamma$ may contain a boundary condition on only one of its sides,
-of the form
-$$
-a u(s) + b u_n(s) = f(s)  \qquad s\in\Gamma, \quad a,b \in \mathbb{C}
-$$
-or, alternatively matching conditions of the form
-\bea
-%\left.\begin{array}{rcl}
-a^+ u^+(s) + a^- u^-(s) &=& f(s)\\
-b^+ u_n^+(s) + b^- u_n^-(s) &=& g(s)
-\eea
-where $a^+,a^-,b^+,b^- \in \mathbb{C}$, and where $u^+$ is the
-limiting value approaching the segment from its positive normal side.
-In the above $f$ and $g$ are functions on the boundary.
+
 In our implementation the user
 may supply these as handles to functions of segment parameter
 $t\in[0,1]$, or as a data column vector on the segment quadrature points.
@@ -283,7 +339,7 @@ $a$ and $b$ for a boundary condition, or
 $[a^+, a^-]$ and $[b^+, b^-]$
 respectively for a matching condition.
 
-\section{Basis sets and problem classes}
+\subsection{Basis sets}
 
 FIX THIS TO REFLECT NEW basis.doms[] PROPERTY:
 
@@ -301,11 +357,47 @@ There will be more elaborate basis set types which naturally affect two domains,
 such as dielectric corner and transmission layer potential objects;
 their handles will appear in the {\tt bas} cell array of more than one domain.
 
+\section{Problem class objects}
+
+Contain list of basis sets.
+These are collected when domains are passed into a problem
+constructor.
+
+The row ordering in the matrix $A$ generated follows this list
+of basis objects.
+
 
 \section{Tweaks and test routines}
 
 By default \mpspack\ uses robust rather than fast math libraries.
-It is simple 
+It is simple to switch to the following
+faster alternatives, but the user should be careful
+to check that the answers agree to their accuracy requirements.
+%  \footnote{We give approximate runtimes below based on a
+%    Intel Core Duo 2GHz laptop running Fedora 8 linux.}
+\ben
+\item Regular bessel functions, needed for {\tt regfbbasis.eval}.
+Each {\tt regfbbasis} object contains a property {\tt besselcode}
+that may be changed to {\tt 'r'} for Barnett's recurrence-relation
+implementation (2-3 times faster the \matlab\ but
+not guaranteed relative accuracy in
+the deep evanescent region),
+or {\tt 'g'} for MEX interface to GSL (nearly as fast as the recurrence
+version, and robust).
+
+\item Hankel functions of order 0 and 1, needed for
+{\tt mfsbasis.eval} and {\tt layerpot.eval}. Both these basis objects
+have a property {\tt fast} which may be 0 (\matlab\ implementation),
+or 1 or 2 (a MEX interface to Greengard-Rokhlin's Fortran code,
+roughly 5 times faster than \matlab).
+The user may change this property for each relevant basis object.
+
+\item Point-in-polygon checking is implemented by a MEX interface
+to a C code which was found to be about 70 times faster than
+\matlab. The implementation
+may be switched only by uncommenting lines
+in {\tt @utils/inpolywrapper.m}
+\een
 
 In the {\tt test/} directory you will find some routines that
 we use to validate \mpspack. These are of variable quality,
@@ -455,11 +547,6 @@ Darren Engwirda, 2005-2007.
 \item {\tt copy.m} makes deep copy of \matlab\ handle object,
 Doug M.~Schwarz, 6/16/08.
 \ei
-
-\matlab\ is commercial software Copyright (C) 1984-2009 The MathWorks Inc.
-We also optionally interface to the GNU Scientific Library,
-Copyright © 2008 Free Software Foundation, Inc.
-
 
 
 \bibliographystyle{siam} 
