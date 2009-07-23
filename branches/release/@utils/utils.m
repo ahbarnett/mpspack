@@ -8,7 +8,7 @@ classdef utils
     % math libraries which evaluate special functions...
     [res,err]=gslbesselj(nmin,nmax,x);
     [res,err]=gslbesseljnu(v,x);
-    J=recursivebessel(M,x);
+    J=recurrencebesselJ(M,x);
     [F0 F1 F2] = fundsol(r, k, orders, fast)
     [B radderivs] = fundsol_deriv(r, cosphi, k, radderivs)
     [H0 H1] = greengardrokhlinhank103(z);
