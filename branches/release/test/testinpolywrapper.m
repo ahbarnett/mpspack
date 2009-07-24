@@ -6,6 +6,10 @@ i = utils.inpolywrapper([], [0; 1; 1+1i; 1i])
 if isempty(i), disp('ok'); else warning('wrong'); end
 i = utils.inpolywrapper([0.5+0.5i; -.5+.5i], [])
 if i==[0;0], disp('ok'); else warning('wrong'); end
+i = utils.inpolywrapper([0], [])           % test point is pure real
+if i==0, disp('ok'); else warning('wrong'); end
+i = utils.inpolywrapper([0], [0])          % test point and polygon pure real
+if i==[0], disp('ok'); else warning('wrong'); end
 i = utils.inpolywrapper([], [])
 if isempty(i), disp('ok'); else warning('wrong'); end
 

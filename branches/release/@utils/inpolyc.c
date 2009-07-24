@@ -54,13 +54,6 @@ int pnpoly(int nvert, double *vertx, double *verty, double testx, double testy)
   return c;
 }
 
-/* Matlab usage: i = inpolyc(p, v);
-
-   p = complex double column vector of test points
-   v = complex double column vector vertices
-   i = column vector of 4-byte integers (taking values 0 or 1)
-*/
-
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
   double *px, *py, *vx, *vy;
@@ -77,14 +70,23 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     return;
   }
 
-  if (mxGetN(prhs[0])!=1) mexErrMsgTxt("inpolyc.c: p must be column vector");
+  if (mxGetN(prhs[0])!=1)
+    mexErrMsgTxt("inpolyc.c: p must be column vector");
   N = (int)mxGetM(prhs[0]);    /* number of test points */
   px = mxGetPr(prhs[0]);
-  py = mxGetPi(prhs[0]);
-  if (mxGetN(prhs[0])!=1) mexErrMsgTxt("inpolyc.c: p must be column vector");
+  if (mxIsComplex(prhs[0]))
+    py = mxGetPi(prhs[0]);
+  else                     /* create zero imag part */
+    py = (double *) mxCreateNumericMatrix(N, 1, mxDOUBLE_CLASS, 0);
+
+  if (!mxIsEmpty(prhs[1]) && mxGetN(prhs[1])!=1)
+    mexErrMsgTxt("inpolyc.c: v must be column vector (or empty)");
   nv = (int)mxGetM(prhs[1]);    /* number of vertices */
   vx = mxGetPr(prhs[1]);
-  vy = mxGetPi(prhs[1]);
+  if (mxIsComplex(prhs[1]))
+    vy = mxGetPi(prhs[1]);
+  else                     /* create zero imag part */
+    vy = (double *) mxCreateNumericMatrix(nv, 1, mxDOUBLE_CLASS, 0);
 
   /* allocate output... column vector of 4-byte integers */
   plhs[0] = mxCreateNumericMatrix(N, 1, mxINT32_CLASS, 0);
