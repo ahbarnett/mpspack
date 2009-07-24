@@ -15,7 +15,7 @@ function i = inpolywrapper(p, v)
 %        brute forces it and loops over points in p, seems to be 70 times
 %        faster than matlab, ie only 8 ns per point per vertex!
 %
-% See also: INPOLYGON, TEST/TESTINPOLYWRAPPER
+% See also: INPOLYGON, TEST/TESTINPOLYWRAPPER, UTILS/INPOLYC
 
 % Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
 
@@ -27,5 +27,5 @@ function i = inpolywrapper(p, v)
 %   Darren Engwirda's inpoly
 %i = utils.inpoly([real(p(:)),imag(p(:))], [real(v),imag(v)]);
 
-%   MEX interface to Wm. Randolph Franklin's C code
-i = logical(utils.inpolyc(p, v));   % note converts int to logical
+%   MEX interface to Wm. Randolph Franklin's C code:
+i = logical(utils.inpolyc(p, v));   % converts int to logical

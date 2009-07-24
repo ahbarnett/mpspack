@@ -1,7 +1,6 @@
 % Example codes from MPSpack tutorial, also generates EPS figures for this doc
 % SECTION 3: CONVERGENCE
 
-cd ../doc                             % so figures write out to doc/ directory
 clear all classes; verb = 0;          % if verb>0, generates EPS figures
 
 % code from previous section used for set-up...
@@ -18,13 +17,13 @@ s.requadrature(50); p.solvecoeffs; p.bcresidualnorm
 
 % convergence plot
 for N=1:15,
-  d.bas{1}.N = N; p.solvecoeffs; r(N) = p.bcresidualnorm;
+  p.updateN(N); p.solvecoeffs; r(N) = p.bcresidualnorm;
 end
 figure; semilogy(r, '+-'); xlabel('N'); ylabel('bdry err norm');
 
 if verb, % generate f:conv
   figure; set(gca,'fontsize', 20); semilogy(r, '+-');
-  xlabel('N'); ylabel('bdry err norm'); print -depsc2 N.eps
+  xlabel('N'); ylabel('bdry err norm'); print -depsc2 ../doc/N.eps
 end
 
 % radial function star-shaped domain
@@ -39,7 +38,7 @@ p.solvecoeffs; p.bcresidualnorm
 figure; opts.comparefunc = f; p.showsolution(opts);
 if verb % generate f:radfunc
   h=colorbar; set(h,'fontsize',20); hold on; s.plot; axis off;
-  print -depsc2 -painters radfunc.eps
+  print -depsc2 -painters ../doc/radfunc.eps
 end
 
 % general analytic domain: crescent

@@ -22,8 +22,8 @@ One may check that its area {\tt d.area} is $\infty$.
 Exterior domains can be created by excluding a closed segment, for instance
 the trefoil segment introduced above,
 \begin{verbatim}
-   tref = segment.radialfunc(100, {@(q) 1 + 0.3*cos(3*q), @(q) -0.9*sin(3*q)});
-   d = domain([], [], tref, -1);                    % overwrites previous d
+tref = segment.radialfunc(100, {@(q) 1 + 0.3*cos(3*q), @(q) -0.9*sin(3*q)});
+d = domain([], [], tref, -1);                    % overwrites previous d
 \end{verbatim}
 Note the choice $-1$ for the direction argument, which states that
 the domain lies on the `nonstandard' side of the segment, i.e.\
@@ -83,8 +83,8 @@ A non-simply connected domain may be built by specifying excluded
 regions from a simply connected bounded domain. For example,
 to remove from an interior trefoil a circular `hole',
 \begin{verbatim}
-   tref.disconnect;                         % clears any domains from segment
-   c = segment([], [0.5 0.4 0 2*pi]);       % new circular segment
+   tref.disconnect;                       % clears any domains from segment
+   c = segment([], [0.5 0.4 0 2*pi]);     % new circular segment
    d = domain(tref, 1, c, -1);
 \end{verbatim}
 Note that segment {\tt tref} had previously
@@ -98,7 +98,7 @@ We may exclude two regions as follows, where the new region is a smaller copy
 of the trefoil,
 \begin{verbatim}
    tref.disconnect; c.disconnect;
-   smtref = tref.scale(0.3);                % create new rescaled copy of tref
+   smtref = tref.scale(0.3);                % create new rescaled tref copy
    smtref.translate(-0.3+0.4i);             % move the segment smtref
    d = domain(tref, 1, {c smtref}, {-1 -1});
 \end{verbatim}

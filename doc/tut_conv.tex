@@ -33,17 +33,20 @@ Notice that we did not have to redefine the domain {\tt d} nor
 the BVP object {\tt p}.
 
 Exploring the convergence of the boundary error norm with the basis set order
-needs a simple loop and figure,
+needs a simple loop over $N$,
 \begin{verbatim}
    for N=1:15
-     d.bas{1}.N = N; p.solvecoeffs; r(N) = p.bcresidualnorm;
+     p.updateN(N); p.solvecoeffs; r(N) = p.bcresidualnorm;
    end
    figure; semilogy(r, '+-'); xlabel('N'); ylabel('bdry err norm');
 \end{verbatim}
-As Fig.~\ref{f:conv}a shows, the convergence is exponential.%
+As the resulting Fig.~\ref{f:conv}a shows, the convergence is exponential.%
   \footnote{Asymptotically, error $\sim e^{-\alpha N}$. In fact the rate is
     $\alpha = \ln \sqrt{13}$, related to the conformal distance to
     the nearest singularity \cite{timothesis}, which here is at $2+3i$.}
+Notice we used {\tt updateN} to change the basis set degree
+in a problem (in this simple case it is equivalent to 
+\verb?d.bas{1}.N = N;?)
 
 Say we want to change the shape of segment {\tt s}, to
 a smooth star-shaped `trefoil' domain expressed as by radius $R(\theta) =
@@ -52,7 +55,7 @@ This is achieved by passing a 1-by-2
 cell array containing the function $R$ and its
 derivative $R' = dR/d\theta$ to a variant of the segment constructor,
 \begin{verbatim}
-   s = segment.radialfunc(50, {@(q) 1 + 0.3*cos(3*q), @(q) -0.9*sin(3*q)});
+s = segment.radialfunc(50, {@(q) 1 + 0.3*cos(3*q), @(q) -0.9*sin(3*q)});
 \end{verbatim}
 We again chose $M=50$.
 The analytic formula for $R'$ is needed to compute normal derivatives
@@ -77,8 +80,8 @@ to construct {\tt d} and {\tt p} afresh, before solving.%
     {\tt speed}, etc, to define the new segment without changing its identity,
     but this is cumbersome. Similarly, searching and changing
     all references to a segment in the properties of {\tt d} and {\tt p}
-    is cumbersome. Neither has been implemented since problem setup time is
-    very rapid.}
+    is cumbersome. Neither has been implemented by us
+    since problem setup time is very rapid.}
 The result, plotting the pointwise error as before,
 is shown by Fig.~\ref{f:conv}b for $N=8$ and $M=50$.
 
@@ -87,14 +90,15 @@ with quadrature equidistant
 in angle. Instead you may create a segment from arbitrary
 smooth parametrizations $z(t)$ for $t \in[0,1]$, as long as $z'(t)$
 is also given. For instance, a closed crescent-shaped analytic segment is
-produced by 
+produced (try it!) by,
 \begin{verbatim}
-   a = 0.2; b = 0.8; w = @(t) exp(2i*pi*t);
-   s = segment(100, {@(t) w(t)-a./(w(t)+b), ...
-                     @(t) 2i*pi*w(t).*(1 + a./(w(t) + b).^2)}, 'p');
+a = 0.2; b = 0.8; w = @(t) exp(2i*pi*t);
+s = segment(100, {@(t) w(t)-a./(w(t)+b), ...
+                  @(t) 2i*pi*w(t).*(1 + a./(w(t) + b).^2)}, 'p');
 \end{verbatim}
-Note the nested anonymous functions for mathematical clarity.
-Note also the new final argument {\tt 'p'} which enforces
+Note that a convenient variable $w = e^{2\pi i t}$ was used
+via nested anonymous functions.
+Heed also the new final argument {\tt 'p'} which enforces
 periodic quadrature (the constructor doesn't try to guess your preferred rule).
 In order to get high-order (or spectral) convergence, it is recommended
 that you choose only smooth (or analytic) $z$.

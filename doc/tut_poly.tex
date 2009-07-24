@@ -9,17 +9,18 @@ has been a single segment connected to itself head-to-tail.
 More generally, a {\em list} of segments may be used to create 
 these closed boundary pieces, as long as the last in the list
 connects back to the starting point of the first.
-For instance, a triangle is built from sending a list of
+For instance, a triangle is built by sending a list of
 three line segments to the domain command;
-this list may conveniently be made with a polygon constructor,
+such a list can simply be built from a list of vertices as follows,
 \begin{verbatim}
-   s = segment.polyseglist([], [1, 1i, exp(4i*pi/3)]);
+   s = segment.polyseglist([], [1 exp(3i*pi/8) exp(5i*pi/4)]);
    tri = domain(s, 1);
 \end{verbatim}
 Since {\tt s} is a 1-by-3 array of (handles to) segments,
-the 2nd argument is automatically vectorized to {\tt [1 1 1]}.
+the 2nd argument of the domain constructor
+is automatically vectorized to {\tt [1 1 1]}.
 Each of the segments could have been made separately, e.g.\ the first by
-\co{s(1) = segment([], [1 1i]);}
+{\tt s(1) = segment([], [1 exp(3i*pi/8)]);} etc.
 Fig.~\ref{f:doms}b shows {\tt tri.plot} output for this domain.%
   \footnote{Notice that periodic quadrature would now be inappropriate:
     in fact $M=20$ point Clenshaw-Curtis is used by default for open
@@ -33,13 +34,13 @@ dangling), and shows the angle range pointing {\em into} the domain.
 %The data is stored in the domain properties as {\tt tri.
 %and their start and end angles
 
-Segment lists may also be sent to the excluded arguments of the
+Segment lists may also be sent to the excluded-region arguments of the
 domain constructor, for instance to create the domain exterior
 to the triangle,
 \co{exttri = domain([], [], s(end:-1:1), -1);}
-where it was important to reverse the order of the segment list,
-since each was 
-or to create the domain exterior to two nearby triangles,
+where it was important to reverse the order of the segment list
+so that they connect head-to-tail correctly.
+To create the domain exterior to two nearby triangles,
 \begin{verbatim}
    ss = s.translate(2);
    exttwotri = domain([], [], {s(end:-1:1), ss(end:-1:1)}, {-1, -1});
@@ -73,48 +74,47 @@ Say we want constant boundary data 1.
 We may use a Fourier-Bessel basis set, solve, and
 plot error convergence with a simple code,
 \begin{verbatim}
-   s.setbc(-1, 'd', [], @(t) 1);             % note inline "1" function
+   s.setbc(-1, 'D', [], @(t) ones(size(t)));   % note inline "1 function"
    tri.addregfbbasis(0, []); tri.bas{1}.rescale_rad = 1.0; % for stability
    p = bvp(tri);
    tri.k = 10;                               % set wavenumber
    Ns = 2:2:40; for i=1:numel(Ns)
-     tri.bas{1}.N = Ns(i); p.solvecoeffs; r(i) = p.bcresidualnorm;
+     p.updateN(Ns(i)); p.solvecoeffs; r(i) = p.bcresidualnorm;
    end
    figure; loglog(2*Ns, r, '+-'); xlabel('# dofs'); ylabel('bdry err norm');
 \end{verbatim}
-This produces the algebraic convergence%
-  \footnote{The power law for convergence is related to the largest corner
-angles and is discussed in \cite{Ei74}.}
+This produces the algebraic convergence
 shown in blue in Fig.~\ref{f:triconv}a.
+Why is this so slow? The triangle has three {\em singular} corners
+(i.e.\ one whose angle is not $pi$ divided by an integer), and
+generically the exact solution to
+such a problem has a singularity at each such corner.%
+  \footnote{The power law for convergence is related to the corner
+    angles and is discussed in \cite{Ei74}.}
 
-We now show how corner-adapted basis sets may enhance
-the above basis set to achieve superior convergence and hence
+We now show how corner-adapted basis sets
+achieve superior convergence and hence
 more efficiency. We clear the previous basis set from the domain
-and add fractional-order (i.e. `wedge' expansion) Fourier Bessel bases
-at two of the corners, of both cos and sin type.%
-  \footnote{Since only one of the corners is
-    singular, it is possible to omit a corner
-    expansion from one of the other corners, for instance the 3rd one.
-    This done with the options {\tt opts.cornermultipliers = [1 1 0];}.}
-Repeating the convergence
-study and comparing against the previous data is easy,
+then add fractional-order (i.e. `wedge' expansion) Fourier-Bessel bases
+at each corner, of both cos and sin type.%
+  \footnote{Sometimes an expansion is needed at some corners and not
+    others. E.g.\ expansions at only the first two corners can be
+    set up by passing in the options {\tt opts.cornermultipliers = [1 1 0];}.}
+Repeating the convergence study and comparing against the previous data is easy,
 %super-algebraic ?
 \begin{verbatim}
-tri.clearbases; opts.rescale_rad = 2.0; opts.cornermultipliers = [1 1 0];
-tri.addcornerbases([], opts);
-Ns = 1:20; for i=1:numel(Ns)
+tri.clearbases;
+opts.rescale_rad = 2.0; tri.addcornerbases([], opts);
+r = []; Ns = 1:13; for i=1:numel(Ns)
   p.updateN(Ns(i)); nn(i) = p.N; p.solvecoeffs; r(i) = p.bcresidualnorm;
 end
 hold on; loglog(nn, r, 'r+-');              % plot error vs total # dofs
 \end{verbatim}
-The new convergence data is shown in red in Fig.~\ref{f:triconv}a,
-and is much faster.
-[initially it is superalgebraic.
-TIMO: WHY IS IT NOT SUPER-ALGEBRAIC ALL THE WAY DOWN?
-IT IS ALSO too SENSITIVE to rescalerad - WHY?]
+The new convergence is shown in red in Fig.~\ref{f:triconv}a,
+and is much faster; in fact it appears superalgebraic \cite{timothesis}.
 The solution field is Fig.~\ref{f:triconv}b, and its large values
 shows that we are quite close to a Dirichlet resonance of the domain.
 The basis set geometry in the domain can be visualized by
-{\tt tri.showbasesgeom} which shows the wedges implied by the corner
+{\tt tri.showbasesgeom} which shows wedges implied by the corner
 expansions.
 
