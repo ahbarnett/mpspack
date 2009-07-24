@@ -201,26 +201,33 @@ For all boundaries $\Gamma_j := \pO_j \cap \pO$
 at the edge of the solution domain we have boundary conditions
 \be
 a_ju + b_j u_n\;=\;f_j\qquad \mbox{on } \Gamma_j~,
+\label{e:bc}
 \ee
 where $a_j, b_j \in \mathbb{C}$ are complex numbers (currently; in future they
 may be functions on the boundary), and $f:\Gamma_j \to \mathbb{C}$ 
-are (possibly homogeneous) driving functions.
+are (possibly identically zero) driving functions.
 $u_n$ is short for $\mbf{n}\cdot \nabla u$, the
-normal derivative on the boundary.
+normal derivative on the boundary.%
+  \footnote{Within this framework it is possible to have domains with
+    `slits' or cracks, as long as each side of the crack
+    is defined to be a different part of $\Gamma_j$.}
 If there is a nonempty
-common boundary $\Gamma_{ij} := \pO_i \cap \pO_j$
-then it may have value and derivative matching conditions,
+{\em common} boundary $\Gamma_{ij} := \pO_i \cap \pO_j$
+then it has value and derivative matching (continuity) conditions,
 \bea
 %\left.\begin{array}{rcl}
 a_{ij}^+ u^+ + a_{ij}^- u^- &=& f_{ij}\qquad \mbox{on } \Gamma_{ij}~,
+\label{e:match}
 \\
 b_{ij}^+ u_n^+ + b_{ij}^- u_n^- &=& g_{ij}\qquad \mbox{on } \Gamma_{ij}~,
+\label{e:matchn}
 \eea
 where $a_{ij}^+,a_{ij}^-,b_{ij}^+,b_{ij}^-$ are numbers
 and $f_{ij}, g_{ij}$ are driving functions.
 The notation $u^+$ ($u^-$) means the
 limiting value approaching the boundary $\Gamma_{ij}$
 from its positive (negative) normal side.
+
 We assume all the boundaries $\Gamma_j$ and $\Gamma_{ij}$
 are piecewise smooth, and each smooth piece we
 will build from one or more {\em segments}.
@@ -260,10 +267,15 @@ We now discuss how software data structures represent the above objects.
 
 \bfi % fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 \ig{width=\textwidth}{relat.eps}
-\ca{Relationship of \mpspack\
-objects used to solve a typical BVP.
-The physical geometry is shown on the left, corresponding
-code structures on the right.}{f:relat}
+\ca{Relationship between segments, domains,
+and basis sets in a simple example.
+The physical geometry is shown on the left. There is a regular
+Fourier-Bessel basis in domain {\tt d}, and a layer-potential
+density on segment {\tt p} which affects both domains {\tt d} and {\tt e}.
+The corresponding
+code objects are on the right.
+Pointers to the four segments, two domains, and two basis sets are
+stored within the problem instance.}{f:relat}
 \efi
 
 
@@ -272,25 +284,50 @@ code structures on the right.}{f:relat}
 
 Fig.~\ref{f:relat} overviews how segments, domains and basis sets are
 represented in \mpspack\ in a simple example.
+For all these objects we use \matlab's {\tt handle} class,
+which means that only a single copy of any object instance is
+stored, and any time an instance is copied or passed as a function argument,
+it is a {\em pointer} to that instance that is duplicated.
+(This contrasts the {\tt value} class, such as numeric variables,
+in which the {\em actual data} is duplicated when copied or passed as an
+argument.)
+Thus each domain stores (as one of its properties)%
+  \footnote{A {\em property} is a variable stored inside the
+    object instance, just like a field {\tt a.b} inside a struct {\tt a}.}.
+an array of pointers to the
+segments forming its boundary.
+It also stores a cell array of the basis sets that
+contribute to the solution inside it.
+Each basis set stores a list of the domains it affects---usually
+this is a single domain.
+There are also boundary conditions stored in
+each segment, which are not shown.
+The `problem' object (BVP, scattering problem, etc) contains arrays of
+(pointers to) all relevant segments, domains, and basis sets.
+{\em Methods} (i.e. commands available which act on the problem class)
+then use this internal information to, for instance,
+construct a matrix and solve the problem.
+
+\subsection{Segments} % and pointsets}
+
 All coordinates in the plane are stored as complex double-precision
 numbers. In other words the point 
-$(2,3)$ and $2+3i$ represent the same point. This reflects
-that
-
-\subsection{Segments and pointsets}
-
-A segment is specified as a parametrized function $z(t)$ for $0\le t\le 1$,
-and $z'(t)$ is also needed.
+$(2,3)$ is represented by $2+3i$ in \mpspack.
+A segment is specified as a parametrized complex-valued
+function $z(t)$ for $0\le t\le 1$, and $z'(t)$ is also needed.
 If {\tt s} is a segment, these are stored as the properties
 {\tt s.Z} and {\tt s.Zp} respectively.
 Given a list {\tt s.t} of quadrature points on $[0,1]$
 (and their weights),
 the parametrization $z$ is used to compute quadrature point locations
 {\tt s.x} and weights {\tt s.w}
-for approximating integrals on the segment.
-Unit normals {\tt s.nx} are computed when needed via the expression $iz'/|z'|$.%
+for approximating integrals with respect to arc-length on the segment.
+Unit normals {\tt s.nx} are computed when needed via the expression $iz'/|z'|$,
+which shows that a segment's normal always points to the {\em right}
+when the segment is traversed in its natural direction (increasing $t$);
+see Fig.~\ref{f:relat}.%
   \footnote{A segment is in fact a
-    subclass of a simpler object called a pointset.
+    subclass of a simple object we call a pointset.
     A pointset {\tt p} contains only a list of locations {\tt p.x}
     and possibly corresponding normal directions {\tt p.nx}.}
 Since our focus is on high-order and accurate methods,
@@ -303,70 +340,191 @@ The benefit is that highly accurate quadrature is possible, and
 the user may simply switch between quadrature schemes ({\tt s.quadr})
 and numbers of points.
 
+Segments start out their lives {\em unconnected} to any domains,
+as evidenced by two empty elements as their domain connection
+property cell-array {\tt s.dom\{1\} = []} and {\tt s.dom\{2\} = []}.
+
 \subsection{Domains}
 
-A domain object {\tt d} contains a list of segments which form its
-outer boundary.
-Each domain is built from
-segments with a list of signs ($+$ or $-$) which define the sense in which
-the segments are used to form the boundary.
-Basis sets affect the function values inside each domain in which they
-are referenced. A basis set may influence more than one domain.
+A domain object {\tt d} contains as properties
+an ordered list of segments {\tt d.segs} which form its
+boundary, and an equal-sized
+list {\tt d.pm} of {\em senses} ($\pm1$)
+specifying whether each segment is to be taken in its `forward'
+(natural, $+1$) direction, or `backward' (reverse, $-1$) direction.
+All segments taken in these (possibly reversed) senses must
+i) connect up head to tail in the correct order,
+in one or more connected closed loops,
+and ii) have the domain interior lying to its left side when traversed
+according to its sense.
+The latter ensures that the segment normals, {\em when multiplied by the
+corresponding senses}, always point {\em outwards} (away) from
+the domain.
+At this point the reader would be wise to
+check they are able to write down correctly from the geometry
+the {\tt pm} arrays in Fig.~\ref{f:relat}.
 
-When domains are built from segments, each segment stores information about
-which domain, if any, it is connected to on each side.
-If segments are to be reused to construct new domains, while erasing any
-old domains, the current way to do this is via the {\tt s.disconnect}
-command, where {\tt s} is a segment handle or array of such. This clears
-these segments of any connections with domains.
+In order to distinguish disconnected components of the boundary of
+{\tt d}, the list {\tt d.spiece} specifies which boundary piece each
+segment is part of. E.g.\ {\tt spiece = [1 1 2 3]} means
+there are three boundary pieces, the first involving
+two segments, and the other two only one segment each.
+If {\tt s.exterior = 0}
+then the domain is not an exterior domain, thus we could deduce that
+there is an outer boundary (which is always the first piece, and 
+taking into account senses is traversed in a CCW direction)
+with two excluded regions (each traversed in a CW direction).
+On the other hand, if {\tt s.exterior = 1} the domain is the whole plane
+with three disjoint excluded regions (each in a CW direction).
+We recommend now looking at the plots produced by
+{\tt test/testdomain.m} and examining their object properties
+at the command prompt.
 
-The segment object field responsible for
-this is {\tt s.dom}, which is a 1-by-2 cell array
-of handles to the domain on the segment's natural normal side and
-back side respectively. If there is no domain on a particular side, the
-cell element is empty.
+Each domain also contains a list of corners where segments meet:
+the first corner is where the
+end of the last segment of piece 1 joins the start of the first segment
+of piece 1. Subsequent corners follow in the same order as segments.
+The angles (in radians) subtended by each 
+corner on the domain interior side are in {\tt d.cang}, and their
+locations in {\tt d.cloc}.
+The angle at which segment {\tt d.seg(j)}
+`heads off in' at its start (when taken in the sense given by
+{\tt pm} as above) is {\tt d.cangoff(j)},
+expressed as a complex number on the unit circle.
+The advantage of domains containing corner information is that
+corner-adapted basis sets may automatically be added.
+
+When a domain is constructed by passing in lists of segments
+and senses, the relevant segment's side is {\em connected} to the domain.
+E.g.\ if the natural positive side of segment {\tt s} has been used
+as a boundary (approaching from the interior) of domain {\tt d},
+we find {\tt s.dom\{1\} = d}.
+This bookkeeping is used to ensure that each side of a segment
+can only be connected to at most one domain.
+If a domain-connected segment {\tt s} is to be reused making new domains,
+one must first run the method {\tt s.disconnect}
+which empties both elements of the {\tt s.dom} cell array.
 
 
 \subsection{Boundary conditions}
 
+These are stored on a per-segment basis, as properties of each segment
+instance. A boundary condition (BC) may reside on only {\em one} side of a
+segment (\mpspack\ checks that this side is connected to a domain),
+as specified by the {\tt bcside} property.
+{\tt s.bcside = +1} indicates a BC on the natural (positive
+normal) side of segment {\tt s}, and {\tt s.bcside = -1} a BC on the
+opposite (negative normal) side.
+(This is independent of any of the {\tt pm} senses stored in the connected
+domains.)
+Then the numbers {\tt s.a}, {\tt s.b},
+and function handle {\tt s.f} give the
+$a_j$ and $b_j$ coefficients and function $f_j$ from \eqref{e:bc}.
 
-In our implementation the user
-may supply these as handles to functions of segment parameter
-$t\in[0,1]$, or as a data column vector on the segment quadrature points.
+If {\tt s.bcside = 0} this indicates a matching condition
+\eqref{e:match} and \eqref{e:matchn} rather than a BC. In this case,
+{\tt s.a} contains a 2-element array with coefficients
+$[a^+, a^-]$ from \eqref{e:match}, {\tt s.b} contains
+$[b^+, b^-]$ from \eqref{e:matchn},
+and {\tt s.f} and {\tt s.g} contain the functions $f$ and $g$.
 
-The segment fields {\tt a} and {\tt b} store
-$a$ and $b$ for a boundary condition, or
-$[a^+, a^-]$ and $[b^+, b^-]$
-respectively for a matching condition.
+In the above, function handles may be replaced by a list (column vector)
+of function {\em values}
+at the quadrature points (however, now the user must ensure that, if
+the quadrature points change, that these function values are updated).
+
 
 \subsection{Basis sets}
 
-FIX THIS TO REFLECT NEW basis.doms[] PROPERTY:
+A basis set object {\tt b} affects the
+function values inside the domain in the pointer {\tt b.doms}.%
+  \footnote{In fact, {\tt doms} may be a list, but currently only obscure
+    layer potential objects have the power to influence more than
+    one domian. Therefore we discuss only the simpler
+    case of one affected domain.}
+When a basis set is {\em added} to a basis-set-free domain {\tt d},
+two things happen: i) a new instance of the appropriate basis class
+is created, with {\tt d.bas\{1\}} pointing to this basis object,
+and ii) this basis object has property {\tt doms} set to {\tt d}.
+These pointers in both directions are shown in Fig.~\ref{f:relat},
+and help later bookkeeping to be rapid (i.e.\ free of searches).
 
-Each basis set has one (or possibly more) domain that it affects.
+The types of basis objects currently implemented are
+\bi
+\item Regular Fourier-Bessel expansions.
+[GIVE FORMULAE]
+\item Fractional-order (corner or wedge) Fourier-Bessel expansions.
+\item Sets of real (as opposed to evanescent) plane waves.
+\item Sets of fundamental solutions with different origins (charge points),
+both monopole and dipole.
+Use $\Phi$
+\item Single- and double-layer potentials lying on segments.
+\be
+u(\bx) = {\cal S}\sigma (\bx) := \int_\Gamma \Phi(\bx-\by) \sigma(\by) ds_\by
+\ee
+where $ds$ is arclength, or double-layer potential (DLP) density
+\be
+u(\bx) = {\cal D}\tau (\bx)
+:= \int_\Gamma \frac{\partial \Phi(\bx-\by)}{\partial n_\by} \tau(\by) ds_\by
+\ee
+where $\Gamma$ is a segment, and $\sigma$ and $\tau$ are functions on $\Gamma$.
+
+\ei
+Here the fundamental solution is
+\be
+        \Phi(\bx) = \frac{i}{4}H_0^{(1)} (k|\bx|)
+\label{e:fund}
+\ee
+A basis set {\tt b} is evaluated at a set of points {\tt x}
+using {\tt b.eval(pointset(x))}.
+OR a segment or previously-defined pointset may be used.
+All basis sets are evaluated in a reasonably efficient manner.
+
+Apart from plane waves, they all degenerate to meaningful basis sets
+in the limit $k=0$ (Laplace's equation)
+as follows.
 
 
-\footnote{apart from layer potentials which require a segment on which
-their source density is placed}.
-However, for a basis set to influence a domain {\tt d}, its handle must appear
-in the cell array field {\tt d.bas}
-This is set up automatically when you perform {\tt d.addregfbbasis()}
-or any of the other 
 
-There will be more elaborate basis set types which naturally affect two domains,
-such as dielectric corner and transmission layer potential objects;
-their handles will appear in the {\tt bas} cell array of more than one domain.
-
-\section{Problem class objects}
+% --------------------------------------------------------------------------
+\section{Solution methods and problem class objects}
 
 Contain list of basis sets.
 These are collected when domains are passed into a problem
 constructor.
+[ARE DOMAINS ACTUALLY NEEDED TO BE STORED AS PROBLEM PROPERTIES?
+if a domain is not affected by any basis set, it is not in the problem, right?]
 
-The row ordering in the matrix $A$ generated follows this list
+The column ordering in the matrix $A$ generated follows this list
 of basis objects.
+This defines the ordering in the coefficient vector {\tt p.co}.
+
+The row ordering is given by the segment list in the problem.
+Segments are uniquely extracted from the domain list.
+
+\subsection{BVPs}
 
 
+sets up BCs and matching based on refractive indices
+
+constructs a RHS in same ordering as 
+
+evaluates solution by checking 
+
+\subsection{Scattering problems}
+
+a subclass of {\tt bvp}.
+
+air domains, choose how $u_{inc}$ is converted into
+inhomogeneous matching conditions and BCs.
+Constructor format of air vs nonair domains.
+
+It also has properties: incident wave, 
+
+Has showthreefields.
+
+
+% --------------------------------------------------------------------------
 \section{Tweaks and test routines}
 
 By default \mpspack\ uses robust rather than fast math libraries.
@@ -403,6 +561,8 @@ In the {\tt test/} directory you will find some routines that
 we use to validate \mpspack. These are of variable quality,
 but contain coding examples that you may find useful.
 \bi
+\item {\tt testdomain.m} builds and plots nine domains of increasing
+complexity.
 \item {\tt testbvp.m} shows the main steps for solution of a BVP on
 a variety of domains.
 \item
