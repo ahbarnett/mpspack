@@ -12,7 +12,7 @@ b) Domain boundary and MFS charge curve geometry, and
 
 Changing from the Laplace to Helmholtz equation is as simple
 as setting {\tt d.k} to a positive value.
-We start a fresh example: a exterior Helmholtz BVP
+We start a fresh example: an exterior Helmholtz BVP
 with Neumann boundary data, and the Sommerfeld radiation
 condition \cite{coltonkress}. This has a unique solution.
 
@@ -23,7 +23,7 @@ Exterior domains can be created by excluding a closed segment, for instance
 the trefoil segment introduced above,
 \begin{verbatim}
 tref = segment.radialfunc(100, {@(q) 1 + 0.3*cos(3*q), @(q) -0.9*sin(3*q)});
-d = domain([], [], tref, -1);                    % overwrites previous d
+d = domain([], [], tref, -1);   % overwrites previous d
 \end{verbatim}
 Note the choice $-1$ for the direction argument, which states that
 the domain lies on the `nonstandard' side of the segment, i.e.\
@@ -32,8 +32,8 @@ with the segment normals pointing {\em into} the exterior domain.
 As before, we set up Dirichlet boundary data corresponding to a known
 radiative solution (a point source lying in the segment interior),
 \begin{verbatim}
-d.k = 10; f = @(z) besselh(0,d.k * abs(z-0.3-0.2i));  % a radiative Helm soln
-tref.setbc(1, 'D', [], @(t) f(tref.Z(t)));            % exterior Dirichlet data
+d.k = 10; f = @(z) besselh(0,d.k * abs(z-0.3-0.2i));
+tref.setbc(1, 'D', [], @(t) f(tref.Z(t))); 
 \end{verbatim}
 A convenient basis set for radiative solutions is a set of fundamental
 solutions (`MFS basis') with origins $\by_j$
@@ -83,8 +83,8 @@ A non-simply connected domain may be built by specifying excluded
 regions from a simply connected bounded domain. For example,
 to remove from an interior trefoil a circular `hole',
 \begin{verbatim}
-   tref.disconnect;                       % clears any domains from segment
-   c = segment([], [0.5 0.4 0 2*pi]);     % new circular segment
+   tref.disconnect;  % clears any domains from segment
+   c = segment([], [0.5 0.4 0 2*pi]); % new circular segment
    d = domain(tref, 1, c, -1);
 \end{verbatim}
 Note that segment {\tt tref} had previously
@@ -98,8 +98,8 @@ We may exclude two regions as follows, where the new region is a smaller copy
 of the trefoil,
 \begin{verbatim}
    tref.disconnect; c.disconnect;
-   smtref = tref.scale(0.3);                % create new rescaled tref copy
-   smtref.translate(-0.3+0.4i);             % move the segment smtref
+   smtref = tref.scale(0.3);    % create new rescaled tref copy
+   smtref.translate(-0.3+0.4i); % move the segment smtref
    d = domain(tref, 1, {c smtref}, {-1 -1});
 \end{verbatim}
 Typing {\tt d.plot} gives Fig.~\ref{f:doms}a. Notice that
@@ -120,3 +120,8 @@ Sec.~\ref{s:exa}.
 \vspace{10ex}
 
 
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "tutorial"
+%%% End: 

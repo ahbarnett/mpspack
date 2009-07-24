@@ -108,7 +108,7 @@ opts.rescale_rad = 2.0; tri.addcornerbases([], opts);
 r = []; Ns = 1:13; for i=1:numel(Ns)
   p.updateN(Ns(i)); nn(i) = p.N; p.solvecoeffs; r(i) = p.bcresidualnorm;
 end
-hold on; loglog(nn, r, 'r+-');              % plot error vs total # dofs
+hold on; loglog(nn, r, 'r+-');  % plot error vs total # dofs
 \end{verbatim}
 The new convergence is shown in red in Fig.~\ref{f:triconv}a,
 and is much faster; in fact it appears superalgebraic \cite{timothesis}.
@@ -118,3 +118,8 @@ The basis set geometry in the domain can be visualized by
 {\tt tri.showbasesgeom} which shows wedges implied by the corner
 expansions.
 
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "tutorial"
+%%% End: 

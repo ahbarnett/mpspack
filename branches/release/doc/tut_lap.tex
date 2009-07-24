@@ -63,6 +63,8 @@ and 8th-order harmonic polynomials.}{f:u}
 Laplace's equation $\Delta u = 0$ is Helmholtz's equation with wavenumber
 zero, which we set for this domain with,
 \co{d.k = 0;}
+If the problem has many domains the wavenumber should be set globally using the
+method {\texttt{problem.setoverallwavenumber}}.
 Our philosophy is
 to approximate the solution in the domain by a linear combination of
 {\em basis functions}, each defined over the whole domain.
@@ -108,3 +110,9 @@ To evaluate and plot the solution we simply use,
 \co{p.showsolution;}
 The software chose an appropriate grid covering the domain
 (points outside the domain are made transparent), giving Fig.~\ref{f:u}a.
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "tutorial"
+%%% End: 
