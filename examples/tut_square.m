@@ -1,4 +1,4 @@
-% SQUAREMETALSCATTDEMO - Exponentially accurate computation of
+% TUT_SQUARE - Exponentially accurate computation of
 % time-harmonic scattering on the unit square.
 
 % Parameters of the problem
@@ -16,7 +16,7 @@ rmfs=0.8*r;  % Radius of the fundamental solutions curve
 
 % Define all segments
 
-s = segment.polyseglist(M, [1i*r 1i*a a+1i*a a r], 'g');
+s = segment.polyseglist(M, [1i*r 1i*a a+1i*a a r]);
 s=[s(1:3) segment(2*M, [0 r 0 pi/2])];
 s = [s rotate(s, pi/2) rotate(s, pi) rotate(s, 3*pi/2)];
 
