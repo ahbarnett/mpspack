@@ -18,7 +18,7 @@ p = pointset([xx(:) + 1i*yy(:)], ones(size(xx(:)))); % set up n for x-derivs
 k = 5;                              % wavenumber for tests (may be 0)
 d = domain(); d.k = k;               % create R^2 domain
 
-for type = 9:11              % select the cases you want to test here
+for type = 7              % select the cases you want to test here
   switch type
    case {1,2,3}             % ................. Reg FB: real/cmplx, rescl
     N = 10;

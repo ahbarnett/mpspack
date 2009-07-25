@@ -466,7 +466,7 @@ where $(r,\theta)$ are polar coordinates relative to an origin $z_0$
 (basis property {\tt origin}).
 If the {\tt real} property is true (default), the real set is
 used, otherwise complex.
-Or, for the Laplace ($k=0$) case,
+Or, for the Laplace ($k=0$) case, as a function of coordinate $z$,
 \bea
 &\{1, \re w, \re w^2, \ldots, \re w^N,
 \im w, \ldots, \im w^N\}
@@ -518,28 +518,45 @@ If the {\tt real} property is true (default), the real set is
 used, otherwise complex. There are $2N$ functions in each case.
 The $k=0$ limit does not give a useful basis set, so it left undefined.
 
-\item Set of fundamental solutions ({\tt mfsbasis}) with $N$ origins
+\item Set of fundamental solutions ({\tt mfsbasis}), with $N$ origins
 (charge points) $\by_j \in \mathbb{R}^2$, $j=1,\ldots, N$,
-both monopole and dipole.
-Use $\Phi$
-
-\item Single- and double-layer potentials lying on segments.
+a linear combination of monopole and dipole,
 \be
-u(\bx) = {\cal S}\sigma (\bx) := \int_\Gamma \Phi(\bx-\by) \sigma(\by) ds_\by
+\{i\eta\Phi(\bx,\by_j) + \frac{\partial\Phi}{\partial n_{\by_j}}(\bx,\by_j)
+\}_{j=1,\ldots, N}
+\ee
+where $\eta\in\mathbb{C}$ is a parameter (property {\tt eta}),
+and the fundamental solution is
+\be
+\Phi(\bx,\by) = \Phi(\bx-\by) =
+\left\{\begin{array}{ll}\frac{i}{4}H_0^{(1)} (k|\bx-\by|),&k>0\\
+\frac{1}{2\pi}\log\frac{1}{|\bx-\by|},& k=0\end{array}\right.      
+\label{e:fund}
+\ee
+Note that the normal derivative of $\Phi$ is taken with respect to its second
+argument, as in a double-layer kernel.
+The linear combination of monopoles and dipoles is useful to prevent interior
+resonances of the MFS curve, hence poor conditioning \cite{polygonscatt}.
+The case {\tt eta=Inf} is interpreted as monopoles only, that is,
+\be
+\{\Phi(\bx,\by_j)\}_{j=1,\ldots, N}
+\ee
+
+
+\item Single- and double-layer potentials ({\tt layerpot}) lying on a segment,
+\be
+u(\bx) = {\cal S}\sigma (\bx) := \int_\Gamma \Phi(\bx,\by) \sigma(\by) ds_\by
 \ee
 where $ds$ is arclength, or double-layer potential (DLP) density
 \be
 u(\bx) = {\cal D}\tau (\bx)
-:= \int_\Gamma \frac{\partial \Phi(\bx-\by)}{\partial n_\by} \tau(\by) ds_\by
+:= \int_\Gamma \frac{\partial \Phi(\bx,\by)}{\partial n_\by} \tau(\by) ds_\by
 \ee
-where $\Gamma$ is a segment, and $\sigma$ and $\tau$ are functions on $\Gamma$.
-
+where $\Gamma$ is a segment
+(property {\tt seg}),
+and $\sigma$ and $\tau$ are functions on $\Gamma$ represented by
+their values at the segment's $M$ quadrature points.
 \ei
-Here the fundamental solution is
-\be
-        \Phi(\bx) = \frac{i}{4}H_0^{(1)} (k|\bx|)
-\label{e:fund}
-\ee
 
 Regular and fractional Fourier-Bessels also may be {\em rescaled},
 i.e.\ basis fuctions normalized to all have a similar-sized value at a given
