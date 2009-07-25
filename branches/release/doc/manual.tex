@@ -186,7 +186,7 @@ general framework (for examples see \cite{mfs,polygonscatt}).
 Let $\Omega_j \subset \mathbb{R}^2$, $j=1,\ldots,D$ be a set of
 (possibly multiply connected) domains. One of the domains may
 be an exterior domain.
-The solution domain is $\Omega:=\Omega_1 \cup \dots \cup \Omega_D$,
+The solution domain is $\Omega:=\bigcup_{j=1}^D \Omega_j$,
 and we seek a solution $u:\Omega \to\mathbb{C}$.
 In each domain we have,
 \be
@@ -194,7 +194,7 @@ In each domain we have,
 \ee
 where the `overall wavenumber' (or frequency) $k$ has been scaled by
 $n_j$ for each domain. In the optical application $n_j$ is interpreted
-as a {\em refractive index} (with $n_j=1$ vacuum or air) and we
+as a {\em refractive index} (with $n_j=1$ vacuum or `air') and we
 will use this name.
 
 For all boundaries $\Gamma_j := \pO_j \cap \pO$
@@ -293,7 +293,7 @@ in which the {\em actual data} is duplicated when copied or passed as an
 argument.)
 Thus each domain stores (as one of its properties)%
   \footnote{A {\em property} is a variable stored inside the
-    object instance, just like a field {\tt a.b} inside a struct {\tt a}.}.
+    object instance, just like a field {\tt a.b} inside a struct {\tt a}.}
 an array of pointers to the
 segments forming its boundary.
 It also stores a cell array of the basis sets that
@@ -342,7 +342,8 @@ and numbers of points.
 
 Segments start out their lives {\em unconnected} to any domains,
 as evidenced by two empty elements as their domain connection
-property cell-array {\tt s.dom\{1\} = []} and {\tt s.dom\{2\} = []}.
+property cell-array \\
+\verb?s.dom = {[] []}?.
 
 \subsection{Domains}
 
@@ -398,7 +399,7 @@ When a domain is constructed by passing in lists of segments
 and senses, the relevant segment's side is {\em connected} to the domain.
 E.g.\ if the natural positive side of segment {\tt s} has been used
 as a boundary (approaching from the interior) of domain {\tt d},
-we find {\tt s.dom\{1\} = d}.
+we find \verb?s.dom{1} = d?.
 This bookkeeping is used to ensure that each side of a segment
 can only be connected to at most one domain.
 If a domain-connected segment {\tt s} is to be reused making new domains,
@@ -431,7 +432,8 @@ and {\tt s.f} and {\tt s.g} contain the functions $f$ and $g$.
 In the above, function handles may be replaced by a list (column vector)
 of function {\em values}
 at the quadrature points (however, now the user must ensure that, if
-the quadrature points change, that these function values are updated).
+the quadrature points change, that these function values are updated
+accordingly).
 
 
 \subsection{Basis sets}
@@ -444,20 +446,83 @@ function values inside the domain in the pointer {\tt b.doms}.%
     case of one affected domain.}
 When a basis set is {\em added} to a basis-set-free domain {\tt d},
 two things happen: i) a new instance of the appropriate basis class
-is created, with {\tt d.bas\{1\}} pointing to this basis object,
+is created, with \verb?d.bas{1}? pointing to this basis object,
 and ii) this basis object has property {\tt doms} set to {\tt d}.
 These pointers in both directions are shown in Fig.~\ref{f:relat},
 and help later bookkeeping to be rapid (i.e.\ free of searches).
 
 The types of basis objects currently implemented are
 \bi
-\item Regular Fourier-Bessel expansions.
-[GIVE FORMULAE]
-\item Fractional-order (corner or wedge) Fourier-Bessel expansions.
-\item Sets of real (as opposed to evanescent) plane waves.
-\item Sets of fundamental solutions with different origins (charge points),
+\item Regular Fourier-Bessel expansion ({\tt regfbbasis})
+of degree $N$, comprising the
+set of $2N+1$ functions, for Helmholtz ($k>0$),
+\bea
+&\{J_n(kr)\cos(n\theta)\}_{n=0,\ldots,N} \cup
+\{J_n(kr)\sin(n\theta)\}_{n=1,\ldots,N}\quad &\mbox{(real case)} \nonumber \\
+\mbox{or }&\{J_n(kr)e^{in\theta}\}_{n=-N,\ldots,N}
+&\mbox{(complex case)}\nonumber
+\eea
+where $(r,\theta)$ are polar coordinates relative to an origin $z_0$
+(basis property {\tt origin}).
+If the {\tt real} property is true (default), the real set is
+used, otherwise complex.
+Or, for the Laplace ($k=0$) case,
+\bea
+&\{1, \re w, \re w^2, \ldots, \re w^N,
+\im w, \ldots, \im w^N\}
+\quad &\mbox{(real case)} \nonumber \\
+\mbox{or }&\{w^{-N}, w^{-N+1}, \ldots, w^N\}&\mbox{(complex case)}\nonumber
+\eea
+where $w:= z-z_0$.
+
+\item Fractional-order (wedge of angle $\pi/\nu$) Fourier-Bessel expansion
+({\tt nufbbasis})
+of degree $N$, for Helmholtz ($k>0$),
+\bea
+&\{J_{\nu n}(kr)\cos(\nu n\theta)\}_{n=0,\ldots,N}\quad &\mbox{(cos type)} \nonumber \\
+&\{J_{\nu n}(kr)\sin(\nu n\theta)\}_{n=1,\ldots,N}&\mbox{(sin type)}\nonumber
+\eea
+where $(r,\theta)$ are polar coordinates relative to the wedge corner $z_0$
+such that $\theta=0$ is aligned with the most clockwise edge of the wedge
+interior.
+The basis set may be of three types (property {\tt type}):
+{\tt 'c'} cos type only ($N+1$ functions),
+{\tt 's'} sin type only ($N$ functions), and
+{\tt 'cs'} cos and sin types ($2N+1$ functions). 
+The cos type satisfies zero Neumann BCs on the wedge boundary, the sin type
+zero Dirichlet BCs.
+Since they have a singularity at $z_0$, the branch cut is chosen
+(angle property {\tt branch}) by default to point symmetrically away from
+the wedge interior.
+
+No complex version is implemented.
+Or, for the Laplace ($k=0$) case,
+\bea
+&\{r^{\nu n}\cos(\nu n\theta)\}_{n=0,\ldots,N}\quad &\mbox{(cos type)} \nonumber \\
+&\{r^{\nu n}\sin(\nu n\theta)\}_{n=1,\ldots,N}&\mbox{(sin type)}\nonumber
+\eea
+
+\item Set of real (as opposed to evanescent) plane waves ({\tt rpwbasis}),
+with $N$ travel directions $\mbf{n}_j = (\cos \theta_j, \sin \theta_j)$, where
+$\theta_j = \pi j/N$, $j=1,\ldots,N$, for $k>0$,
+\bea
+&\{\cos(k \mbf{n}_j \cdot \bx)\}_{j=1,\ldots,N} \cup
+\{\sin(k \mbf{n}_j \cdot \bx)\}_{j=1,\ldots,N}
+\quad &\mbox{(real case)} \nonumber \\
+&\{e^{ik \mbf{n}_j \cdot \bx}\}_{j=1,\ldots,N} \cup
+\{e^{-ik \mbf{n}_j \cdot \bx}\}_{j=1,\ldots,N}&\mbox{(complex case)}\nonumber
+\eea
+Here $\bx:=(x,y)$ and the usual dot product in $\mathbb{R}^2$ is used.
+Note the travel directions are equally spaced in $(0,\pi]$.
+If the {\tt real} property is true (default), the real set is
+used, otherwise complex. There are $2N$ functions in each case.
+The $k=0$ limit does not give a useful basis set, so it left undefined.
+
+\item Set of fundamental solutions ({\tt mfsbasis}) with $N$ origins
+(charge points) $\by_j \in \mathbb{R}^2$, $j=1,\ldots, N$,
 both monopole and dipole.
 Use $\Phi$
+
 \item Single- and double-layer potentials lying on segments.
 \be
 u(\bx) = {\cal S}\sigma (\bx) := \int_\Gamma \Phi(\bx-\by) \sigma(\by) ds_\by
@@ -475,25 +540,40 @@ Here the fundamental solution is
         \Phi(\bx) = \frac{i}{4}H_0^{(1)} (k|\bx|)
 \label{e:fund}
 \ee
-A basis set {\tt b} is evaluated at a set of points {\tt x}
+
+Regular and fractional Fourier-Bessels also may be {\em rescaled},
+i.e.\ basis fuctions normalized to all have a similar-sized value at a given
+radius, in order to improve numerical stability and keep coefficient sizes
+similar. This radius is the basis property \verb?rescale_rad? (default
+is 0, no rescaling).
+
+Any basis set {\tt b} is evaluated at a set of points {\tt x}
 using {\tt b.eval(pointset(x))}.
 OR a segment or previously-defined pointset may be used.
 All basis sets are evaluated in a reasonably efficient manner.
 
-Apart from plane waves, they all degenerate to meaningful basis sets
-in the limit $k=0$ (Laplace's equation)
-as follows.
 
 
 
 % --------------------------------------------------------------------------
 \section{Solution methods and problem class objects}
 
-Contain list of basis sets.
+A problem class contains list of (pointers to)
+basis sets, domains, and segments; see Fig.~\ref{f:relat}.
 These are collected when domains are passed into a problem
 constructor.
-[ARE DOMAINS ACTUALLY NEEDED TO BE STORED AS PROBLEM PROPERTIES?
-if a domain is not affected by any basis set, it is not in the problem, right?]
+%[ARE DOMAINS ACTUALLY NEEDED TO BE STORED AS PROBLEM PROPERTIES?
+%if a domain is not affected by any basis set, it is not in the problem, right?]
+The problem object also contains the matrix $A$, right-hand side $\mbf{b}$,
+and coefficient
+vector $\mbf{c}$ in the linear system,
+\be
+A \mbf{c} = \mbf{b}
+\ee
+that results when basis sets are evaluated on boundary quadrature points.
+
+An idea of the least squares boundary-condition functional $J(\mbf{c})$,
+give integrals.
 
 The column ordering in the matrix $A$ generated follows this list
 of basis objects.
@@ -561,11 +641,14 @@ In the {\tt test/} directory you will find some routines that
 we use to validate \mpspack. These are of variable quality,
 but contain coding examples that you may find useful.
 \bi
+\item {\tt testsegment.m} builds and plots line, arc, and analytic function
+segments.
 \item {\tt testdomain.m} builds and plots nine domains of increasing
 complexity.
 \item {\tt testbvp.m} shows the main steps for solution of a BVP on
 a variety of domains.
-\item
+\item {\tt testinpolywrapper.m} validates the MEX interface to point-in-polygon
+checking.
 \ei
 
 
