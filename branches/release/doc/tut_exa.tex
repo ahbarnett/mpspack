@@ -6,6 +6,178 @@ give the corresponding code.
 All examples can also be found in the
 {\texttt{examples}} subdirectory of \mpspack.
 
+
+\subsection{Scattering from an array of discs}
+
+In this section we describe how to solve the problem of scattering
+from an array of circular scatterers in \mpspack using a basis of
+fundamental solutions.
+
+\subsubsection{Problem description and solution approach}
+
+\begin{figure}
+\center
+\includegraphics[width=6cm]{circarray}
+\caption{An array of $9$ scatterers.}
+\label{fig:circarray}
+\end{figure}
+
+Let $\Omega$ be the union of disks $D_j$ with radius $r$ whose
+midpoints have the coordinates $(an_1^{(j)},an_2^{(j)})\in\mathbb{R}^2$, where
+$n_1^{(j)},n_2^{(j)}\in\mathbb{N}$ and $a>0$ is the distance between
+two neighboring midpoints. An example for $9$ scatterers is shown in Figure
+\ref{fig:circarray}. The PDE is the following.
+ 
+\begin{eqnarray}
+\Delta u+k^2u & = & 0  \quad \text{in
+}\mathbb{R}^2\backslash\Omega\label{eq:helm0}\\
+u&=&0 \quad \text{on } \pO \label{eq:soundsoft0}\\
+\frac{\partial u_s}{\partial r}-iku_s & = & o(r^{-1/2}),\label{eq:sommerfeld0}
+\end{eqnarray}
+Here, $u=u_{inc}+u_s$ is the total field, $u_{inc}$ is the incident
+wave, $u_s$ is the scattered field, and $r$ is the radial coordinate.
+The Sommerfeld radiation condition
+\eqref{eq:sommerfeld} is to be understood to hold uniformly in all
+directions. 
+
+
+We solve the problem using fundamental solutions approximations in
+each disk, where the charge  points lie on circles with radius $r_{mfs}<r$.
+
+\subsubsection{Implementation in \mpspack}
+
+\paragraph{Initialization of the problem parameters}
+
+We have the following problem parameters.
+\begin{verbatim}
+N1=3; N2=3; % Number of scatterers in each direction
+r=1; % Radii of circles
+a=3; % Distance of midpoints of neighboring circles in each dimension
+k=10; % Wavenumber
+M=300; % Number of points on each circle
+N=150;  % Number of MFS basis fct. in each circle
+Rmfs=0.8*r; % Radius of fundamental solutions inside circles
+\end{verbatim}
+
+\paragraph{Setup of the geometry}
+
+The geometry is setup using a simple for loop.
+\begin{verbatim}
+y0=0;
+s=segment.empty(N1*N2,0);
+for i=1:N1,
+    x0=0;
+    for j=1:N2
+        seg=segment(M,[x0+1i*y0 r 0 2*pi],'p');
+        seg.setbc(1,'D',[]);
+        s((i-1)*N2+j)=seg;
+        x0=x0+a;
+    end
+    y0=y0+a;
+end
+\end{verbatim}
+In the inner for loop circular segments are created whose handle is
+the variable {\texttt seg}. We directly assign the homogeneous
+Dirichlet boundary conditions using the command \co{seg.setbc(1,'D',[]);}
+The segments are then stored in the array
+{\texttt s}. Storing the circular segments in an array makes plotting
+easy. Figure \ref{fig:circarray} is simply created with the commands
+\begin{verbatim}
+o.normals=0;
+plot(s,1,o);
+\end{verbatim}
+Once all segments are created we define the domain by
+\co{d=domain([],[],num2cell(s),num2cell(-1*ones(N1*N2,1)));}
+This command might look complicated at first because of the use of
+{\texttt num2cell}. We need to convert the array {\texttt s} into a
+cell structure so that the {\texttt domain} constructor recognizes
+that each element of $s$ is a closed shape in itself. Otherwise, the
+constructor would try to combine the elements of {\texttt s} into one
+connected shape, which is not possible.
+
+
+\paragraph{Basis functions}
+
+We want to use a basis of fundamental solutions in each of the
+circular scatterers. This is achieved with the following for loop.
+\begin{verbatim}
+x0=0; y0=0; opts.fast=1;
+for i=1:N1,
+    x0=0;
+    for j=1:N2
+        Z=@(w) rmfs*exp(2i*pi*w)+x0+1i*y0;
+        Zp=@(w) rmfs*2i*pi*w.*exp(2i*pi*w);
+        d.addmfsbasis({Z,Zp},N,opts);
+        x0=x0+a;
+    end
+    y0=y0+a;
+end
+\end{verbatim}
+The function handle {\texttt Z} defines the fundamental solutions
+curve and {\texttt Zp} its derivative. We have to shift the curves
+according to the midpoints of the circles.
+
+\paragraph{Solving the problem}
+We now have everything together to setup a problem instance.
+This is easily done with the {\texttt
+  scattering} class and the following three commands.
+
+\begin{verbatim}
+pr=scattering(d,[]);
+pr.setoverallwavenumber(k);
+pr.setincidentwave(-pi/3);
+\end{verbatim}
+
+The solution and timing results are then obtained by
+\begin{verbatim}
+tic; pr.solvecoeffs; fprintf('\tcoeffs done in %.2g sec\n', toc)
+fprintf('\tL2 bdry error norm = %g, coeff norm = %g\n', ...
+        pr.bcresidualnorm, norm(pr.co));
+\end{verbatim}
+On a standard Core 2 Duo Laptop this takes just under $40$
+seconds with a boundary error of about $2\cdot 10^{-13}$.
+We can plot the solution using the following commands.
+\begin{verbatim}
+o.bb=[-a N2*a -a N1*a];
+o.dx=0.05;
+o.sepfigs=1;
+pr.showthreefields(o);
+\end{verbatim}
+The command {\texttt pr.showthreefields(o)} plots the incoming wave,
+scattered field and full field using the parameters given in {\texttt
+  o}. We have specified {\texttt o.sepfigs=1}. This creates three
+separate figures for the three different fields instead of plotting
+everyhting into one figure.
+
+\begin{figure}
+\center
+\begin{tabular}{cc}
+\includegraphics[width=6cm]{circarrayscattered} &
+\includegraphics[width=6cm]{circarrayfull}
+\end{tabular}
+\caption{The scattered (left) and the full field (right) for the
+  problem of scattering from an array of circles.}
+\label{fig:circarraysol}
+\end{figure}
+
+
+The scattered and the full field are shown in Figure
+\ref{fig:circarraysol}. Note that plotting can take a long time since
+the array of scatterers spans many wavelenghts for which we need a
+sufficiently high resolution. The solution is not symmetric with
+respect to the diagonal since the incident angle for the incoming wave is
+$-\frac{\pi}{3}$, destroying the symmetry given by the configuration
+of scatterers.
+
+
+
+
+
+
+
+
+
+
 \subsection{Transmission scattering with metallic inclusions and air holes}
 \label{s:dielhole}
 
@@ -49,7 +221,7 @@ directions.
 \end{figure}
 
 
-To achieve high accuracy we cannot simply use fundamental soluitions
+To achieve high accuracy we cannot simply use fundamental solutions
 to approximate the scattered field. The problem is the singularities
 of the solution $u$ at the corners. If these are not represented in
 the basis our approximation error will decay very slowly as the number
@@ -129,11 +301,10 @@ rmfs=0.8*r;  % Radius of the fundamental solutions curve
 We now need to define the geometry. Fortunately,
 \mpspack gives some support for the construction of the geometry.
 
-First we define the segments of one element ($E_3$ in Figure
-\ref{fig:geom}). This is done with the following three commands.
+The list of segments is defined by the following three commands.
 
 \begin{verbatim}
-s = segment.polyseglist(M, [1i*r 1i*a a+1i*a a r], 'g');
+s = segment.polyseglist(M, [1i*r 1i*a a+1i*a a r]);
 s=[s(1:3) segment(2*M, [0 r 0 pi/2])];
 s = [s rotate(s, pi/2) rotate(s, pi) rotate(s, 3*pi/2)];
 \end{verbatim}
@@ -180,7 +351,10 @@ reverse order with reversed sense $-1$. This is necessary since we now
 have the boundary of an exterior domain, which has a reversed sense of
 direction.
 
-Setting up the compatibility conditions is now trivial. It is done by
+\paragraph{Boundary conditions and basis functions}
+
+Setting up the compatibility conditions between the elements is 
+trivial. It is done by
 the command
 \begin{verbatim}
 sdecomp.setmatch([k -k],[1 -1]);
@@ -218,6 +392,7 @@ Note that now {\texttt nmultiplier} is set to $2$. It turns out to be
 effective for this problem to use twice as many fundamental solutions
 as there are Fourier-Bessel sine functions in each domain.
 
+\paragraph{Solving the problem}
 We now have everything together to setup the problem class and solve
 the scattering problem. The following commands setup the scattering
 problem and define an incident plane wave.
@@ -229,7 +404,11 @@ pr.setincidentwave(-pi/4);
 There is one small specialty here. In the first line we have 
 defined {\texttt ext} to be an air-domain and the array {\texttt d} to
 be a non-air domain. This tells \mpspack~to add the incident field to
-the exterior basis functions in assembling the least-squares problem.
+the exterior basis functions in assembling the least-squares
+problem. In the finite domains this is not necessary since there we
+approximate directly the full field.
+
+
 
 The following commands now solve the problem and plot the solution
 $u$.
@@ -260,7 +439,10 @@ and the scattered field in the exterior domain). The {\texttt
   scattering} class also provides a routine {\texttt showthreefields}
 to plot the incident wave, scattered field and total field. However,
 the routine assumes that the computed solution is the scattered field,
-which is not correct for the way we have set up this problem.
+which is not correct for the way we have set up this problem. The
+resolution if the plot can easily be increased by decreasing the
+variable {\texttt o.dx}, which influences the distance of two grid points.
+
 
 The output of the example problem is shown in Figure \ref{fig:squareplot}.
 \begin{figure}
@@ -292,12 +474,8 @@ normal derivative. The solution to this problem is shown in Figure
 The accuracy and solution time are comparable to the sound-soft
 scattering place.
 
-
-\subsection{Transmission scattering from multiple dielectric discs}
-
-TIMO TO DO ?
-
 %%% Local Variables: 
 %%% mode: latex
 %%% TeX-master: "tutorial"
 %%% End: 
+
