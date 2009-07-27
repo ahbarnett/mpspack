@@ -92,13 +92,11 @@ classdef layerpot < handle & basis
 %     p being the segment on which the LP density sits, opts.dom must be
 %     defined, since it resolves which sign the jump relation has.
 %    opts.fast: if 0 use matlab Hankel, 1 use fast fortran Hankel, 2 even faster
-%    opts.Jfilter: if present, use evaluation through J-expansion instead.
+%    opts.Jfilter: (advanced feature) evaluate via J-expansion instead.
 %     Expects structure with:
 %                  Jfilter.M = max order of local expansion
 %       (optional) Jfilter.rescale_rad = radius to rescale J-exp to be O(1) at
 %       (optional) Jfilter.origin = center of J-expansion
-%
-%   Barnett 1/17/09: added Jfilter
       if nargin<3, o = []; end
       if ~isfield(o, 'fast'), o.fast = b.fast; end    % default given in b obj
       if ~isempty(b.quad), o.quad = b.quad; end % pass quadr type to S,D,T eval

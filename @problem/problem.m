@@ -18,6 +18,13 @@ classdef problem < handle
   
    function fillquadwei(pr)   % ............... fill quadrature weights vector
    % FILLQUADWEI - compute sqrt of bdry quadrature weights vector for a problem
+   %
+   % p.fillquadwei where p is a problem object fills the column vector p.sqrtwei
+   %   with the square-root of quadrature weights for the segment BC / matching
+   %   points in a problem. The ordering matches the row ordering of p.A matrix
+   %   and p.rhs right-hand side vector.
+   %
+   % See also: BVP.SOLVECOEFFS
       pr.sqrtwei = [];        % get ready to stack stuff onto it as a big row
       for s=pr.segs
         if s.bcside==0          % matching condition
@@ -56,8 +63,8 @@ classdef problem < handle
     %
     %   A = FILLBCMATRIX(pr) returns the matrix mapping all basis degrees of
     %   freedom in the problem to all segment boundary or matching condition
-    %   mismatch functions. With no output argument the answer is written to
-    %   the problem's property A.
+    %   inhomogeneity functions. With no output argument the answer is written
+    %   to the problem's property A.
     %
     %   A = FILLBCMATRIX(pr, opts) allows certain options including:
     %   opts.doms: if present, restricts to contrib from only domain list doms.
@@ -69,7 +76,8 @@ classdef problem < handle
     %    in some problem domain.
     %    (The above three are needed by blochmodeproblem)
     %
-    %    Notes: faster version, based on basis dofs rather than domain dofs
+    %  Issues/Notes:
+    %  * is now faster version, based on basis dofs rather than domain dofs
       if nargin<2, opts=[]; end
       if ~isfield(opts, 'doms'), opts.doms = []; end
       if ~isfield(opts, 'trans'), trans = []; else trans = opts.trans; end

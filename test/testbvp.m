@@ -1,7 +1,6 @@
-% BVP class test routine
+% BVP class test routines
 % barnett 7/18/08, included exterior domain and Neumann 7/19/08
-% added MFS and transmission 7/20/08, added DLP 7/31/08
-% To Do: debug why prob9 doesn't not match bdry vals in GRF (testlayerpot works)
+% added MFS and transmission 7/20/08, added DLP 7/31/08, new interface 7/27/09
 
 clear all classes
 verb = 1;          % verbosity: 0 for no figures, 1 for figures
@@ -15,10 +14,10 @@ for prob=1:9 % ===== loop over test problems ======
     dname = 'interior';
     if prob==3                            % choose a basis set for domain
       s = segment.smoothstar(70, 0.3, 3); pm = 1; d = domain(s, pm);
-      d.addlayerpotbasis([], 'd', k); dname = [dname ' DLP'];
+      d.addlayerpot([], 'd'); dname = [dname ' DLP'];
     elseif prob==9
       s = segment.smoothstar(70, 0.3, 3); pm = 1; d = domain(s, pm);
-      d.addlayerpotbasis([], 's', k); d.addlayerpotbasis([], 'd', k);
+      d.addlayerpot([], 's'); d.addlayerpot([], 'd');
       dname = [dname ' Green Rep Thm'];
     else
       p = [1 1i exp(4i*pi/3)];            % triangle from Alex's inclusion paper
@@ -27,7 +26,7 @@ for prob=1:9 % ===== loop over test problems ======
       s(2) = segment(M, [p(2) p(3)], 't');
       s(3) = segment(M, [p(1) p(3)]);       % note 3rd seg is backwards
       pm = [1 1 -1]; d = domain(s, pm);     % build interior polygonal domain
-      opts.real = 1; d.addrpwbasis(30, k, opts);
+      opts.real = 1; d.addrpwbasis(30, opts);
     end
     xsing = 1 + 1i;                        % location of singularity
     u = @(x) bessely(0, k*abs(x - xsing)); % an exact Helmholtz soln in domain
@@ -35,14 +34,14 @@ for prob=1:9 % ===== loop over test problems ======
     du = @(x) -k*(x-xsing)./R(x).*bessely(1, k*R(x)); % grad u as C# (why? u=Re)
     ux = @(x) real(du(x)); uy = @(x) imag(du(x)); % u_x and u_y funcs
    
-   case 4 % cases  ......................... exterior polygon D & N Herglotz
+   case 4 % cases  ........... exterior polygon D & N Herglotz (ill-posed BVP)
     %segment.disconnect(s); s = s(end:-1:1);      % flip segment order for ext
     s(3) = segment(M, [p(1) p(2)]);
     s(2) = segment(M, [p(2) p(3)], 't');
     s(1) = segment(M, [p(1) p(3)]);
     pm = [1 -1 -1]; d = domain([], [], s, pm);   % new exterior polygonal domain
     dname = 'exterior Herglotz';
-    N = 20; opts.real = 1; d.addrpwbasis(N, k, opts);
+    N = 20; opts.real = 1; d.addrpwbasis(N, opts);
     u = @(x) besselj(0, k*abs(x));               % entire Helmholtz solution
     du = @(x) -k*x./abs(x).*besselj(1,k*abs(x)); % grad u as C#
     ux = @(x) real(du(x)); uy = @(x) imag(du(x)); % u_x and u_y funcs
@@ -55,7 +54,7 @@ for prob=1:9 % ===== loop over test problems ======
     s = segment(M, {Z, @(s) 2*pi*(1i*Z(s) + exp(2i*pi*s).*Rt(2*pi*s))}, 'p');
     pm = -1; d = domain([], [], s, pm);
     dname = 'exterior radiative';
-    N = 50; opts.real = 1; d.addmfsbasis([], 0.3, N, k, opts);
+    N = 50; d.addmfsbasis(s, N, struct('tau',0.05,'real',1));
     xsing = -0.2 + 0.3i;                        % location of singularity
     u = @(x) bessely(0, k*abs(x - xsing)); % radiative Helmholtz soln
     R = @(x) abs(x - xsing);
@@ -68,10 +67,10 @@ for prob=1:9 % ===== loop over test problems ======
     Z = @(s) exp(2i*pi*s).*R(2*pi*s);
     s = segment(M, {Z, @(s) 2*pi*(1i*Z(s) + exp(2i*pi*s).*Rt(2*pi*s))}, 'p');
     d = domain(s, 1); d(2) = domain([], [], s, -1); % int, ext domains
-    N = 50; opts.real = 1; d(2).addmfsbasis([], 0.3, N, k, opts);
-    ki = 20; Ni = 40; d(1).addregfbbasis(0, Ni, ki, opts);   % int basis set
+    N = 50; d(2).addmfsbasis(s, N, struct('tau',0.05,'real',1));
+    d(1).refr_ind=2; Ni = 40; d(1).addregfbbasis(0, Ni, opts);   % int basis set
     dname = 'transmission';
-    t = 1; kvec = ki*exp(1i*t);              % t is plane wave angle
+    t = 1; kvec = d(1).refr_ind*k*exp(1i*t);      % t is plane wave angle
     ui = @(x) exp(1i*real(conj(kvec) .* x)); % field inside (we take 0 outside)
     uix = @(x) 1i*real(kvec)*ui(x); uiy = @(x) 1i*imag(kvec)*ui(x); u = ui;
   end
@@ -100,8 +99,10 @@ for prob=1:9 % ===== loop over test problems ======
   end
 
   pr = bvp(d); % ......... set up then solve BVP, plot soln and err
-  tic; if prob==9, un = real(conj(du(s.x)).*s.nx); pr.co = [un; -u(s.x)];
-      pr.fillquadwei; pr.fillbcmatrix; pr.rhs = u(s.x); % GRF test, no lin solve
+  pr.setoverallwavenumber(k);
+  tic; if prob==9 % GRF test, no lin solve, just set up RHS by hand
+      un = real(conj(du(s.x)).*s.nx); pr.co = [un; -u(s.x)];
+      pr.fillquadwei; pr.fillbcmatrix; pr.rhs = u(s.x).*pr.sqrtwei.';
      else pr.solvecoeffs; end
   name = sprintf('BVP #%d, %s %s', prob, dname, bname);
   fprintf('%s: done in %.2g sec; cond(A)=%2.g\n', name, toc, cond(pr.A))
@@ -122,3 +123,4 @@ for prob=1:9 % ===== loop over test problems ======
   fprintf('\tgrid eval in %.2g sec, L2 domain error norm = %g\n\n', t, r);
   end
 end % ====== end prob loop ========
+disp('All bdry err norms should be small, and all domain norms small except #3 and #9. These errs are large due to the fact that no special scheme was used for close evaluation of layer-pots.');

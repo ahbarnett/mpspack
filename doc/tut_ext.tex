@@ -17,10 +17,10 @@ with Neumann boundary data, and the Sommerfeld radiation
 condition \cite{coltonkress}. This has a unique solution.
 
 The simplest unbounded domain is $\mathbb{R}^2$, which is created with
-\co{d = domain();}
+\co{d = domain([], []);}
 One may check that its area {\tt d.area} is $\infty$.
-Exterior domains can be created by excluding a closed segment, for instance
-the trefoil segment introduced above,
+Exterior domains can be created by excluding from $\mathbb{R}^2$
+a closed segment, for instance the trefoil segment introduced above,
 \begin{verbatim}
 tref = segment.radialfunc(100, {@(q) 1 + 0.3*cos(3*q), @(q) -0.9*sin(3*q)});
 d = domain([], [], tref, -1);   % overwrites previous d
@@ -42,10 +42,7 @@ The formula for the $j$th basis function at location
 $\bx\in\mathbb{R}^2\setminus \by_j$
 is $\Phi(|\bx-\by_j|)$, where
 the fundamental solution for the Helmholtz equation at wavenumber $k$ is
-\be
-        \Phi(\bx) = \frac{i}{4}H_0^{(1)} (k|\bx|)
-\label{e:fund}
-\ee
+$\Phi(\bx) = \frac{i}{4}H_0^{(1)} (k|\bx|)$.
 We set this up and plot convergence of boundary error norm,
 \begin{verbatim}
 opts.tau = 0.06; d.addmfsbasis(tref, [], opts);
@@ -66,8 +63,8 @@ by $\tau$ in the imaginary direction.%
     the MFS curve should be
     as far as possible from the solution domain boundary, while still
     `shielding' this boundary from singularities in the analytic continuation
-    of the solution field. The user will have to adjust this parameter.
-    See~\cite{mfs}.}
+    of the solution field. The user will have to adjust this parameter,
+    although it should not depend on $k$. See~\cite{mfs}.}
 Plotting pointwise error with
 \co{opts.comparefunc = f; figure; p.showsolution(opts);}
 shows that is it around $10^{-13}$.

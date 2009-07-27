@@ -85,8 +85,9 @@ p.setoverallwavenumber(k);
 The matching condition that $u$ and $u_n$ are continuous across the interface
 is appropriate for TM-polarized Maxwell (in two dimensions, i.e.\
 $z$-invariant), for a dielectric problem, hence the {\tt setmatch}
-arguments. This is also appropriate for acoustics when $u$ represents
-the pressure field.
+arguments.
+%This is also appropriate for acoustics when $u$ represents
+%the pressure field. - NOTE SURE ABOUT THIS.
 Then, {\tt p.solvecoeffs; p.showthreefields;} produces
 Fig.~\ref{f:diel}, which has error in boundary matching
 (summing the $L^2$ errors in the jump in $u$ and jump in $u_n$)
