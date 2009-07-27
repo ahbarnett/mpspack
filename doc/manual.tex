@@ -66,11 +66,7 @@ boundary conditions, and domain geometries
 may be solved, explored and visualized with ease.
 In these methods there is either no mesh (as in
 fundamental solutions methods), or
-the number of subdomains is small and fixed
-(so-called $p$-FEM).
-Thus we leave the job of specifying subdomains, i.e.\ `meshing',
-to the user---this contrasts with the large number of
-finite-element packages already in existence.
+the number of subdomains is small and fixed.
 The benefit of such methods is their rapid convergence and efficiency.
 The solution boils down to dense least-squares linear algebra,
 which despite the $O(N^3)$ cost enables some quite high-frequency problems
@@ -93,7 +89,7 @@ mathematical objects such as segments, domains,
 basis sets, and BVPs, by software objects that may be manipulated
 just like variables.
 The result is that complicated problems may be set up and solved in
-a few lines of quite-readable code.
+a few lines of simple code.
 For example, to solve and plot the scattering
 of plane-wave incident from a smooth sound-hard (Neumann) domain
 10 wavelengths in size, we can type,
@@ -152,6 +148,9 @@ command:
 \co{svn co http://mpspack.googlecode.com/svn/branches/release mpspack}
 This creates a directory {\tt mpspack} containing the toolbox.
 
+TODO: CHANGE LINK TO TAG DIRECTORY AFTER RELEASE VERSION IS TAGGED 1.0
+
+
 You might prefer a more user-friendly graphical
 subversion client such as those listed at {\tt
 http://subversion.tigris.org/links.html\#clients}
@@ -163,6 +162,9 @@ In a UNIX environment you may now
 unpack this with
 \co{tar zxvf mpspack.tar.gz}
 This creates the directory {\tt mpspack} containing the toolbox.
+
+TODO: ALSO MAKE AVAILABLE ZIP ARCHIVE
+
 \een
 There are some optional fast basis and other math libraries
 (C and Fortran with MEX interfaces), which should be compiled
@@ -324,7 +326,7 @@ Given a list {\tt s.t} of quadrature points on $[0,1]$
 the parametrization $z$ is used to compute quadrature point locations
 {\tt s.x} and weights {\tt s.w}
 for approximating integrals with respect to arc-length on the segment.
-Unit normals {\tt s.nx} are computed when needed via the expression $iz'/|z'|$,
+Unit normals {\tt s.nx} are computed when needed via the expression $-iz'/|z'|$,
 which shows that a segment's normal always points to the {\em right}
 when the segment is traversed in its natural direction (increasing $t$);
 see Fig.~\ref{f:relat}.%
@@ -363,8 +365,8 @@ according to its sense.
 The latter ensures that the segment normals, {\em when multiplied by the
 corresponding senses}, always point {\em outwards} (away) from
 the domain.
-At this point the reader would be wise to
-check they are able to write down correctly from the geometry
+It is a helpful exercise for the reader to
+check that they are able to write down correctly from the geometry
 the {\tt pm} arrays in Fig.~\ref{f:relat}.
 
 In order to distinguish disconnected components of the boundary of
