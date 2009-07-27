@@ -633,7 +633,7 @@ as appropriate, evaluated on the quadrature points
 of each segment of the problem
 and stacked together to give one column vector,
 when $u$ is given by its basis representation in each domain.%
-  \footnote{This inhomogeneity vector is in fact multiplied by the
+  \footnote{This inhomogeneity vector is in fact multiplied elementwise by the
     square-root of the quadrature weight vector {\tt sqrtwei},
     so that $L^2$ and $l_2$ norms become equal.}
 The matrix {\tt A} has block structure \cite{polygonscatt}, where the
@@ -650,8 +650,9 @@ problem to $N$ times their scale factor {\tt bas.nmultiplier}
 Note that the total number of degrees of freedom is often several times
 larger than $N$.
 \item
-{\tt fillquadwei} which fills the column vector of
-quadrature weights (in the same order as the inhomogeneity vector)
+{\tt fillquadwei} which fills {\tt p.sqrtwei} the row vector of
+(square-roots of)
+quadrature weights, in the same order as the inhomogeneity vector
 \item {\tt setoverallwavenumber(k)} which sets the problem wavenumber to $k$,
 and hence the wavenumbers in domain $j$ to $n_j k$ as in \eqref{e:helmj}
 \item {\tt pointsolution(z)} which evaluates $u$ at the pointset {\tt z}
@@ -687,7 +688,7 @@ contains the right-hand sides of \eqref{e:bc}, or \eqref{e:match} and
 multiplied elementwise
 by the square-roots of the quadrature weights {\tt p.sqrtwei}.
 This `left diagonal preconditioning' of linear system
-by the quadrature weights means that
+by the quadrature weights is chosen so that
 the minimum $L^2$ boundary error in solving the BVP is
 given by the minimum $l_2$ residual norm in solving the linear system,
 \co{A*co = rhs}
@@ -779,9 +780,9 @@ complexity.
 \item {\tt testbasis.m} plots all basis function types over a grid and
 uses the finite-difference grid approximation to validate their derivatives.
 \item {\tt testbvp.m} shows the main steps for solution of a BVP on
-a variety of domains (FIX THIS CODE).
+a variety of domains.
 \item {\tt testscattering.m} shows the main steps for solution of a 
-scattering problem on a variety of domains (FIX THIS CODE).
+scattering problem on a variety of domains.
 \item {\tt testinpolywrapper.m} validates the MEX interface to point-in-polygon
 checking.
 \ei

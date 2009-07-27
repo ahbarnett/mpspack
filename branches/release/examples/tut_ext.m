@@ -38,7 +38,7 @@ smtref = tref.scale(0.3);                % create new rescaled copy of tref
 smtref.translate(-0.3+0.5i);             % move the segment smtref
 d = domain(tref, 1, {c smtref}, {-1 -1});
 if verb  % generate f:doms a
-  figure; set(gca, 'fontsize', 14); d.plot; axis off;
+  figure; set(gca, 'fontsize', 14); opts.gridinside=0.05; d.plot(opts);axis off;
   print -depsc2 ../doc/twoholes.eps
 end
   

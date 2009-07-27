@@ -1,7 +1,8 @@
 function addmfsbasis(d, varargin)
-% ADDMFSBASIS - Add an MFS basis to a domain
+% ADDMFSBASIS - Add an MFS (fundamental solutions) basis to a domain
 %
-%  For a full list of possible arguments see MFSBASIS
+% d.ADDMFSBASIS(args) where d is a domain, adds an MFS basis to the domain.
+%   The argument list args are exactly as in MFSBASIS.
 %
 % See also: MFSBASIS
 
