@@ -24,9 +24,6 @@ classdef basis < handle
   
   methods % ....................................... actual methods ...........
   
-    function updateNf(b) % ................ dummy for all but layerpot bases
-    end
-
     function updateN(b,N) % ................ overloaded in some basis objects
     % UPDATEN - Change basis set degree in proportion to an overall N.
       b.N = ceil(N * b.nmultiplier);
