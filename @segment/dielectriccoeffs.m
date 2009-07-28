@@ -3,6 +3,10 @@ function [a b] = dielectriccoeffs(pol, np, nm) % ...diel matching coeffs
 %
 %  [a b] = dielectriccoeffs(pol, np, nm). np and nm are indices on + and -
 %   sides respectively
+%
+% Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
+
+
 epsp = np^2; epsm = nm^2;               % epsilon (permittivity)
 if pol=='tm' | pol=='TM'                % u represents Ez
   a = [1 -1]; b = [1 -1];               % note opposing signs, for continuity!

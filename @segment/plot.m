@@ -1,3 +1,4 @@
+function h = plot(s, pm, o)
 % PLOT - plots a directed segment on current figure, using its quadrature pts
 %
 %  h = PLOT(seg) plots a segment, quadrature points, etc. Also plots an array
@@ -11,8 +12,9 @@
 %   opts.blobs: if true, show quadrature pt blobs (default true)
 %
 % See also: pointset/PLOT, domain/SHOWSEGMENTS
+%
+% Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
 
-function h = plot(s, pm, o)
 if nargin<2, pm = 1; end                       % default sense is positive
 if nargin<3, o = []; end
 if ~isfield(o, 'arrow'), o.arrow = 1; end % default is show arrow

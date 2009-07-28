@@ -1,6 +1,4 @@
 function v = approxpolygon(s, pm)
-% APPROXPOLYGON - extracts col vec of approx vertices from closed seg array
-%
 % APPROXPOLYGON - stack together approximating polygon vertices of segment list
 %
 %  v = APPROXPOLYGON(seg, pm) returns a column vector of vertices (as

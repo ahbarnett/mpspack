@@ -1,3 +1,4 @@
+function s = radialfunc(M, fs)
 % RADIALFUNC - closed segment from radial function r=f(theta) and derivatives
 %
 %  s = radialfunc(M, {f fp}) generates a smooth closed radial function segment
@@ -7,8 +8,8 @@
 %
 %  s = radialfunc(M, {f fp fpp}) also includes 2nd-derivative, enabling
 %   curvature information to be created in the segment (for spectral quadr)
-
-function s = radialfunc(M, fs)
+%
+% Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
 
 f = fs{1};
 Z = @(s) exp(2i*pi*s).*f(2*pi*s);   % note conversion from 0<s<1 to 0<t<2pi
