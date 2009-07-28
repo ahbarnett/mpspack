@@ -1,0 +1,119 @@
+\bfi % ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+a)\raisebox{-0.3\textwidth}{\ig{height=0.35\textwidth}{seg.eps}}
+b)\raisebox{-0.3\textwidth}{\ig{height=0.35\textwidth}{dom.eps}}
+\ca{a) circular closed segment, b) unit disc domain.
+Both have a periodic trapezoidal quadrature rule
+with $M=20$ quadrature points}{f:sd}
+\efi
+
+% ----------------------------------------------------------------------------
+\section{Solving Laplace's equation in a disc}
+\label{s:lap}
+
+We start by setting up a domain in $\mathbb{R}^2$.
+% in which a PDE will be solved.
+Domains are built from segments which define their boundary.
+To make the unit disc domain,
+we first need a circle segment with center
+0, radius 1, and angle range
+$[0,2\pi)$, as follows,
+\co{s = segment([], [0 1 0 2*pi])}
+The object {\tt s} is indeed a circular segment, as we may check by
+typing {\tt s.plot}, producing Fig.~\ref{f:sd}a.
+%or by examining its contents by typing {\tt s}.
+All segments have a natural {\em sense}, i.e.\ direction of travel:
+for this segment it is counter-clockwise, as shown by the
+downwards-pointing
+arrow symbol overlayed onto the segment at about 9 o'clock.%
+  \footnote{In fact, segments are parametrized internally as function $z(t)$
+    of a real variable $t\in[0,1]$, and the sense is the direction of
+    increasing $t$. Segment {\tt s} stores this function as {\tt s.Z}.}
+Notice also normal vectors (short `hairs') pointing outwards
+at each boundary point; our definition is that
+normals on a segment always point to the {\em right} when traversing the
+sense of the segment.
+
+We create the domain interior to this segment with
+\co{d = domain(s, +1)}
+where the second argument (here $+1$, the only other option being $-1$)
+specifies that the domain is to the `standard' side of the segment, which
+we take to be such that the normals point {\em away from} the domain.
+That is, with $+1$ the domain lies to the {\em left} of the segment
+when traversed in its correct sense (with $-1$ the domain
+would lie to the right of the segment.)
+Typing {\tt d.plot} produces%
+  \footnote{There are extra plotting options and features that
+    are described in documentation such as {\tt help domain.plot}.
+    E.g.\ in this figure a grid of points interior to the domain has been
+    included, achieved with {\tt opts.gridinside=0.05; d.plot(opts);}
+    %TODO: demo switch off corner fan.
+  }
+Fig.~\ref{f:sd}b.
+Note that perimeter and area are automatically
+labelled (these are only rough approximations intended for sanity checks).
+
+\bfi % ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+a)\raisebox{-0.3\textwidth}{\ig{height=0.35\textwidth}{u.eps}}
+b)\raisebox{-0.3\textwidth}{\ig{height=0.35\textwidth}{uerr.eps}}
+\ca{a) Numerical solution field $u$, b) pointwise error $u-f$,
+for Laplace's equation in the unit disc with $M=20$ quadrature points
+and 8th-order harmonic polynomials.}{f:u}
+\efi
+
+Laplace's equation $\Delta u = 0$ is Helmholtz's equation with wavenumber
+zero, which we set for this domain with,
+\co{d.k = 0;}
+If the problem has many domains the wavenumber should be set globally using the
+method {\texttt{problem.setoverallwavenumber}}.
+Our philosophy is
+to approximate the solution in the domain by a linear combination of
+{\em basis functions}, each defined over the whole domain.
+%We have to choose how many to use, i.e.\ the
+%{\em order} of approximation.
+We choose 8th-order harmonic polynomials
+$u(z) = \sum_{n=0}^{8} c_n \,\mbox{Re}\,z^n +
+\sum_{n=1}^{8} c_{-n}\,\mbox{Im}\,z^n$, where $\mbf{c}:=\{c_n\}_{n=-8}^{8}
+\in\mathbb{R}^{17}$
+is a coefficient vector, based at the origin 0,
+%i.e.\ the sets $\{\mbox{Re } z^n\}_{n=0}^{10}$ and
+%$\{\mbox{Im } z^n\}_{n=1}^{10}$,
+using the command
+\co{d.addregfbbasis(0, 8);}
+Let's specify Dirichlet boundary data $f(z) = 
+\ln |z-2-3i|$ for
+$z$ on the segment%
+  \footnote{In other words, $f(x,y) = \ln \sqrt{(x-2)^2+(y-3)^2}$
+    for points $(x,y)$ on the boundary.}
+by representing this as an anonymous function {\tt f}
+and associating it with one side of the segment,
+\begin{verbatim}
+   f = @(z) log(abs(z-2-3i));
+   s.setbc(-1, 'd', [], @(t) f(s.Z(t)));
+\end{verbatim}
+Note that we needed to pass in a function not of location $z$,
+but of the segment parameter $t$;
+this was achieved by
+wrapping ${\tt f}$ around the parametrization function ${\tt s.Z}$.
+The first argument $-1$ expresses that the boundary condition is to be
+understood in the limit approaching from the side {\em opposite} the
+segment's normal direction, which is where the domain is located.
+The second argument {\tt 'd'} specifies that the data is Dirichlet.
+ 
+Finally we use the domain to make a boundary-value
+problem object {\tt p},
+\co{p = bvp(d);}
+and may then solve (in the least-squares sense)
+a linear system for the coefficients
+\co{p.solvecoeffs;}
+If it is needed, {\tt p.co} now contains the coefficients vector $\mbf{c}$.
+To evaluate and plot the solution we simply use,
+\co{p.showsolution;}
+The software chose an appropriate grid covering the domain
+(points outside the domain are made transparent, but show
+up deep blue in this document), giving Fig.~\ref{f:u}a.
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "tutorial"
+%%% End: 

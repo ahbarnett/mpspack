@@ -1,0 +1,109 @@
+\bfi % ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+a)\raisebox{-0.3\textwidth}{\ig{height=0.35\textwidth}{N.eps}}
+b)\raisebox{-0.3\textwidth}{\ig{height=0.35\textwidth}{radfunc.eps}}
+\ca{a) Convergence of boundary error $L^2$ norm for harmonic
+polynomials for Laplace equation
+in the unit disc, b) solution error for same boundary data $f$
+in a smooth star-shaped `trefoil' domain (normals also shown).}{f:conv}
+\efi
+
+% ----------------------------------------------------------------------------
+\section{Accuracy, convergence, and smooth domains}
+\label{s:conv}
+
+How accurate was our numerical solution $u$? One measure is the
+$L^2$ error on the boundary, and is estimated by
+\co{p.bcresidualnorm}
+which returns $2.09 \times 10^{-6}$.
+However, since the function $f(z)$ is already harmonic in the domain,
+it is in fact the unique solution, and we may plot the
+pointwise error in $u$ by passing in the analytic solution as an option,
+\co{opts.comparefunc = f; p.showsolution(opts);}
+giving Fig.~\ref{f:u}b. Note that the color scale is $10^{-8}$.
+
+In the above, boundary integrals were approximated using the default of
+$M=20$ quadrature points, barely adequate given the
+oscillatory error function in Fig.~\ref{f:u}b.
+$M$ may be easily changed either by specifying
+a non-empty first argument in the {\tt segment} constructor above, or
+for an existing segment as follows,
+\co{s.requadrature(50); p.solvecoeffs; p.bcresidualnorm}
+which now gives $1.98\times 10^{-6}$, not much different than before.
+Notice that we did not have to redefine the domain {\tt d} nor
+the BVP object {\tt p}.
+
+Exploring the convergence of the boundary error norm with the basis set order
+needs a simple loop over $N$,
+\begin{verbatim}
+   for N=1:15
+     p.updateN(N); p.solvecoeffs; r(N) = p.bcresidualnorm;
+   end
+   figure; semilogy(r, '+-'); xlabel('N'); ylabel('bdry err norm');
+\end{verbatim}
+As the resulting Fig.~\ref{f:conv}a shows, the convergence is exponential.%
+  \footnote{Asymptotically, error $\sim e^{-\alpha N}$. In fact the rate is
+    $\alpha = \ln \sqrt{13}$, related to the conformal distance to
+    the nearest singularity \cite{timothesis}, which here is at $2+3i$.}
+Notice we used {\tt updateN} to change the basis set degree
+in a problem (in this simple case it is equivalent to 
+\verb?d.bas{1}.N = N;?)
+
+Say we want to change the shape of segment {\tt s}, to
+a smooth star-shaped `trefoil' domain expressed as by radius $R(\theta) =
+1 + 0.3\cos 3\theta$ as a function of angle $0\le \theta< 2\pi$.
+This is achieved by passing a 1-by-2
+cell array containing the function $R$ and its
+derivative $R' = dR/d\theta$ to a variant of the segment constructor,
+\begin{verbatim}
+s = segment.radialfunc(50, {@(q) 1 + 0.3*cos(3*q), @(q) -0.9*sin(3*q)});
+\end{verbatim}
+We again chose $M=50$.
+The analytic formula for $R'$ is needed to compute normal derivatives
+to high accuracy.
+
+One might ask: has this change to {\tt s} {\em propagated}
+to the existing domain
+object {\tt d} and BVP object {\tt p}, which both refer to it?
+In contrast to the case of quadrature point number $M$ above,
+the answer is no:
+{\tt s} is overwritten by a newly-constructed object, while
+{\tt d} and {\tt p} still contain handles pointing to the {\em old}
+{\tt s}.
+Furthermore, the fact that the segment had domain {\tt d}
+attached to its `minus' or back side has been forgotten, as have the
+boundary conditions.
+(These segment properties are described in the \mpspack\ user manual.)
+We must therefore rerun the code from Sec.~\ref{s:lap}
+to construct {\tt d} and {\tt p} afresh, before solving.%
+  \footnote{Note that in theory it would be possible to
+    change one by one each of the segment properties, {\tt t}, {\tt w},
+    {\tt speed}, etc, to define the new segment without changing its identity,
+    but this is cumbersome. Similarly, searching and changing
+    all references to a segment in the properties of {\tt d} and {\tt p}
+    is cumbersome. Neither has been implemented by us
+    since problem setup time is very rapid.}
+The result, plotting the pointwise error as before,
+is shown by Fig.~\ref{f:conv}b for $N=8$ and $M=50$.
+
+The {\tt radialfunc} constructor above is limited to radial functions
+with quadrature equidistant
+in angle. Instead you may create a segment from arbitrary
+smooth parametrizations $z(t)$ for $t \in[0,1]$, as long as $z'(t)$
+is also given. For instance, a closed crescent-shaped analytic segment is
+produced (try it!) by,
+\begin{verbatim}
+a = 0.2; b = 0.8; w = @(t) exp(2i*pi*t);
+s = segment(100, {@(t) w(t)-a./(w(t)+b), ...
+                  @(t) 2i*pi*w(t).*(1 + a./(w(t) + b).^2)}, 'p');
+\end{verbatim}
+Note that a convenient variable $w = e^{2\pi i t}$ was used
+via nested anonymous functions.
+Heed also the new final argument {\tt 'p'} which enforces
+periodic quadrature (the constructor doesn't try to guess your preferred rule).
+In order to get high-order (or spectral) convergence, it is recommended
+that you choose only smooth (or analytic) $z$.
+If periodic quadrature is used,
+this also applies to the 1-periodic extension of $z$ to the real line.
+If $z(1)\neq z(0)$, the ends of the segment will not connect
+up, and the domain constructor above will report an error.
+

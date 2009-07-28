@@ -1,0 +1,938 @@
+\documentclass[12pt]{article}
+\usepackage{graphicx,bm,amssymb,amsmath,amsthm}
+\input{macros}
+
+\begin{document}
+\title{\mpspack\ user manual}
+\author{Alex Barnett\footnote{Department of Mathematics, Dartmouth College, Hanover, NH, 03755, USA}
+\ and Timo Betcke\footnote{Department of Mathematics,
+University of Reading, Berkshire, RG6 6AX, UK}}
+\date{\today}   % how pipe from getrevisionnumber + 1?
+
+\maketitle
+\begin{abstract}
+\mpspack\ is a fully object-oriented \matlab\ toolbox for
+solving Laplace, Helmholtz, wave scattering, and related PDE boundary-value
+problems
+on piecewise-homogeneous 2D domains, including those with corners.
+The philosophy is to
+%represent solutions using
+use basis functions
+which are particular solutions to the
+PDE in some region; solving is thus reduced to matching on
+the boundary (or on boundaries of subregions).
+This idea is known as the Method of Particular Solutions, or as Trefftz,
+ultra-weak, or non-polynomial 
+methods in the FEM community.
+Basis functions include plane-wave, Fourier-Bessel,
+corner-adapted expansions, and
+fundamental solutions.
+Layer potential representations and associated
+singular quadrature schemes are also available.
+It is designed to
+be simple to use, and to enable highly-accurate solutions.  This is
+the user manual; for a more hands-on approach and worked examples
+see the accompanying tutorial.
+\end{abstract}
+
+
+\bfi % ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+\ig{width=\textwidth}{hard.eps}
+\ca{Sound-hard (homogeneous Neumann boundary condition) scattering from a smooth
+obstacle using a fundamental solutions basis in \mpspack.
+Left: incident wave. Center: scattered wave.
+Right: total solution field.}{f:hard}
+\efi
+
+
+\section{Overview}
+\label{s:overview}
+
+In numerical analysis there has been recent excitement
+in methods for solving linear PDEs where solutions are approximated by
+linear combinations of {\em particular solutions} to the PDE.
+These methods are high-order (often exponentially convergent),
+efficient at high frequencies (the number of degrees of freedom $N$
+scales linearly with wavenumber, in 2D),
+and are quite simple to implement.
+When geometries become more complicated, the domain needs to be split
+up into multiple subdomains, e.g.\ one for each corner, and the
+implementation and matrix construction becomes cumbersome.
+The goal of this software toolbox is to make implementation of
+these methods simple
+and transparent, and create an intuitive, unifying framework in which many
+types of boundary-value problems,
+boundary conditions, and domain geometries
+may be solved, explored and visualized with ease.
+In these methods there is either no mesh (as in
+fundamental solutions methods), or
+the number of subdomains is small and fixed.
+The benefit of such methods is their rapid convergence and efficiency.
+The solution boils down to dense least-squares linear algebra,
+which despite the $O(N^3)$ cost enables some quite high-frequency problems
+to be solved.
+
+We focus on the scalar homogeneous
+Helmholtz equation in the plane,
+\bea
+(\Delta+k^2)u& =& 0 \qquad \mbox{in } \Omega~,
+\eea
+where $\Omega \subset \mathbb{R}^2$ is an interior or exterior
+domain, $k\ge 0$ is the wavenumber, and certain
+%imhomogeneous
+linear boundary conditions are imposed.
+Such problems arise in wave scattering and cavity resonances.
+In \mpspack\ we use the (recently-acquired)
+power of \matlab\ \cite{matlab} {\em object-oriented}
+programming to represent the 
+mathematical objects such as segments, domains,
+basis sets, and BVPs, by software objects that may be manipulated
+just like variables.
+The result is that complicated problems may be set up and solved in
+a few lines of simple code.
+For example, to solve and plot the scattering
+of plane-wave incident from a smooth sound-hard (Neumann) domain
+10 wavelengths in size, we can type,
+\begin{verbatim}
+s = segment.radialfunc(250, {@(q) 1 + 0.3*cos(3*q), @(q) -0.9*sin(3*q)});
+d = domain([], [], s, -1);
+s.setbc(1, 'N', []);
+opts.tau = 0.04; d.addmfsbasis(s, 210, opts);
+p = scattering(d, []);
+p.setoverallwavenumber(30);
+p.setincidentwave(pi/6);
+p.solvecoeffs;
+p.showthreefields;
+\end{verbatim}
+which produces Fig.~\ref{f:hard} in about 1 sec of CPU time,
+to an accuracy of $10^{-9}$ (boundary condition $L^2$-norm).
+
+More generally we may have multiple domains with different
+wavenumbers connected by homogeneous or inhomogeneous boundary conditions,
+as in transmission, dielectric-coated, acoustic or photonics problems.
+With $k=0$ we have Laplace's equation, with applications to
+electrostatics, steady-state heat flow, and probability.
+In this release we discuss only boundary-value problems (BVPs).
+Extensions to eigenvalue and periodic problems are already in progress;
+we will document these in future releases.
+%We believe the object-oriented framework we have set up generalizes
+%gracefully to 
+
+The accompanying tutorial is the best way to leap right in to using
+the package.
+The rest of this rather brief manual is more of a `top-down' document,
+describing installation, the PDEs that may be solved,
+our data structures and design choices, limitations, and acknowledgments.
+As usual you
+may also get help on any \mpspack\ command by typing {\tt help} followed
+by the command name at the \matlab\ prompt.
+
+
+\subsection{Installation}
+
+Requirements: \matlab\ version 7.6 (2008a) or newer is needed,
+since we make heavy use of recent object-oriented programming features.
+No other \matlab\ toolboxes are needed.
+If you wish to use faster regular Bessel functions you may want to
+install the GNU Scientific Library \cite{GSL}.
+
+The project is hosted at the repository
+\co{http://code.google.com/p/mpspack}
+There are two alternative methods to download and unpack:
+\ben
+\item
+Ensure you have subversion ({\tt svn}) installed.
+This is available from {\tt http://subversion.tigris.org}.
+Anonymous check out (download) of \mpspack\ is then via the subversion
+command:
+\co{svn co http://mpspack.googlecode.com/svn/branches/release-1.0 mpspack}
+This creates a directory {\tt mpspack} containing the toolbox.
+
+%TODO: CHANGE LINK TO TAG DIRECTORY AFTER RELEASE VERSION IS TAGGED 1.0
+
+
+You might prefer a more user-friendly graphical
+subversion client such as those listed at {\tt
+http://subversion.tigris.org/links.html\#clients}
+
+\item
+Get a gzip-compressed tar archive from
+\co{http://code.google.com/p/mpspack/downloads/list}
+In a UNIX environment you may now
+unpack this with
+\co{tar zxvf mpspack-release-1.0.tar.gz}
+This creates the directory {\tt mpspack} containing the toolbox.
+
+%TODO: ALSO MAKE AVAILABLE ZIP ARCHIVE
+
+\een
+There are some optional fast basis and other math libraries
+(C and Fortran with MEX interfaces), which should be compiled
+in a UNIX environment as follows:
+from the {\tt mpspack} directory type {\tt make}.
+(If GSL \cite{GSL} is not installed, you will need to remove the
+references to {\tt gsl} codes in {\tt @utils/Makefile} before
+executing {\tt make}).
+
+You should now add the {\tt mpspack}
+directory to your \matlab\ path, for instance by adding the line
+\co{addpath 'path/to/mpspack';}
+to your MATLAB {\tt startup.m} file.
+You are now ready to use \mpspack\ !
+
+
+\subsection{What problems can \mpspack\ solve?}
+\label{s:bvp}
+
+Here we give a
+general framework (for examples see \cite{mfs,polygonscatt}). 
+Let $\Omega_j \subset \mathbb{R}^2$, $j=1,\ldots,D$ be a set of
+(possibly multiply connected) domains. One of the domains may
+be an exterior domain.
+The solution domain is $\Omega:=\bigcup_{j=1}^D \Omega_j$,
+and we seek a solution $u:\Omega \to\mathbb{C}$.
+In each domain we have,
+\be
+(\Delta+n_j^2k^2)u\; =\; 0 \qquad \mbox{in } \Omega_j~,
+\label{e:helmj}
+\ee
+where the `overall wavenumber' (or frequency) $k$ has been scaled by
+$n_j$ for each domain. In the optical application $n_j$ is interpreted
+as a {\em refractive index} (with $n_j=1$ vacuum or `air') and we
+will use this name.
+
+For all boundaries $\Gamma_j := \pO_j \cap \pO$
+at the edge of the solution domain we have boundary conditions
+\be
+a_ju + b_j u_n\;=\;f_j\qquad \mbox{on } \Gamma_j~,
+\label{e:bc}
+\ee
+where $a_j, b_j \in \mathbb{C}$ are complex numbers (currently; in future they
+may be functions on the boundary), and $f:\Gamma_j \to \mathbb{C}$ 
+are (possibly identically zero) driving functions.
+$u_n$ is short for $\mbf{n}\cdot \nabla u$, the
+normal derivative on the boundary.%
+  \footnote{Within this framework it is possible to have domains with
+    `slits' or cracks, as long as each side of the crack
+    is defined to be a different part of $\Gamma_j$.}
+If there is a nonempty
+{\em common} boundary $\Gamma_{ij} := \pO_i \cap \pO_j$
+then it has value and derivative matching (continuity) conditions,
+\bea
+%\left.\begin{array}{rcl}
+a_{ij}^+ u^+ + a_{ij}^- u^- &=& f_{ij}\qquad \mbox{on } \Gamma_{ij}~,
+\label{e:match}
+\\
+b_{ij}^+ u_n^+ + b_{ij}^- u_n^- &=& g_{ij}\qquad \mbox{on } \Gamma_{ij}~,
+\label{e:matchn}
+\eea
+where $a_{ij}^+,a_{ij}^-,b_{ij}^+,b_{ij}^-$ are numbers
+and $f_{ij}, g_{ij}$ are driving functions.
+The notation $u^+$ ($u^-$) means the
+limiting value approaching the boundary $\Gamma_{ij}$
+from its positive (negative) normal side.
+
+We assume all the boundaries $\Gamma_j$ and $\Gamma_{ij}$
+are piecewise smooth, and each smooth piece we
+will build from one or more {\em segments}.
+If $\Omega_j$ is the exterior domain (with $n_j=1$), we may wish to impose
+additional boundary conditions at infinity, such as Sommerfeld's
+radiation condition,
+\be
+iku - \frac{\partial u}{\partial r} = o(r^{1/2})~,
+\ee
+where $r$ is the radial coordinate.
+This occurs in the scattering context, where the unknown satisfying
+the above BVP is now usually renamed $u_s$, and the total field
+is then $u = u_{inc} + u_s$ with $u_{inc}$ the incident wave
+\cite{coltonkress}.
+As is standard with integral equation methods,
+this is achieved by choosing basis sets (MFS, layer potentials, etc.)
+satisfying the radiation condition.
+
+To solve a BVP the flow using \mpspack\ is often as follows
+(look back to the code given in Sec.~\ref{s:overview}):
+\ben
+\item define piecewise-smooth segments forming all boundaries
+\item build domains using various of these segments as their boundaries
+\item set up (in)homogeneous boundary or matching conditions on each segment
+\item choose basis set(s) within each domain
+\item build then solve a dense least-squares
+linear system to get the basis coefficient vector
+\item check residual error in satisfying boundary and matching conditions
+\item evaluate and plot solution on desired points or grid
+\een
+The accompanying
+tutorial document is a good way to explore these steps
+in the context of examples.
+We now discuss how software data structures represent the above objects.
+
+
+
+\bfi % fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+\ig{width=\textwidth}{relat.eps}
+\ca{Relationship between segments, domains,
+and basis sets in a simple example.
+The physical geometry is shown on the left. There is a regular
+Fourier-Bessel basis in domain {\tt d}, and a layer-potential
+density on segment {\tt p} which affects both domains {\tt d} and {\tt e}.
+The corresponding
+code objects are on the right.
+Pointers to the four segments, two domains, and two basis sets are
+stored within the problem instance.}{f:relat}
+\efi
+
+
+% --------------------------------------------------------------------------
+\section{Objects: segments, domains, and basis sets}
+
+Fig.~\ref{f:relat} overviews how segments, domains and basis sets are
+represented in \mpspack\ in a simple example.
+For all these objects we use \matlab's {\tt handle} class,
+which means that only a single copy of any object instance is
+stored, and any time an instance is copied or passed as a function argument,
+it is a {\em pointer} to that instance that is duplicated.
+(This contrasts the {\tt value} class, such as numeric variables,
+in which the {\em actual data} is duplicated when copied or passed as an
+argument.)
+Thus each domain stores (as one of its properties)%
+  \footnote{A {\em property} is a variable stored inside the
+    object instance, just like a field {\tt a.b} inside a struct {\tt a}.}
+an array of pointers to the
+segments forming its boundary.
+It also stores a cell array of the basis sets that
+contribute to the solution inside it.
+Each basis set stores a list of the domains it affects---usually
+this is a single domain.
+There are also boundary conditions stored in
+each segment, which are not shown.
+The `problem' object (BVP, scattering problem, etc) contains arrays of
+(pointers to) all relevant segments, domains, and basis sets.
+{\em Methods} (i.e. commands available which act on the problem class)
+then use this internal information to, for instance,
+construct a matrix and solve the problem.
+
+\subsection{Segments} % and pointsets}
+
+All coordinates in the plane are stored as complex double-precision
+numbers. In other words the point 
+$(2,3)$ is represented by $2+3i$ in \mpspack.
+A segment is specified as a parametrized complex-valued
+function $z(t)$ for $0\le t\le 1$, and $z'(t)$ is also needed.
+If {\tt s} is a segment, these are stored as the properties
+{\tt s.Z} and {\tt s.Zp} respectively.
+Given a list {\tt s.t} of quadrature points on $[0,1]$
+(and their weights),
+the parametrization $z$ is used to compute quadrature point locations
+{\tt s.x} and weights {\tt s.w}
+for approximating integrals with respect to arc-length on the segment.
+Unit normals {\tt s.nx} are computed when needed via the expression $-iz'/|z'|$,
+which shows that a segment's normal always points to the {\em right}
+when the segment is traversed in its natural direction (increasing $t$);
+see Fig.~\ref{f:relat}.%
+  \footnote{A segment is in fact a
+    subclass of a simple object we call a pointset.
+    A pointset {\tt p} contains only a list of locations {\tt p.x}
+    and possibly corresponding normal directions {\tt p.nx}.}
+Since our focus is on high-order and accurate methods,
+we feel that forcing the user to go to the trouble of providing $z$ and $z'$
+is reasonable.%
+  \footnote{In future releases we may allow $z$ and $z'$ to be automatically
+    generated by high-order polynomial fits to a set of boundary points such
+    as might be available from an engineering or CAD package.}
+The benefit is that highly accurate quadrature is possible, and
+the user may simply switch between quadrature schemes ({\tt s.quadr})
+and numbers of points.
+
+Segments start out their lives {\em unconnected} to any domains,
+as evidenced by two empty elements as their domain connection
+property cell-array \\
+\verb?s.dom = {[] []}?.
+
+\subsection{Domains}
+
+A domain object {\tt d} contains as properties
+an ordered list of segments {\tt d.segs} which form its
+boundary, and an equal-sized
+list {\tt d.pm} of {\em senses} ($\pm1$)
+specifying whether each segment is to be taken in its `forward'
+(natural, $+1$) direction, or `backward' (reverse, $-1$) direction.
+All segments taken in these (possibly reversed) senses must
+i) connect up head to tail in the correct order,
+in one or more connected closed loops,
+and ii) have the domain interior lying to its left side when traversed
+according to its sense.
+The latter ensures that the segment normals, {\em when multiplied by the
+corresponding senses}, always point {\em outwards} (away) from
+the domain.
+It is a helpful exercise for the reader to
+check that they are able to write down correctly from the geometry
+the {\tt pm} arrays in Fig.~\ref{f:relat}.
+
+In order to distinguish disconnected components of the boundary of
+{\tt d}, the list {\tt d.spiece} specifies which boundary piece each
+segment is part of. E.g.\ {\tt spiece = [1 1 2 3]} means
+there are three boundary pieces, the first involving
+two segments, and the other two only one segment each.
+If {\tt s.exterior = 0}
+then the domain is not an exterior domain, thus we could deduce that
+there is an outer boundary (which is always the first piece, and 
+taking into account senses is traversed in a CCW direction)
+with two excluded regions (each traversed in a CW direction).
+On the other hand, if {\tt s.exterior = 1} the domain is the whole plane
+with three disjoint excluded regions (each in a CW direction).
+We recommend now looking at the plots produced by
+{\tt test/testdomain.m} and examining their object properties
+at the command prompt.
+
+Each domain also contains a list of corners where segments meet:
+the first corner is where the
+end of the last segment of piece 1 joins the start of the first segment
+of piece 1. Subsequent corners follow in the same order as segments.
+The angles (in radians) subtended by each 
+corner on the domain interior side are in {\tt d.cang}, and their
+locations in {\tt d.cloc}.
+The angle at which segment {\tt d.seg(j)}
+`heads off in' at its start (when taken in the sense given by
+{\tt pm} as above) is {\tt d.cangoff(j)},
+expressed as a complex number on the unit circle.
+The advantage of domains containing corner information is that
+corner-adapted basis sets may automatically be added.
+
+When a domain is constructed by passing in lists of segments
+and senses, the relevant segment's side is {\em connected} to the domain.
+E.g.\ if the natural positive side of segment {\tt s} has been used
+as a boundary (approaching from the interior) of domain {\tt d},
+we find \verb?s.dom{1} = d?.
+This bookkeeping is used to ensure that each side of a segment
+can only be connected to at most one domain.
+If a domain-connected segment {\tt s} is to be reused making new domains,
+one must first run the method {\tt s.disconnect}
+which empties both elements of the {\tt s.dom} cell array.
+
+
+\subsection{Boundary conditions}
+
+These are stored on a per-segment basis, as properties of each segment
+instance. A boundary condition (BC) may reside on only {\em one} side of a
+segment (\mpspack\ checks that this side is connected to a domain),
+as specified by the {\tt bcside} property.
+{\tt s.bcside = +1} indicates a BC on the natural (positive
+normal) side of segment {\tt s}, and {\tt s.bcside = -1} a BC on the
+opposite (negative normal) side.
+(This is independent of any of the {\tt pm} senses stored in the connected
+domains.)
+Then the numbers {\tt s.a}, {\tt s.b},
+and function handle {\tt s.f} give the
+$a_j$ and $b_j$ coefficients and function $f_j$ from \eqref{e:bc}.
+
+If {\tt s.bcside = 0} this indicates a matching condition
+\eqref{e:match} and \eqref{e:matchn} rather than a BC. In this case,
+{\tt s.a} contains a 2-element array with coefficients
+$[a^+, a^-]$ from \eqref{e:match}, {\tt s.b} contains
+$[b^+, b^-]$ from \eqref{e:matchn},
+and {\tt s.f} and {\tt s.g} contain the functions $f$ and $g$.
+
+In the above, function handles may be replaced by a list (column vector)
+of function {\em values}
+at the quadrature points (however, now the user must ensure that, if
+the quadrature points change, that these function values are updated
+accordingly).
+
+
+\subsection{Basis sets}
+
+A basis set object {\tt b} affects the
+function values inside the domain in the pointer {\tt b.doms}.%
+  \footnote{In fact, {\tt doms} may be a list, but currently only obscure
+    layer potential objects have the power to influence more than
+    one domian. Therefore we discuss only the simpler
+    case of one affected domain.}
+When a basis set is {\em added} to a basis-set-free domain {\tt d},
+two things happen: i) a new instance of the appropriate basis class
+is created, with \verb?d.bas{1}? pointing to this basis object,
+and ii) this basis object has property {\tt doms} set to {\tt d}.
+These pointers in both directions are shown in Fig.~\ref{f:relat},
+and help later bookkeeping to be rapid (i.e.\ free of searches).
+
+The types of basis objects currently implemented are
+\bi
+\item Regular Fourier-Bessel expansion ({\tt regfbbasis})
+of degree $N$, comprising the
+set of $2N+1$ functions, for Helmholtz ($k>0$),
+\bea
+&\{J_n(kr)\cos(n\theta)\}_{n=0,\ldots,N} \cup
+\{J_n(kr)\sin(n\theta)\}_{n=1,\ldots,N}\quad &\mbox{(real case)} \nonumber \\
+\mbox{or }&\{J_n(kr)e^{in\theta}\}_{n=-N,\ldots,N}
+&\mbox{(complex case)}\nonumber
+\eea
+where $(r,\theta)$ are polar coordinates relative to an origin $z_0$
+(basis property {\tt origin}).
+If the {\tt real} property is true (default), the real set is
+used, otherwise complex.
+Or, for the Laplace ($k=0$) case, as a function of coordinate $z$,
+\bea
+&\{1, \re w, \re w^2, \ldots, \re w^N,
+\im w, \ldots, \im w^N\}
+\quad &\mbox{(real case)} \nonumber \\
+\mbox{or }&\{w^{-N}, w^{-N+1}, \ldots, w^N\}&\mbox{(complex case)}\nonumber
+\eea
+where $w:= z-z_0$.
+
+\item Fractional-order (wedge of angle $\pi/\nu$) Fourier-Bessel expansion
+({\tt nufbbasis})
+of degree $N$, for Helmholtz ($k>0$),
+\bea
+&\{J_{\nu n}(kr)\cos(\nu n\theta)\}_{n=0,\ldots,N}\quad &\mbox{(cos type)} \nonumber \\
+&\{J_{\nu n}(kr)\sin(\nu n\theta)\}_{n=1,\ldots,N}&\mbox{(sin type)}\nonumber
+\eea
+where $(r,\theta)$ are polar coordinates relative to the wedge corner $z_0$
+such that $\theta=0$ is aligned with the most clockwise edge of the wedge
+interior.
+The basis set may be of three types (property {\tt type}):
+{\tt 'c'} cos type only ($N+1$ functions),
+{\tt 's'} sin type only ($N$ functions), and
+{\tt 'cs'} cos and sin types ($2N+1$ functions). 
+The cos type satisfies zero Neumann BCs on the wedge boundary, the sin type
+zero Dirichlet BCs.
+Since they have a singularity at $z_0$, the branch cut is chosen
+(angle property {\tt branch}) by default to point symmetrically away from
+the wedge interior.
+
+No complex version is implemented.
+Or, for the Laplace ($k=0$) case,
+\bea
+&\{r^{\nu n}\cos(\nu n\theta)\}_{n=0,\ldots,N}\quad &\mbox{(cos type)} \nonumber \\
+&\{r^{\nu n}\sin(\nu n\theta)\}_{n=1,\ldots,N}&\mbox{(sin type)}\nonumber
+\eea
+
+\item Set of real (as opposed to evanescent) plane waves ({\tt rpwbasis}),
+with $N$ travel directions $\mbf{n}_j = (\cos \theta_j, \sin \theta_j)$, where
+$\theta_j = \pi j/N$, $j=1,\ldots,N$, for $k>0$,
+\bea
+&\{\cos(k \mbf{n}_j \cdot \bx)\}_{j=1,\ldots,N} \cup
+\{\sin(k \mbf{n}_j \cdot \bx)\}_{j=1,\ldots,N}
+\quad &\mbox{(real case)} \nonumber \\
+&\{e^{ik \mbf{n}_j \cdot \bx}\}_{j=1,\ldots,N} \cup
+\{e^{-ik \mbf{n}_j \cdot \bx}\}_{j=1,\ldots,N}&\mbox{(complex case)}\nonumber
+\eea
+Here the coordinate is $\bx:=(x,y)$,
+and the usual dot product in $\mathbb{R}^2$ is used.
+Note the travel directions are equally spaced in $(0,\pi]$.
+If the {\tt real} property is true (default), the real set is
+used, otherwise complex. There are $2N$ functions in each case.
+The $k=0$ limit does not give a useful basis set, so it left undefined.
+
+\item Set of fundamental solutions ({\tt mfsbasis}), with $N$ origins
+(charge points) $\by_j \in \mathbb{R}^2$, $j=1,\ldots, N$,
+a linear combination of monopole and dipole,
+\be
+\{i\eta\Phi(\bx,\by_j) + \frac{\partial\Phi}{\partial n_{\by_j}}(\bx,\by_j)
+\}_{j=1,\ldots, N}
+\ee
+where $\eta\in\mathbb{C}$ is a parameter (property {\tt eta}),
+and the fundamental solution is defined for $\bx\in\mathbb{R}^2\setminus\{\by\}$
+as
+\be
+\Phi(\bx,\by) = \Phi(\bx-\by) =
+\left\{\begin{array}{ll}\frac{i}{4}H_0^{(1)} (k|\bx-\by|),&k>0\\
+\frac{1}{2\pi}\log\frac{1}{|\bx-\by|},& k=0\end{array}\right.      
+\label{e:fund}
+\ee
+Note that the normal derivative of $\Phi$ is taken with respect to its second
+argument, as in a double-layer kernel.
+The linear combination of monopoles and dipoles is useful to prevent interior
+resonances of the MFS curve, hence poor conditioning \cite{polygonscatt}.
+The case {\tt eta=Inf} is interpreted as monopoles only, that is,
+\be
+\{\Phi(\bx,\by_j)\}_{j=1,\ldots, N}
+\ee
+
+
+\item Single- and double-layer potentials ({\tt layerpot}) lying on a segment,
+\be
+u(\bx) = {\cal S}\sigma (\bx) := \int_\Gamma \Phi(\bx,\by) \sigma(\by) ds_\by
+\ee
+where $ds$ is arclength, or double-layer potential (DLP) density
+\be
+u(\bx) = {\cal D}\tau (\bx)
+:= \int_\Gamma \frac{\partial \Phi(\bx,\by)}{\partial n_\by} \tau(\by) ds_\by
+\ee
+where $\Gamma$ is a segment
+(property {\tt seg}),
+and $\sigma$ and $\tau$ are functions on $\Gamma$ represented by
+their values at the segment's $M$ quadrature points.
+\ei
+
+Regular and fractional Fourier-Bessels also may be {\em rescaled},
+i.e.\ basis fuctions normalized to all have a similar-sized value at a given
+radius, in order to improve numerical stability and keep coefficient sizes
+similar. This radius is the basis property \verb?rescale_rad? (default
+is 0, no rescaling).
+
+\subsection{Basis set evaluation}
+
+Any basis set {\tt b} can be {\em evaluated} at a column vector {\tt x}
+of points $\{\bx_i\}_{i=1,\ldots,M}$
+by making from them a pointset object {\tt z = pointset(x)},
+then using one the following,
+\begin{verbatim}
+   A = b.eval(z)
+   [A An] = b.eval(z)
+   [A Ax Ay] = b.eval(z)
+\end{verbatim}
+If the set of basis functions in {\tt b} are labeled
+$\{\xi_j\}_{j=1,\ldots,N}$, then
+the matrix {\tt A} has the $ij-$th element $\xi_j(\bx_i)$. The
+second and third methods above also return first-derivatives of the
+basis functions, either the normal ({\tt An}) or Cartesian ({\tt Ax, Ay})
+derivatives. As you might expect, for the normal derivative case only
+the pointset must also contain a list of normals, i.e.\
+ {\tt z = pointset(x, nx)}.
+
+All these dense basis set matrices
+are evaluated in a reasonably efficient manner
+(see Sec.~\ref{s:tweak}).
+With a coefficient vector $\mbf{c}$, the linear combinations
+$\sum_{j=1}^N c_j \xi_j(\bx_i)$ are given by the product
+of {\tt A} with the column vector.
+We chose to have the basis evaluation interface return these dense
+matrices, with cost $O(NM)$,
+since they will be stacked together as blocks of a larger
+matrix (see next section), and all our linear algebra is dense.
+However, for large-scale problems Fast Multipole method for computing
+a weighted sum of fundamental solutions would be
+better, for instance costing $O(N\log N)$ when $M=N$.
+We do not implement these yet, since our focus is on small to medium
+problems.
+
+
+
+
+% --------------------------------------------------------------------------
+\section{Solution methods and problem classes}
+
+A problem class object contains as properties lists of (pointers to)
+basis sets, domains, and segments; see Fig.~\ref{f:relat}.
+%[ARE DOMAINS ACTUALLY NEEDED TO BE STORED AS PROBLEM PROPERTIES?
+%if a domain is not affected by any basis set, it is not in the problem, right?]
+These are collected%
+  \footnote{For instance, segments are extracted from the domains passed in,
+    then duplicate segments are removed.}
+when domains are passed into a problem
+constructor (see tutorial for examples).
+The main method {\tt fillbcmatrix} common to all problem classes
+fills the block-structured matrix {\tt A} which maps the
+coefficient vector {\tt co} 
+(stacked column vectors of basis coefficients for all
+bases or degrees of freedom in the problem)
+to the boundary condition {\em inhomogeneity vector}.
+The latter is defined as the left-hand sides of
+\eqref{e:bc}, or \eqref{e:match} and \eqref{e:matchn}
+as appropriate, evaluated on the quadrature points
+of each segment of the problem
+and stacked together to give one column vector,
+when $u$ is given by its basis representation in each domain.%
+  \footnote{This inhomogeneity vector is in fact multiplied elementwise by the
+    square-root of the quadrature weight vector {\tt sqrtwei},
+    so that $L^2$ and $l_2$ norms become equal.}
+The matrix {\tt A} has block structure \cite{polygonscatt}, where the
+order of the block columns matches that of the problem basis
+objects {\tt bas}, and the order of the block rows
+matches that of the problem segments {\tt segs}.
+
+All problem classes contain various helper methods such as
+\bi
+\item
+{\tt updateN(N)} which sets the degree of all basis sets in the
+problem to $N$ times their scale factor {\tt bas.nmultiplier}
+(by default this is 1 for each basis object).
+Note that the total number of degrees of freedom is often several times
+larger than $N$.
+\item
+{\tt fillquadwei} which fills {\tt p.sqrtwei} the row vector of
+(square-roots of)
+quadrature weights, in the same order as the inhomogeneity vector
+\item {\tt setoverallwavenumber(k)} which sets the problem wavenumber to $k$,
+and hence the wavenumbers in domain $j$ to $n_j k$ as in \eqref{e:helmj}
+\item {\tt pointsolution(z)} which evaluates $u$ at the pointset {\tt z}
+(by checking into which domain each point in the pointset falls%
+  \footnote{Note that this is currently quite approximate, though usually
+    adequate for plotting purposes. It is computed using an approximating
+    polygon for the domain, with 50--100 or so sides per curved segment.
+    See {\tt domain.inside}.}),
+and utilities which build on this such as {\tt gridsolution} and
+{\tt showsolution}. Currently these routines discard the
+basis evaluation matrices used on the plotting grids---clearly 
+this design choice could be improved when multiple problems at the
+same wavenumber are to be solved.
+\item methods which plot problem geometry rather than fields, such as
+{\tt showbdry}, {\tt showbasesgeom}, and {\tt plot}.
+These are most useful for checking that the problem has been set up correctly.
+\ei
+
+In order to solve a problem, it is intended that the user create one of the
+convenient classes {\tt bvp} or {\tt scattering}, outlined below.
+
+
+\subsection{Boundary-value problem class: {\tt bvp}}
+
+This class is a subclass of {\tt problem}, and solves
+the BVP from the first part of Sec.~\ref{s:bvp}.
+All domains in the problem are passed to the constructor
+as a single array, as in {\tt p = bvp(doms)}.
+When the solution is requested via {\tt p.solvecoeffs}, 
+the right-hand side vector {\tt p.rhs} is first created which
+contains the right-hand sides of \eqref{e:bc}, or \eqref{e:match} and
+\eqref{e:matchn}, for each problem segment, stacked in order,
+multiplied elementwise
+by the square-roots of the quadrature weights {\tt p.sqrtwei}.
+This `left diagonal preconditioning' of linear system
+by the square-root of quadrature weights is chosen so that
+the minimum $L^2$ boundary error in solving the BVP is
+given by the minimum $l_2$ residual norm in solving the linear system,
+\co{A*co = rhs}
+This least-squares solution is done internally via {\tt p.linsolve}
+which simply calls \matlab's dense solver ({\tt backslash} command).
+
+Once the least-squares coefficient vector has been found, the
+solution $u$ is usually evaluated for plotting; see the tutorial for examples.
+
+%The problem class also contains the matrix $A$, right-hand side $\mbf{b}$,
+%and coefficient
+%vector $\mbf{c}$ in the linear system,
+%\be
+%A \mbf{c} = \mbf{b}
+%\ee
+%that results when basis sets are evaluated on boundary quadrature points.
+
+
+\subsection{Scattering problem class: {\tt scattering}}
+
+This class is a subclass of {\tt bvp}.
+It solves the frequency-domain
+scattering problem mentioned in the middle of Sec.~\ref{s:bvp}
+and defined in Sec.~8 of the tutorial, in \cite{polygonscatt},
+or in many standard texts \cite{coltonkress}.
+A BVP is solved for $u_s$, with right-hand side data {\tt rhs} deriving
+from the incident wave field $u_{inc}(\bx)$
+which is $\exp(ik \mbf{n}_{inc} \cdot \bx)$ in each air domain
+and 0 in all remaining problem domains.
+The incident wave direction is $\mbf{n}_{inc} = (\cos \theta,\sin \theta)$,
+and $\theta$ is set by the {\tt p.setincidentwave(theta)} command.
+More precisely, the right-hand side data for $u_s$ is
+the negative of the boundary-condition mismatches that $u_{inc}$
+possesses at each boundary, so that the total field $u=u_{inc}+u_s$ obeys
+homogeneous boundary or matching conditions on all segments.
+
+This class includes a useful plotting routine
+{\tt p.showthreefields} which uses {\tt p.gridsolution} and
+{\tt p.gridincidentwave} to compute and show separate subplots of
+$u_{inc}$, $u_s$ and $u$, as in Fig.~\ref{f:hard}.
+
+
+%An idea of the least squares boundary-condition functional $J(\mbf{c})$,
+%give integrals. ?
+
+
+% --------------------------------------------------------------------------
+\section{Tweaks and test routines}
+\label{s:tweak}
+
+By default \mpspack\ uses robust rather than fast math libraries.
+It is simple to switch to the following
+faster alternatives, but the user should be careful
+to check that the answers agree to their accuracy requirements.
+%  \footnote{We give approximate runtimes below based on a
+%    Intel Core Duo 2GHz laptop running Fedora 8 linux.}
+\ben
+\item Regular ($J$-type) Bessel functions, needed for {\tt regfbbasis.eval}.
+Each {\tt regfbbasis} object contains a property {\tt besselcode}
+that may be changed to {\tt 'r'} for Barnett's recurrence-relation
+implementation (2-3 times faster the \matlab\ but
+not guaranteed relative accuracy in
+the deep evanescent region),
+or {\tt 'g'} for MEX interface to GSL (nearly as fast as the recurrence
+version, and robust).
+
+\item Hankel functions of order 0 and 1, needed for
+{\tt mfsbasis.eval} and {\tt layerpot.eval}. Both these basis objects
+have a property {\tt fast} which may be 0 (\matlab\ implementation),
+or 1 or 2 (a MEX interface to Greengard-Rokhlin's Fortran code,
+roughly 5 times faster than \matlab).
+The user may change this property for each relevant basis object.
+
+\item Point-in-polygon checking is implemented by a MEX interface
+to a C code which was found to be about 70 times faster than
+\matlab. The implementation
+may be switched only by uncommenting lines
+in {\tt @utils/inpolywrapper.m}
+\een
+
+In the {\tt test/} directory you will find some routines that
+we use to validate \mpspack. These are of variable quality,
+but contain coding examples that you may find useful, in particular,
+\bi
+\item {\tt testsegment.m} builds and plots line, arc, and analytic function
+segments.
+\item {\tt testdomain.m} builds and plots nine domains of increasing
+complexity.
+\item {\tt testbasis.m} plots all basis function types over a grid and
+uses the finite-difference grid approximation to validate their derivatives.
+\item {\tt testbvp.m} shows the main steps for solution of a BVP on
+a variety of domains.
+\item {\tt testscattering.m} shows the main steps for solution of a 
+scattering problem on a variety of domains.
+\item {\tt testinpolywrapper.m} validates the MEX interface to point-in-polygon
+checking.
+\ei
+There are several other more specific test routines in the directory
+that we do not list here.
+
+\section{Known bugs and limitations}
+
+Current bugs and issues are listed at the repository site,
+
+{\tt http://code.google.com/p/mpspack/issues/list}
+
+Please alert the authors to any new
+bugs that you discover, including a description
+of how to reproduce the behavior, using this interface.
+
+You may also contact the authors with suggestions
+via their email addresses
+given on the source page {\tt http://code.google.com/p/mpspack}
+
+Limitations of, and planned future improvements to, the software include:
+
+\bi
+\item Two dimensions. Quadrature, decomposition into subdomains, and
+corner singularities, the
+main ideas upon which this toolbox is based, become much more complicated
+in three dimensions. 
+Implementing 3D problems would be a major undertaking.
+
+\item Eigenvalue problems, one of the main reasons the authors became
+interested in particular solutions methods, are not yet implemented.
+For efficiency in symmetric domains, such as Bunimovich's stadium,
+this would include
+classes which symmetrize basis sets for single reflection, $C_4$, etc
+symmetry, by wrapping the calls to basis evaluations using reflection
+points.
+
+\item The necessity to purchase commercial \matlab\ software.
+However, there are no free mathematical environments that we know of
+of comparable numerical versatility, plotting, and object-oriented capability.
+One idea would be to port to the promising-looking {\tt SAGE} and {\tt python}
+environment; get in touch if you would like to be involved.
+
+\item Some better tools for problem set-up are needed, such as:
+\bi
+  \item Automatic meshing, based on complex approximation theory
+  \item make {\tt domain.setbc} which uses one BC data function on all segments
+  \item segment methods to create analytic interpolant function from boundary
+point data, enabling user to specify a segment using points on a curve,
+as in {\tt FMMToolbox}.
+\ei
+
+\item Checking of whether a point is inside a domain is approximate,
+currently based on an approximating polygon of typically 50-100 sides
+per segment object.
+Better would be to use the segment parametrization function in
+an iterative scheme, since this could give machine precision.
+
+\item We have not tested complex wavenumber problems, which have
+applications to conductive media. We expect that some of the
+methods, such as layer potentials and fundamental solutions,
+will carry over without modification.
+
+\item Graded-index media problems, using Airy and other particular
+solutions.
+
+\item Better automated ways to choose MFS charge points given a domain,
+based on \cite{mfs}.
+
+\item Solution evaluation on boundary segments via {\tt segment.bdrysolution}
+ which evaluates $u$, $u_n$ on one
+or other side of a boundary.
+This should then be used by {\tt problem.fillbcmatrix}
+
+\item Incorporation of Fast Multipole Methods for evaluation with MFS and
+layer potentials, and iterative
+methods for second-kind layer potential formulations.
+High-order quadrature for self-evaluation of layer-potentials.
+
+\item Saving plotting-evaluation matrices
+for use with multiple right-hand sides.
+Using QR factors of {\tt problem.A} matrix
+for rapid solution with multiple right-hand sides.
+
+\item Computation of far-field distribution in a scattering problem
+from MFS or layer potential
+representation of a radiating solution. This needs a variant of a
+multipole-to-local matrix of $J$-Bessel functions.
+\ei
+
+Please contact the authors if you implement any of these and/or want
+to join the project!
+
+
+
+\section{Acknowledgments and credits}
+
+Almost all the code in \mpspack\ is written by 
+Alex Barnett and Timo Betcke.
+The concept and need for the package came out of our work in eigenvalue
+and scattering problems, using global basis methods.
+We have been influenced by, and learned useful tricks from,
+the Schwarz-Christoffel toolbox by Toby Driscoll,
+the {\tt FMMToolbox} by MadMax Optics, Inc.,
+and the {\tt chebfun} system
+by L. N. Trefethen, Z. Battles, T. Driscoll, R. Pach\'{o}n, and R. Platte.
+Alex Barnett's work is supported by National Science Foundation
+grants DMS-0507614 and DMS-0811005.
+Timo Betcke's work is supported by XXX.
+
+\mpspack\ is released under the GNU Public License, as follows:
+\begin{verbatim}
+Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
+
+MPSpack is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+
+MPSpack is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with MPSpack; if not, see <http://www.gnu.org/licenses>
+\end{verbatim}
+
+As part of the distribution (sometimes in order to
+improve performance over native \matlab\ libraries),
+we include codes written by others, as follows:
+\bi
+\item {\tt hank103.f} fast Hankel function computation, by
+V.~Rokhlin and L.~Greengard.
+\item {\tt kapurtrap.m} Kapur-Rokhlin periodic quadrature weights,
+by Z.~Gambutas.
+\item {\tt clencurt.m} and {\tt gauss.m}, quadrature nodes and weights,
+by L.~N.~Trefethen \cite{tref}.
+\item {\tt polypn.c} algorithm to check if a point is in a polygon,
+Copyright (C) 1970-2003, Wm.~Randolph Franklin.
+\item {\tt inpoly.m} algorithm to check if a point is in a polygon,
+Darren Engwirda, 2005-2007.
+\item {\tt copy.m} makes deep copy of \matlab\ handle object,
+Doug M.~Schwarz, 6/16/08.
+\ei
+
+
+\bibliographystyle{siam} 
+\bibliography{alexrefs}
+
+
+
+\end{document}

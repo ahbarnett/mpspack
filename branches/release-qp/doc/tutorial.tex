@@ -1,0 +1,58 @@
+\documentclass[11pt]{article}
+\usepackage{graphicx,bm,amssymb,amsmath,amsthm}
+\input{macros}
+
+\begin{document}
+\title{\mpspack\ tutorial}
+\author{Alex Barnett\footnote{Department of Mathematics, Dartmouth College,
+Hanover, NH, 03755, USA}
+\ and
+Timo Betcke\footnote{Department of Mathematics,
+University of Reading, Berkshire, RG6 6AX, UK}}
+\date{\today}   % how pipe from getrevisionnumber + 1?
+
+\maketitle
+\begin{abstract}
+This tutorial shows how a variety of two-dimensional Laplace and Helmholtz
+boundary-value problems
+may be numerically solved simply and accurately with the \mpspack\ toolbox
+for \matlab. We assume basic familiarity with \matlab\
+and with partial differential equations.
+%concept of particular-solution type numerical methods is assumed.
+\end{abstract}
+
+%\tableofcontents
+
+\section{About this tutorial}
+
+This tutorial is designed for `bottom-up' learning of the features
+of \mpspack, i.e.\ by progressing through simple examples.
+In that sense it complements the user manual which describes
+the theoretical framework in broad strokes and therefore could
+be considered `top-down'.
+We will skip most of the mathematics behind the techniques,
+focusing on computing and plotting useful PDE solutions.
+We hope you will try each command as you read!
+
+Throughout we will identify the plane $\mathbb{R}^2$ with the complex
+plane $\mathbb{C}$, by the usual map $z=x+iy$. In other words
+$(2,3)$ and $2+3i$ represent the same point.
+We use {\tt teletype} font to designate commands that may be typed
+at the \matlab\ prompt.
+You may get help on any \mpspack\ command by typing {\tt help command}.
+All the code examples in this document, including code to generate the
+figures, is found in the {\tt examples/} directory.
+The codes for Sections \ref{s:lap}--\ref{s:layer} are named
+\verb@tut_*.m@ according to the section names in {\tt tutorial.tex}.
+
+\input{tut_lap}
+\input{tut_conv}
+\input{tut_ext}
+\input{tut_poly}
+\input{tut_scatt}
+\input{tut_layer}
+\input{tut_exa}
+
+\bibliographystyle{siam} 
+\bibliography{alexrefs}
+\end{document}

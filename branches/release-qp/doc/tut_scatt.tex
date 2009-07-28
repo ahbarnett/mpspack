@@ -1,0 +1,117 @@
+\bfi % ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+\ig{width=\textwidth}{soft.eps}
+\ca{Sound-soft (homogeneous Dirichlet BC) scattering from a smooth
+trefoil at $k=30$ using an MFS basis.
+Left: incident wave $u_{inc}$. Center: scattered wave
+$u_s$. Right: their sum, the total solution field $u$.}{f:soft}
+\efi
+
+
+
+% ----------------------------------------------------------------------------
+\section{Scattering and transmission problems}
+\label{s:scatt}
+
+Scattering of scalar waves (acoustic, or suitably-polarized Maxwell
+equations) involves finding a Helmholtz solution $u = u_{inc} + u_s$
+with homogeneous boundary conditions
+on an obstacle, given an incident (often plane-wave)
+Helmholtz solution $u_{inc}$.
+The unknown $u_s$ is then the solution to the radiative
+exterior BVP solved in Sec.~\ref{s:ext}
+(see Sec.~\ref{s:scatbvp} for more detail), with inhomogenous boundary data
+related to $u_{inc}$.
+
+We designed a {\tt scattering} class to 
+implement this in a user-friendly fashion. Creating the analytic
+{\tt tref} segment (with $M=250$)
+and its exterior domain {\tt d} as in the start of
+Sec.~\ref{s:ext}, we set up and solve the sound-soft scattering
+problem as follows,
+\begin{verbatim}
+opts.tau = 0.05; d.addmfsbasis(tref, 200, opts);  % basis set for ext domain
+s.setbc(1, 'D', []);                  % homogeneous Dirichlet BCs: sound-soft
+p = scattering(d, []);
+k = 30; p.setoverallwavenumber(k);
+p.setincidentwave(pi/6);              % incident plane wave with given angle
+p.solvecoeffs;                        % fills matrices, least-squares soln
+\end{verbatim}
+The quadrature approximation to the $L^2$ boundary error is $3\times10^{-10}$
+as given by {\tt p.bcresidualnorm}; exponential convergence could be checked
+with a little loop as in Sec.~\ref{s:conv}. 
+The incident wave, scattered wave, and solution are plotted%
+  \footnote{We in fact tweaked the grid spacing and bounding-box options via
+{\tt o.dx=0.01; o.bb = 2*[-1 1 -1 1]; p.showthreefields(o);}}
+as in Fig.~\ref{f:soft} by typing {\tt p.showthreefields}.
+The solution took around 0.1 sec; the time for plotting is around 1 sec, but
+depends on the grid resolution requested.
+A good choice of the {\tt opts.tau} distance parameter must usually found
+by trial and error, examining the charge point locations and solution quality.
+
+We may trivially switch to other physical boundary conditions by replacing
+the {\tt setbc} command with either of the following,
+\begin{verbatim}
+s.setbc(1, 'N', []);                  % homogeneous Neumann: sound-hard
+s.setbc(1, 1i*k, 1);                  % homogeneous Robin: impedance
+\end{verbatim}
+In the latter case a boundary condition $iku + u_n=0$ is applied, which
+strongly absorbs incident waves.
+
+\bfi % ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+\ig{width=\textwidth}{diel.eps}
+\ca{Transmission scattering from a smooth
+trefoil with refractive index (interior to exterior wavenumber ratio) 1.5
+and exterior wavenumber $k=30$,
+using MFS bases inside and out.
+Left: incident wave $u_{inc}$. Center: scattered wave
+$u_s$. Right: total solution field $u$.}{f:diel}
+\efi
+
+A transmission problem involves coupled regions of different wavenumber,
+for instance wavenumber $k$ in an exterior domain, and wavenumber $nk$ in
+its complement, where $n$ is the `refractive index'%
+  \footnote{Here we borrow notation from the optical application.}
+of the interior.
+Reusing the above domain {\tt d} and its basis, we need a new interior domain
+{\tt di}
+and its MFS basis (with charge points this time outside the boundary curve),
+\begin{verbatim}
+di = domain(tref, 1); di.refr_ind = 1.5;
+opts.tau = -0.03; di.addmfsbasis(tref, 220, opts);
+tref.setmatch('diel', 'TM');
+p = scattering(d, di);               % d is an `air' domain, di not air domain
+p.setoverallwavenumber(k);
+\end{verbatim}
+The matching condition that $u$ and $u_n$ are continuous across the interface
+is appropriate for TM-polarized Maxwell (in two dimensions, i.e.\
+$z$-invariant), for a dielectric problem, hence the {\tt setmatch}
+arguments.
+%This is also appropriate for acoustics when $u$ represents
+%the pressure field. - NOTE SURE ABOUT THIS.
+Then, {\tt p.solvecoeffs; p.showthreefields;} produces
+Fig.~\ref{f:diel}, which has error in boundary matching
+(summing the $L^2$ errors in the jump in $u$ and jump in $u_n$)
+of $10^{-6}$ given by {\tt p.bcresidualnorm}.
+It can be verified that the convergence is exponential; MFS bases are an
+excellent choice for analytic boundaries.%
+  \footnote{If condition number is not a problem \cite{mfs}.
+    For well-conditioned
+    formulations, layer potentials are needed as described in the next
+    section.}
+
+Notice that the {\tt scattering} constructor takes {\em two} arguments
+(recall {\tt bvp} took only one, the domain or list of domains in the problem).
+The first argument is the (list of)
+`air' (as opposed to dielectric) domains, the second the `non-air' domains.
+The former are interpreted as the domains which have
+the incident plane wave as their $u_{inc}$;
+notice the non-air domain {\tt di} has trivial $u_{inc}$ in the left plot
+of Fig.~\ref{f:diel}, because this index $n\neq 1$ domain
+does not have the incident plane wave as a Helmholtz solution of the
+correct wavenumber $nk$.
+In the above, there was no freedom of choice of the air/non-air categorization,
+but in more complicated problems the exterior region may be divided into
+subdomains, some of which are passed in as air domains, others not;
+see Sec.~\ref{s:square}.
+This enables dielectric-coated metals, dielectrics with interior holes,
+etc, to be solved; see Sec.~\ref{s:dielhole}.
