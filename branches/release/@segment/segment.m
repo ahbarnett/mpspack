@@ -25,6 +25,9 @@
 %  s = SEGMENT() creates an empty segment object.
 %
 % See also: POINTSET, segment/PLOT
+%
+% Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
+
 
 classdef segment < handle & pointset
     properties
