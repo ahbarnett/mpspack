@@ -145,10 +145,10 @@ Ensure you have subversion ({\tt svn}) installed.
 This is available from {\tt http://subversion.tigris.org}.
 Anonymous check out (download) of \mpspack\ is then via the subversion
 command:
-\co{svn co http://mpspack.googlecode.com/svn/branches/release mpspack}
+\co{svn co http://mpspack.googlecode.com/svn/branches/release-1.0 mpspack}
 This creates a directory {\tt mpspack} containing the toolbox.
 
-TODO: CHANGE LINK TO TAG DIRECTORY AFTER RELEASE VERSION IS TAGGED 1.0
+%TODO: CHANGE LINK TO TAG DIRECTORY AFTER RELEASE VERSION IS TAGGED 1.0
 
 
 You might prefer a more user-friendly graphical
@@ -160,10 +160,10 @@ Get a gzip-compressed tar archive from
 \co{http://code.google.com/p/mpspack/downloads/list}
 In a UNIX environment you may now
 unpack this with
-\co{tar zxvf mpspack.tar.gz}
+\co{tar zxvf mpspack-release-1.0.tar.gz}
 This creates the directory {\tt mpspack} containing the toolbox.
 
-TODO: ALSO MAKE AVAILABLE ZIP ARCHIVE
+%TODO: ALSO MAKE AVAILABLE ZIP ARCHIVE
 
 \een
 There are some optional fast basis and other math libraries
@@ -688,7 +688,7 @@ contains the right-hand sides of \eqref{e:bc}, or \eqref{e:match} and
 multiplied elementwise
 by the square-roots of the quadrature weights {\tt p.sqrtwei}.
 This `left diagonal preconditioning' of linear system
-by the quadrature weights is chosen so that
+by the square-root of quadrature weights is chosen so that
 the minimum $L^2$ boundary error in solving the BVP is
 given by the minimum $l_2$ residual norm in solving the linear system,
 \co{A*co = rhs}
@@ -722,7 +722,7 @@ The incident wave direction is $\mbf{n}_{inc} = (\cos \theta,\sin \theta)$,
 and $\theta$ is set by the {\tt p.setincidentwave(theta)} command.
 More precisely, the right-hand side data for $u_s$ is
 the negative of the boundary-condition mismatches that $u_{inc}$
-possesses at each boundary, so that the totla field $u=u_{inc}+u_s$ obeys
+possesses at each boundary, so that the total field $u=u_{inc}+u_s$ obeys
 homogeneous boundary or matching conditions on all segments.
 
 This class includes a useful plotting routine
@@ -860,6 +860,7 @@ This should then be used by {\tt problem.fillbcmatrix}
 \item Incorporation of Fast Multipole Methods for evaluation with MFS and
 layer potentials, and iterative
 methods for second-kind layer potential formulations.
+High-order quadrature for self-evaluation of layer-potentials.
 
 \item Saving plotting-evaluation matrices
 for use with multiple right-hand sides.
@@ -869,7 +870,7 @@ for rapid solution with multiple right-hand sides.
 \item Computation of far-field distribution in a scattering problem
 from MFS or layer potential
 representation of a radiating solution. This needs a variant of a
-multipole-to-local matrix of regular bessel functions.
+multipole-to-local matrix of $J$-Bessel functions.
 \ei
 
 Please contact the authors if you implement any of these and/or want

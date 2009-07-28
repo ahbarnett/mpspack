@@ -19,6 +19,7 @@ classdef layerpot < handle & basis
 %
 % Also see: DOMAIN/ADDLAYERPOT, LAYERPOT/S, etc
 
+%          Copyright (C) 2008, 2009, Alex Barnett and Timo Betcke
   properties
     real                            % true if fund sol is Y_0, false for H_0^1
     seg                             % handle of segment on which density sits
@@ -44,9 +45,10 @@ classdef layerpot < handle & basis
       b.real = opts.real;
       if isfield(opts, 'quad'), b.quad = opts.quad; end  % quad=[] is default
       if isfield(opts, 'ord'), b.ord = opts.ord; end     % ord=[] is default
+      if ~isfield(opts,'nmultiplier'), opts.nmultiplier=1; end
+      b.nmultiplier = opts.nmultiplier;
       if ~isa(seg, 'segment'), error('seg must be a segment object!'); end
       b.seg = seg;
-      b.updateNf;                 % count the # dofs, is # quadr pts on seg
       b.N = b.Nf;
       if ~isnumeric(a)
         switch a
@@ -69,7 +71,7 @@ classdef layerpot < handle & basis
     
     function updateN(b,N) % ................ overloaded in some basis objects
     % UPDATEN - Change N and requadrature segment in proportion to an overall N
-      b.N = ceil(N * b.nmultiplier);
+      b.N = ceil(N * b.nmultiplier / 2) * 2;  % ensures even #, for Kress quad
       b.seg.requadrature(b.N);
     end
     

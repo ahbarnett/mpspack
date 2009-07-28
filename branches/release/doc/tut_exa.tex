@@ -144,11 +144,11 @@ o.dx=0.05;
 o.sepfigs=1;
 pr.showthreefields(o);
 \end{verbatim}
-The command {\texttt pr.showthreefields(o)} plots the incoming wave,
-scattered field and full field using the parameters given in {\texttt
-  o}. We have specified {\texttt o.sepfigs=1}. This creates three
+The command {\tt pr.showthreefields(o)} plots the incoming wave,
+scattered field and full field using the parameters given in {\tt
+  o}. We have specified {\tt o.sepfigs=1}. This creates three
 separate figures for the three different fields instead of plotting
-everyhting into one figure.
+everything into one figure.
 
 \begin{figure}
 \center
@@ -234,9 +234,9 @@ d.setrefractiveindex(1.5);                    % choose dielectric index
 
 Assuming relative permeability of unity, the relative
 permittivity of the dielectric is $\epsilon = n^2$.
-The transverse-electric (TE) boundary condition is that $u$ is continuous
+The TE boundary condition is that $u$ is continuous
 across a dielectric interface (segments {\tt sd} and {\tt sa}),
-while for the normal derivative $\epsilon^{-1} \partial u/\partial \nu$ is
+while for the normal derivatives $\epsilon^{-1} \partial u/\partial n$ is
 continuous.\footnote{See \cite{jackson}.
 See {\tt segment.dielectriccoeffs} for where this
 is set up in \mpspack.}
@@ -268,11 +268,11 @@ The distances {\tt tau} in the following should be chosen as large as possible
 while still keeping the coefficient norm {\tt norm(pr.co)} not too large
 (i.e.\ $10^4$ or less).
 \begin{verbatim}
-de.addmfsbasis(sd, 120, struct('tau',0.05)); % BASIS SETS: exterior domain
-da.addmfsbasis(sa, 60, struct('tau',-0.1)); % inside air pocket
-d.addmfsbasis(sd, 150, struct('tau',-0.05)); % 1st of 3 curves for diel...
-d.addmfsbasis(sm, 60, struct('tau',0.1));   % ...2nd curve in `metal' hole
-d.addmfsbasis(sa, 60, struct('tau',0.1));   % ...3rd curve in air hole
+de.addmfsbasis(sd, 120,struct('tau',0.05));  % exterior domain
+da.addmfsbasis(sa, 60, struct('tau',-0.1));  % inside air pocket
+d.addmfsbasis(sd,  150,struct('tau',-0.05)); % 1st of 3 curves for diel...
+d.addmfsbasis(sm,  60, struct('tau',0.1));   % ...2nd curve in `metal' hole
+d.addmfsbasis(sa,  60, struct('tau',0.1));   % ...3rd curve in air hole
 \end{verbatim}
 Note that the basis set degrees were optimized roughly for this $k$ value,
 giving only 450 total degrees of freedom for a problem around
@@ -284,37 +284,37 @@ pr.solvecoeffs; pr.bcresidualnorm
 The $L^2$ boundary error is less than $10^{-7}$.
 We then plot the incident, scattered, and total field as usual with
 {\tt pr.showthreefields;} giving Fig.~\ref{f:dielhole}.
-Computing the solution on a 400$\times$400 grid takes 11 sec.
+Evaluating the solution on a 400$\times$400 grid takes 11 sec.
 
 \subsubsection{Convergence study}
 Once a good set of MFS basis sizes has been chosen, as above, they
 may all be changed at once conveniently with the {\tt nmultiplier} option.
-We redo the basis sets as follows,
+We could have redone the basis sets as follows,
 \begin{verbatim}
 d.clearbases; de.clearbases; da.clearbases;
-de.addmfsbasis(sd, [], struct('tau',0.05,'nmultiplier', 120/450));
-da.addmfsbasis(sa, [], struct('tau',-0.1,'nmultiplier', 60/450));
-d.addmfsbasis(sd, [], struct('tau',-0.05, 'nmultiplier', 150/450));
-d.addmfsbasis(sm, [], struct('tau',0.1, 'nmultiplier', 60/450));
-d.addmfsbasis(sa, [], struct('tau',0.1, 'nmultiplier', 60/450));
+de.addmfsbasis(sd, [], struct('tau',0.05, 'nmultiplier', 120/450));
+da.addmfsbasis(sa, [], struct('tau',-0.1, 'nmultiplier', 60/450));
+d.addmfsbasis(sd, [],  struct('tau',-0.05,'nmultiplier', 150/450));
+d.addmfsbasis(sm, [],  struct('tau',0.1,  'nmultiplier', 60/450));
+d.addmfsbasis(sa, [],  struct('tau',0.1,  'nmultiplier', 60/450));
 \end{verbatim}
 The mutipliers were set up to be the fraction of the total degrees of freedom
-that they were above, but now they can be scaled with a single command,
+that they were before, but now they can be scaled with a single command,
 viz, {\tt pr.updateN(450)} sets up the original basis sizes,
 as may be checked with {\tt diff([pr.basnoff pr.N])} which gives the
 numbers of degrees of freedom in each problem basis set.
 We put this in a convergence loop,
 \begin{verbatim}
 Ns=300:50:600; for i=1:numel(Ns)
-  pr.updateN(Ns(i)); pr.solvecoeffs;
-  fprintf('N=%d, co-norm=%g, bc-norm=%g, u(0)=%.16g\n', Ns(i), ...
-      norm(pr.co), pr.bcresidualnorm, pr.pointsolution(pointset(0)));
+  pr.updateN(Ns(i)); pr.solvecoeffs; u0 = pr.pointsolution(pointset(0));
+  fprintf('N=%d, co-norm=%g, bc-norm=%g, |u(0)|=%.16g\n', Ns(i), ...
+          norm(pr.co), pr.bcresidualnorm, abs(u0));
 end
 \end{verbatim}
-Note that we doubled the number of quadrature points on the original
-domains to perform this high-accuracy study, giving 680 quadrature points in
+We actually doubled the number of quadrature points on the original
+segments to perform this high-accuracy study, giving 680 quadrature points in
 total.
-The output is as follows,
+The output shows very rapid convergence,
 \begin{verbatim}
 N=300, co-norm=2125.38, bc-norm=0.000363003, |u(0)|=3.045222448551815
 N=350, co-norm=1968.37, bc-norm=1.26165e-05, |u(0)|=3.045222451567895
@@ -324,11 +324,10 @@ N=500, co-norm=1651.79, bc-norm=3.96167e-09, |u(0)|=3.045222451436035
 N=550, co-norm=1581.87, bc-norm=1.1487e-09,  |u(0)|=3.045222451436006
 N=600, co-norm=1521.16, bc-norm=1.44025e-10, |u(0)|=3.045222451436037
 \end{verbatim}
-This suggests convincingly
-that, at least for $u$ at the origin, we had 12 correct
+This suggests that, at least for $u$ at the origin, we had 12 correct
 digits in the solution with the total $N=450$ used above,
 and probably achieved 14 digits with $N=600$,
-computed in just a few seconds.
+computed in just a couple of seconds.
 
 
 
