@@ -76,7 +76,7 @@ classdef qpuclayerpot < handle & basis
     end
     
     function showgeom(b, varargin) % ............. crude show discr pts of segs
-      t =  b.copylist.t;
+      t =  b.copylist{:}.t;     % NB get t from all cell arrays
       for j=1:numel(t)
         seg(j) = b.pseg.translate(-t(j));   % make temp segment copies for plot
       end
@@ -99,10 +99,10 @@ classdef qpuclayerpot < handle & basis
       if nargin<4, opts = []; end
       if ~isfield(opts, 'poly'), opts.poly = 0; end
       N = b.Nf;                             % cut for speed? (now a method)
-      if b.uc.buffer==0
+      if b.uc.buffer==0       % 1x1 UC case
         opts.copylist = b.copylist{1};   % pass QPUC's copylist to lp summing...
         [varargout{1:nargout}] = b.lp.evalunitcellcopies(p, b.uc, opts);
-      else
+      else         % buffer>0, not working yet:
         M = numel(p.x);                           % height of each block column
         Ns = N/3;                                 % basis size for each 3 LPs
         B = zeros(M,N,opts.poly+1);               % preallocate
@@ -145,7 +145,7 @@ classdef qpuclayerpot < handle & basis
                                                         varargin{:});
     end % note how the datadummy asks for one more output arg than passed out.
     
-    function [Q d] = evalunitcelldiscrep(b, ucdummy, opts) % ....overloads basis
+    function [Q d] = evalunitcelldiscrep(b, uc, opts) % ....overloads basis
     % EVALUNITCELLDISCREP - return Q matrix mapping a QPUC basis to UC discrep
     %
     %  Same usage as basis/EVALUNITCELLDISCREP, which it overloads.
@@ -153,27 +153,27 @@ classdef qpuclayerpot < handle & basis
     %  Includes source quadr wei, ie dofs are density values, as always for LP.
     %  Currently uses no symmetry relations. Stores Bloch-indep interaction
     %   matrices using evalunitcellcopies data cells in d.
-    %  The 2nd input argument is ignored, since the basis already contains the
-    %   handle of unit cell. Ignores opts.nei since not applies to QPUC lp's.
+    %  Uses unit cell in 2nd argument.
+    %  Ignores opts.nei since does not apply to QPUC lp's.
+    %  uc.buffer = 0 gives 1x1 scheme, works
+    %  uc.buffer = 1 gives 3x3 scheme, which never worked correctly.
     %
     %  Uses only distant interactions + Id, so has spectral convergence.
     %  See testqpuclayerpot.m for convergence plot
     %
     % See also QPUCLAYERPOT, LAYERPOT, QPUNITCELL, basis/EVALUNITCELLDISCREP.
-      uc = b.uc;
       if nargin<3, opts = []; end
-      if ~isfield(opts, 'poly'), opts.poly = 0; end       % default no poly
+      if ~isfield(opts, 'dom'), opts.dom = uc; end     % eval in uc by default
+      if ~isfield(opts, 'poly'), opts.poly = 0; end    % default no poly
       recompute = ~isfield(opts, 'data');
-      % TODO:insert more detailed test for if data is current... (quick for now)
-      % recompute = (opts.dom.k~=d.k | nei~=d.nei |ucbuf~=d.ucbuf); %| numel(uc.L.x)~=size(d.L,1));
-      if ~recompute
-        d = opts.data; if isempty(d) | b.lp.Nf~=size(d{1}.B)  % check
+      if ~recompute    % data exists, could be out of date in a variety of ways
+        d = opts.data;
+        if isempty(d) || size(d{1}.B,1)~=b.Nf || d{1}.k~=opts.dom.k  % NB relop
           recompute=1; end
       end
       if recompute %--------------use uc.buffer to build copylist then fill data
         d = {};
         if isfield(opts,'data'), opts = rmfield(opts,'data'); end % ignore data
-        if ~isfield(opts, 'dom'), opts.dom = uc; end     % eval in uc by default
         if uc.buffer==0 %............1x1 unit cell discrep (d has 2 cells)
           c = uc.discrepcopylist(-1:1, 1, b.direc, 0);
           d{1} = b.lp.copiesdata(b.pseg, c.t, 2, opts); d{1}.copylist = c;
@@ -211,7 +211,7 @@ classdef qpuclayerpot < handle & basis
         [Qo Qon dummy] = ...
             b.lp.evalunitcellcopies(b.oseg, uc, opts); % get matrices for f, f'
       
-      elseif uc.buffer==1 %...........3x3 unit cell discrep (d has 16 cells)
+      elseif uc.buffer==1 %.......3x3 unit cell discrep (d has 16 cells),broken
         % contribs to same-direction target (parallel 'p') seg: ======
         Qp = zeros(3*MP, 3*MP, opts.poly+1); Qpn = Qp;
         % r gives list of row indices stored in d{1:7} needed for each subblock

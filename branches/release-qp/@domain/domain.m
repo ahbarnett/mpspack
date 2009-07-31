@@ -229,12 +229,12 @@ classdef domain < handle
       % methods defined by separate files...
       addconnectedsegs(d, s, pm, o)  % helper routine for constructor
       h = plot(d, o)                     % domain plot: o is plot opts struct
-      addregfbbasis(d, origin, N, opts) % add reg FB basis object
-      addnufbbasis(d,origin,nu,offset,branch,N,opts) % add irreg. FB basis
+      addregfbbasis(d, varargin) % add reg FB basis object
+      addnufbbasis(d,varargin) % add irreg. FB basis
       addcornerbases(d, N, opts)  % add multiple nu-FB's at corners
-      addrpwbasis(d, N, opts)           % add real PW basis
-      addmfsbasis(d, Z, tau, N, opts)   % add MFS basis
-      b = addlayerpot(d, a, segs, opts) % add layer-potential basis
+      addrpwbasis(d, varargin)           % add real PW basis
+      addmfsbasis(d, varargin)   % add MFS basis
+      b = addlayerpot(d, segs, a, opts) % add layer-potential basis
       [A A1 A2] = evalbases(d, p, opts)    % evaluate all basis funcs in domain
       setrefractiveindex(doms, n)
       

@@ -122,7 +122,7 @@ classdef layerpot < handle & basis
           Jopts.rescale_rad = o.Jfilter.rescale_rad; % same resc for S2L as J
         end
         xo = 0; if isfield(o.Jfilter, 'origin'), xo=o.Jfilter.origin; end
-        Jopts.real = 0; Jopts.besselcode = 'g';  % GSL needed for small J vals
+        Jopts.real = 0; Jopts.besselcode = 'm';  % GSL needed for small J vals
         Jexp = regfbbasis(xo, o.Jfilter.M, Jopts); % make new local exp basis
         Jexp.doms = b.doms;      % FIX to include o.dom ???
                

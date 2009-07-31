@@ -135,6 +135,7 @@ classdef basis < handle
       if ~recompute          % b.k never differs from d.k, FIX!
         d = opts.data; if isempty(opts.data) | (b.k~=d.k), recompute=1; end
       end
+      %b.k, d.k, recompute, opts.data
       if recompute
         d = [];
         if ~isfield(opts, 'copylist')    % make default square local copy grid
@@ -205,10 +206,9 @@ classdef basis < handle
       if ~isfield(opts, 'poly'), opts.poly = 0; end       % default no poly
       if isfield(opts, 'nei'), nei = opts.nei; else nei = 0; end
       recompute = ~isfield(opts, 'data');
-      % TODO:insert more detailed test for if data is current... (quick for now)
-      % recompute = (opts.dom.k~=d.k | nei~=d.nei |ucbuf~=d.ucbuf); %| numel(uc.L.x)~=size(d.L,1));
-      if ~recompute
-        d = opts.data; if isempty(opts.data) | (b.k~=d{1}.k), recompute=1; end
+      if ~recompute   % data exists but may be out of date in variety of ways..
+        d = opts.data;
+        if isempty(d) || d{1}.k~=b.k, recompute=1; end
       end
       if recompute  % use nei and uc.buffer to build copylist then fill data...
         d = {};

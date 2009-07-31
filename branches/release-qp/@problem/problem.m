@@ -150,7 +150,7 @@ classdef problem < handle
       if nargout==0, pr.A = A; end     % this only stores internally if no outp
     end % func
     
-    function [u di] = pointsolution(pr, p) % ...........eval soln on pointset
+    function [u di] = pointsolution(pr, p) % ......eval soln on pointset
     % POINTSOLUTION - evaluate solution to a problem on a pointset, given coeffs
     %
     %  [u di] = pointsolution(pr, pts) returns array of values u, and

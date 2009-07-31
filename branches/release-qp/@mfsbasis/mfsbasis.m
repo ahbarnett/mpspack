@@ -79,6 +79,7 @@ properties
               if isempty(b.ny) && ~isinf(b.eta),
                   error('Normal directions not supplied');
               end
+              b.N = numel(b.y);
           elseif iscell(varargin{1}) | isa(varargin{1},'function_handle')
               % case of Z or {Z, Zp} ...
               havederiv = iscell(varargin{1});        % Zp is available
