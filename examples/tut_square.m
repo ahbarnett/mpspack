@@ -52,7 +52,7 @@ ext.addmfsbasis({Z, Zp},N,opts);
 
 pr=scattering(ext,d);
 pr.setoverallwavenumber(k);
-pr.setincidentwave(-pi/6);
+pr.setincidentwave(-pi/4);
 
 % Solve and plot solution
 % -----------------------
