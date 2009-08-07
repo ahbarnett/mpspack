@@ -45,13 +45,12 @@ classdef mfsbasis < handle & basis
       if (b.fast>0 & b.eta<inf), 
           error('MFSERROR','Fast evaluation of combined basis not implemented');
       end
-      if ~isempty(k), b.k = k; end
       if isnumeric(Z)                         % Z contains y list of MFS pts
         N = numel(Z);
         b.y = reshape(Z, [1 N]);
-        b.N = N; b.Nf = N;
+        b.N = N;
       elseif ~isempty(Z)                      % Z is a function handle
-        b.N = N; b.Nf = N;
+        b.N = N;
         b.Z = Z; b.tau = tau;
         b.t = 2*pi*(1:N)/N;                   % create row vec
         b.y = Z(b.t + 1i*tau);
