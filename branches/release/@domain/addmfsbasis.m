@@ -6,7 +6,7 @@ function addmfsbasis(d, varargin)
 %
 % See also: MFSBASIS
 
-% Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
+% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
 
 b=mfsbasis(varargin{:});
 d.bas={d.bas{:},b};                    % append basis to domain's list

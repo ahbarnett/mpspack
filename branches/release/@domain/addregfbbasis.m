@@ -6,8 +6,8 @@ function addregfbbasis(d, varargin)
 %   The rest of the argument list is discussed in REGFBBASIS
 %
 % See also: REGFBBASIS
-%
-% Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
+
+% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
 
 
 d.bas  = {d.bas{:}, regfbbasis(varargin{:})}; % append cell arr of basis handles

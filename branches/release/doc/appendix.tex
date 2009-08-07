@@ -224,12 +224,155 @@ from signed connected seg list
 {\tt h = showdomains(dlist, opts)} plot all domains on current
 figure using a color for each
 
+\newpage
+
+\paragraph{\tt MFSBASIS} create a fundamental solutions (MFS) basis
+set.
+
+\textbf{Constructors}
+
+{\tt b = MFSBASIS(Z, N, opts)} creates an MFS basis using charge points
+    at Z(t), where t are equally distributed in [0,1]. Z is a handle
+   to a function. If the charge curve is to be closed, then Z must be
+   1-periodic. N may be empty.
+
+{\tt b = MFSBASIS({Z, Zp}, N, opts)} is as above. But Zp additionally specifies
+   the derivative of Z. This is necessary if dipole-type charges (double
+   layer potentials) are used. N may be empty.
+
+{\tt b = MFSBASIS(p, opts)} describes MFS charge points in terms of a point
+   set object p. If double layer potentials are used then p also needs to
+   contain normal directions.
+
+{\tt b = MFSBASIS(s, N, opts)} uses the function handles from segment s to choose
+   N charge points. It is equivalent to b = MFSBASIS({s.Z, s.Zp}, N, opts).
+
+  In each of the above, opts is an optional structure with optional fields:\\
+  {\tt opts.eta}   - (inf) If eta=inf use single layer potential MFS basis. For
+               eta $\neq$ inf use linear combination of double and single layer
+               potential MFS basis\\
+  {\tt opts.fast}  - (0) Hankel evaluation method (0=matlab; 1,2=faster)\\
+  {\tt opts.real}  - (false) If true, use real part of Hankel functions only\\
+  {\tt opts.tau}   - (0) Creates charge curve Z(t+i.tau) rather than Z(t)\\
+
+\textbf{Methods}
+
+{\tt [A B C] = eval(b, pts, opts)} evaluate fundamental solutions
+(MFS) basis at set of points
+
+{\tt showgeom(bas, opts)} plots geometry of MFS basis charge points on current figure
 
 
+\newpage
+
+\paragraph{\tt NUFBBASIS} create a fractional-order Fourier-Bessel
+basis set
+
+\textbf{Constructors}
 
 
+{\tt b = NUFBBASIS(origin, nu, offset, branch, N)} creates a basis of
+fractional- 
+   order Fourier-Bessel functions appropriate for expansion of the Helmholtz
+   equation in a wedge of angle pi/nu > 0. The orders are nu*(1:N) (for sine
+   angular functions) or nu*(0:N) (for cosine angular functions). The other
+   arguments are:\\ 
+     {\tt origin}: The origin of the Fourier-Bessel functions (as complex number)\\
+     {\tt offset}: The direction that corresponds to the angular variable theta=0\\
+     {\tt branch}: Direction of the branch cut (point on the unit circle);\\
+             it must not point into the affected domain.\\
+     {\tt N}     : degree of the basis set
+
+   The wedge lies counterclockwise from offset, spanning pi/nu in angle.
+   As with all basis types, the wavenumber k is determined by that of the
+   affected domain. k=0 gives fractional-power Laplace equation solutions.
+
+ {\tt b = NUFBBASIS(origin, nu, offset, branch, N, opts)} as above but permits
+   optional arguments to be selected. Currently supported is\\
+         {\tt opts.type}:\\    's'  Create basis of Fourier-Bessel sine fct.\\
+                          'c'  Create basis of Fourier-Bessel cosine fct.\\
+                          'cs' Create basis of Fourier-Bessel cosine and
+                               sine functions (default)\\
+   The reason for having 'cs' rather than using separate 's' and 'c' objects
+   is a factor of 2 in speed: the set of Bessel evaluations is reused.
+
+See also: DOMAIN/ADDNUFBBASIS
+
+\textbf{Methods}
+
+{\tt [A, A1, A2] = eval(nufb,pts,opts)} evaluates fractional
+Fourier-Bessel basis at a set of points 
+
+{\tt h = showgeom(nufb, opts)} 
+show corner wedge location, geometry and branch cut
+
+{\tt sc = Jrescalefactors(nufb, n)} given list of orders, return FB
+J-rescaling factors
 
 
+\newpage
+
+\paragraph{\tt REGFBBASIS} create a regular Fourier-Bessel basis set
+
+\textbf{Constructors}
+
+{\tt b = REGFBBASIS(origin, N)} creates a regular Fourier-Bessel basis object
+   with given origin, and order N. As with all basis types, the wavenumber
+   k is determined by that of the affected domain, as follows:
+
+   $k=0$ gives harmonic polynomials,\\
+       $\{1, \text{Re} z, \text{Re} z^2, ..., \text{Re} z^N, \text{Im} z, ..., \text{Im} z^N\}$ (real case)\\
+    or $\{z^{-N}, z^{-N+1}, ..., z^N\}$ (complex case)\\
+  $k>0$ gives generalized harmonic polynomials,
+       $\{J_n(kr)\cos(n\theta)\}$ $n=0,..,N$ and
+       $\{J_n(kr)\sin(n\theta)\}$ $n=1,..,N$ (real case)\\
+    or $\{J_n(kr)\exp(1in\theta)\}$ $n=-N,..,N$ (complex case)
+
+  {\tt b = REGFBBASIS(origin, N, opts)} is as above, with options:\\
+   {\tt opts.real}: if true (default), use real values (cos, sin
+   type), otherwise use complex exponentials with orders -N through N.\\
+  {\tt opts.rescale\_rad}: if positive, rescales the basis coefficients i.e.
+              columns of evaluation matrix, such that the value at radius
+              rescale\_rad is O(1). (default is 0, giving no rescaling)\\
+   {\tt opts.besselcode}: math library to use for J Bessel evaluation ($k>0$)\\
+              {\tt 'r'} use downwards-recurrence in Matlab, fast, but
+                       relative accuracy not guaranteed.\\
+              {\tt 'm'} use Matlab's built-in besselj, is slower (default).\\
+              {\tt 'g'} use GNU Scientific Library via MEX interface, fast.
+
+See also: {\tt DOMAIN/ADDREGFBBASIS}
+
+\textbf{Methods}
+
+{\tt [A, A1, A2] = eval(regfb,pts,opts)} evaluates regular
+Fourier-Bessel basis at given set of points 
+
+{\tt showgeom(regfb, opts)} plot regular FB basis set geometry info
+(just origin now)
+
+{\tt sc = Jrescalefactors(regfb, n)} given list of orders, return FB
+J-rescaling factors
+
+\newpage
+
+\paragraph{\tt RPWBASIS} create a real (as opposed to evanescent)
+plane wave basis set
+
+\textbf{Constructors}
+
+{\tt b = RPWBASIS(N)} creates a real plane wave basis object, with N directions
+   $\theta_j$ equally spaced in $(0,\pi]$, i.e. $\theta_j = \pi j/N$. As with all basis
+   types, the wavenumber k is determined by that of the affected domain.
+   Basis functions are:\\
+      $\{\cos(k n_j z)\}$ $j=1,..,N$ and $\{\sin(k n_j.z)\}$ $j=1,..,N$       (real case)\\
+   $\{\exp(i k n_j z)\}$ $j=1,..,N$ and $\{\exp(-i k n_j z)\}$ $j=1,..,N$  (complex case)\\
+     where the direction unit vectors are $n_j = (\cos\theta_j, \sin\theta_j)$
+
+   If k=0 a warning is produced since this basis does not have a useful
+   limiting form as k tends to zero (regfbbasis should be used instead).
+
+  {\tt b = RPWBASIS(N, opts)} does the same, except allowing user options:\\
+   {\tt opts.real}: if true, real case (cos/sin type), otherwise complex case.
 
 
 

@@ -1,6 +1,6 @@
 classdef regfbbasis < handle & basis
 
-    % REGFBBASIS - create a regular Fourier-Bessel (cylindrical J-exp) basis set
+    % REGFBBASIS - create a regular Fourier-Bessel basis set
     %
     %  b = REGFBBASIS(origin, N) creates a regular Fourier-Bessel basis object
     %   with given origin, and order N. As with all basis types, the wavenumber
@@ -25,11 +25,12 @@ classdef regfbbasis < handle & basis
     %              = 'm' use Matlab's built-in besselj, is slower (default).
     %              = 'g' use GNU Scientific Library via MEX interface, fast.
     %
-    % Issues/notes:
-    %  * add error checking in recursivebessel
-    %  * might be worth avoiding sin/cos instead using opts.fastang for speed
     %
-    % Also see: DOMAIN.ADDREGFBBASIS
+    % See also: DOMAIN/ADDREGFBBASIS
+    
+    % Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
+    
+    
     properties
         origin             % Origin of the Fourier-Bessel fct.
         real               % true for real valued output, otherwise complex

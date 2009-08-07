@@ -16,10 +16,11 @@ classdef rpwbasis < handle & basis
 %  b = RPWBASIS(N, opts) does the same, except allowing user options:
 %   opts.real: if true, real case (cos/sin type), otherwise complex case.
 %
-% Issues/notes:
-%  * on regular grids the evaluator could use NUFFT for speed (Alex rpws code)
 %
-% Also see: DOMAIN.ADDRPWBASIS, TEST/TESTBASIS
+% See also: DOMAIN/ADDRPWBASIS, TEST/TESTBASIS
+
+% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
+
   properties
     real     % true if sin/cos, false for complex exponentials
     dirs     % row vec of directions as complex numbers on unit circle

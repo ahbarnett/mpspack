@@ -27,8 +27,8 @@
 %   domain with excluded region(s).
 %
 % See also: SEGMENT, domain/PLOT
-%
-% Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
+
+% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
 
 
 classdef domain < handle

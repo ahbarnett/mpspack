@@ -4,8 +4,8 @@ function d = addconnectedsegs(d, s, pm, o)
 %  This is a helper routine for domain constructor. Doc to be written.
 %
 %  If pm has length 1 it will be expanded to a vector of the correct length.
-%
-% Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
+
+% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
 
 if nargin<4, o = []; end
 if ~isfield(o, 'hole'), o.hole = 0; end    % default is an outer bdry (+ve area)
