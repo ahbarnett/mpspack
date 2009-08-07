@@ -226,7 +226,27 @@ figure using a color for each
 
 \newpage
 
-\paragraph{\tt MFSBASIS} create a fundamental solutions (MFS) basis
+\paragraph{\tt BASIS (ABSTRACT)} Abstract class that defines the
+interfaces which are common for all basis objects
+
+
+\textbf{Methods}
+
+{\tt [A, A1, A2] = eval(b, pts)} (abstract) evaluate a basis on a set of points
+
+{\tt Nf = Nf(b, opts)} (abstract) method returning number of degrees of freedom
+
+{\tt updateN(b,N)} set the number of basis functions
+
+{\tt k = k(b, opts)} looks up the basis wavenumber
+
+
+
+
+
+\newpage 
+
+\paragraph{\tt MFSBASIS : BASIS} create a fundamental solutions (MFS) basis
 set.
 
 \textbf{Constructors}
@@ -257,15 +277,12 @@ set.
 
 \textbf{Methods}
 
-{\tt [A B C] = eval(b, pts, opts)} evaluate fundamental solutions
-(MFS) basis at set of points
-
 {\tt showgeom(bas, opts)} plots geometry of MFS basis charge points on current figure
 
 
 \newpage
 
-\paragraph{\tt NUFBBASIS} create a fractional-order Fourier-Bessel
+\paragraph{\tt NUFBBASIS : BASIS} create a fractional-order Fourier-Bessel
 basis set
 
 \textbf{Constructors}
@@ -300,9 +317,6 @@ See also: DOMAIN/ADDNUFBBASIS
 
 \textbf{Methods}
 
-{\tt [A, A1, A2] = eval(nufb,pts,opts)} evaluates fractional
-Fourier-Bessel basis at a set of points 
-
 {\tt h = showgeom(nufb, opts)} 
 show corner wedge location, geometry and branch cut
 
@@ -312,7 +326,7 @@ J-rescaling factors
 
 \newpage
 
-\paragraph{\tt REGFBBASIS} create a regular Fourier-Bessel basis set
+\paragraph{\tt REGFBBASIS : BASIS} create a regular Fourier-Bessel basis set
 
 \textbf{Constructors}
 
@@ -344,9 +358,6 @@ See also: {\tt DOMAIN/ADDREGFBBASIS}
 
 \textbf{Methods}
 
-{\tt [A, A1, A2] = eval(regfb,pts,opts)} evaluates regular
-Fourier-Bessel basis at given set of points 
-
 {\tt showgeom(regfb, opts)} plot regular FB basis set geometry info
 (just origin now)
 
@@ -355,7 +366,7 @@ J-rescaling factors
 
 \newpage
 
-\paragraph{\tt RPWBASIS} create a real (as opposed to evanescent)
+\paragraph{\tt RPWBASIS : BASIS} create a real (as opposed to evanescent)
 plane wave basis set
 
 \textbf{Constructors}
@@ -374,11 +385,87 @@ plane wave basis set
   {\tt b = RPWBASIS(N, opts)} does the same, except allowing user options:\\
    {\tt opts.real}: if true, real case (cos/sin type), otherwise complex case.
 
+See also: {\tt DOMAIN/ADDRPWBASIS}
 
 
+\textbf{Methods}
+
+{\tt showgeom(b, opts)} plot real plane wave basis set geometry information
+
+\newpage
+
+\paragraph{\tt LAYERPOT : BASIS} create a layer potential basis set on a segment
+
+\textbf{Constructors}
+
+{\tt b = LAYERPOT(seg, a, opts)} where {\tt a = 'single'} or {\tt
+  'double'} creates a layer
+   potential basis object with density on segment seg, with options:\\
+    {\tt opts.real}: if true, real valued ($Y_0$), otherwise complex
+    ($H_0$ outgoing).\\
+    {\tt opts.fast}: if 0 use matlab Hankel, 1 use fast fortran
+    Hankel, 2 faster.\\
+   If a is instead a 1-by-2 array, then a mixture of a(1) single plus a(2)
+   double is created, useful for Brakhage, Werner, Leis \& Panich type
+   combined representations. As usual for basis sets, the wavenumber k is
+   determined by that of the affected domain.
+
+   Note that the discretization of the layerpot is given by that of the seg,
+    apart from periodic segments where new quadrature weights may be used.
+
+See also: {\tt DOMAIN/ADDLAYERPOT},
+
+\textbf{Methods}
+
+{\tt showgeom(b, opts)} show discrete points of segments
 
 
+{\tt [A Sker] = S(k, s, t, o)} (Static Method) double layer potential
+discretization matrix for density on a segment
 
+{\tt [A Dker\_noang cosker] = D(k, s, t, o)} (Static Method) double
+layer potential discretization matrix for density on a segment
+
+{\tt [A Sker Dker\_noang] = T(k, s, t, o)} (Static Method) deriv of double layer
+potential discr matrix for density on a segment
+
+{\tt A = localfromSLP(s, Jexp)} (Static Method) return matrix taking SLP density
+values on seg to J (local) exp
+
+{\tt A = localfromDLP(s, Jexp)} (Static Method) return matrix taking DLP density
+values on seg to J (local) exp
+
+{\tt A = fundsol(r, k)} (Static Method) return matrix of fundamental
+solutions
+
+{\tt [B radderivs] = fundsol\_deriv(r, cosphi, k, radderivs)} (Static Method) return
+matrix of normal derivatives of fundamental solutions 
+
+\newpage
+
+\paragraph{QUADR} static class of quadrature rules
+
+\textbf{Methods}
+
+{\tt [x w] = peritrap(N)} (Static Method) trapezoid quadrature rule for periodic
+functions
+
+{\tt [x w] = traprule(N)} (Static Method) quadrature points and weights for composite
+N+1-point trapezoid rule
+
+{\tt [x,w] = gauss(N)} (Static Method) nodes x (Legendre points) and weights w 
+for Gauss quadrature
+
+{\tt [x w] = clencurt(N)} (Static Method) nodes x (Chebyshev points) and weights
+w for Clenshaw-Curtis quadrature
+
+{\tt [x,w,cs,ier]=kapurtrap(n,m)} (Static Method) nodes and weights of n-point
+corrected trapezoidal quadrature formula on [0,1]
+
+{\tt Rjn = kress\_Rjn(n)} (Static Method) Kress weights
+
+{\tt D = perispecdiffrow(N)} (Static Method) row 1 of N-pt spectral
+2pi-periodic differentiation matrix
 
 
 

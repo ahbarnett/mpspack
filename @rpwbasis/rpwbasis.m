@@ -17,7 +17,7 @@ classdef rpwbasis < handle & basis
 %   opts.real: if true, real case (cos/sin type), otherwise complex case.
 %
 %
-% See also: DOMAIN/ADDRPWBASIS, TEST/TESTBASIS
+% See also: DOMAIN/ADDRPWBASIS
 
 % Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
 
