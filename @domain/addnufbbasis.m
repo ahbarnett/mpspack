@@ -8,8 +8,8 @@ function addnufbbasis(d, varargin)
 %   full description see NUFBBASIS
 %
 %  See also: NUFBBASIS
-%
-% Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
+
+% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
 
 d.bas  = {d.bas{:}, nufbbasis(varargin{:})}; % append cell arr of basis handles
 

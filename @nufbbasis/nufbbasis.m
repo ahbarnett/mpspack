@@ -1,6 +1,6 @@
 classdef nufbbasis < handle & basis
 
-% NUFBBASIS - create a fractional-order Fourier-Bessel basis set (corner exp)
+% NUFBBASIS - create a fractional-order Fourier-Bessel basis set
 %
 % b = NUFBBASIS(origin, nu, offset, branch, N) creates a basis of fractional-
 %   order Fourier-Bessel functions appropriate for expansion of the Helmholtz
@@ -26,14 +26,9 @@ classdef nufbbasis < handle & basis
 %   The reason for having 'cs' rather than using separate 's' and 'c' objects
 %   is a factor of 2 in speed: the set of Bessel evaluations is reused.
 %
-% Issues/notes:
-%  * need mixed-type D-N wedge angular functions too.
-%  * add switch to GSL bessel_nu
-%  * for slit domains nu=1/2, user needs to jiggle the branch cut either side?
-%
-% Also see: DOMAIN.ADDNUFBBASIS
+% See also: DOMAIN/ADDNUFBBASIS
 
-% Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
+% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
 
     properties
         origin   % Origin of the Fourier-Bessel fct.

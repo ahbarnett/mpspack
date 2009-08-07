@@ -17,8 +17,8 @@
 %  nx are not required to be, nor changed to, unity.
 % 
 % See also: POINTSET/plot, SEGMENT which builds on POINTSET
-%
-% Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
+
+% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
 
 
 classdef pointset < handle

@@ -11,8 +11,8 @@ function h = plot(d, o)
 %   Also all options in SHOWSEGMENTS have effect.
 %
 % Also see: DOMAIN.SHOWDOMAINS which is the correct code for domain lists
-%
-% Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
+
+% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
 
 if nargin<2, o = []; end
 if numel(d)>1, domain.showdomains(d, o); return; end

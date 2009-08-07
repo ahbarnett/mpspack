@@ -15,7 +15,7 @@ function bas = addlayerpot(d, seg, varargin)
 %
 % See also LAYERPOT, SEGMENT
 
-% Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
+% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
 
 
 if isempty(seg), seg = d.seg; end

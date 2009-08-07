@@ -1,7 +1,7 @@
 function x = stackquadpts(s, pm)
 % STACKQUADPTS - helper routine, ordered quad pts from signed connected seg list
-%
-% Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
+
+% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
 
 
 x = [];

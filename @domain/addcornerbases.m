@@ -16,8 +16,8 @@ function addcornerbases(d, N, opts)
 %    Other opts fields are passed to nufbbasis.
 %
 % See also: NUFBBASIS, ADDNUFBBASIS
-%
-% Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
+
+% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
 
 
   if nargin<3, opts = []; end
