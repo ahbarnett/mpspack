@@ -1,5 +1,7 @@
 % static class of quadrature rules.
 
+% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
+
 classdef quadr
     methods(Static)
         [x w] = peritrap(N)

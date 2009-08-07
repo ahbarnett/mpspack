@@ -29,8 +29,9 @@ function [A Sker] = S(k, s, t, o)
 %
 % [S Sker] = S(...) also returns quad-unweighted kernel values matrix Sker.
 %
-%  Adapted from leslie/pc2d/slp_matrix.m, barnett 7/31/08, close eval 10/16/08
-%  Tested by routine: testlpquad.m
+
+% Copyright (C) 2008, 2009, Alex Barnett and Timo Betcke
+
 if isempty(k) | isnan(k), error('SLP: k must be a number'); return; end
 if nargin<4, o = []; end
 if nargin<3, t = []; end

@@ -5,11 +5,11 @@ function A = fundsol(r, k)
 % Uses matlab built-in hankels, and
 %  uses symmetry (since zero argument is fast) if r appears symm (based on diag)
 %
-% Issues/notes:
-%  * barnett 2/6/08, debugged the test for self-int 2/26/08, dummy diag now 999.
-%  * Should make use @utils/fundsol.m but this doesn't have angle factors.
 %
 % See also LAYERPOT
+
+% Copyright (C) 2008, 2009, Alex Barnett and Timo Betcke
+
 
 %fprintf('min r = %g\n', min(r(:)))
 if k==0

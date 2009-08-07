@@ -11,6 +11,9 @@ function A = localfromSLP(s, Jexp)
 %
 %  Requires no layerpot object, but in contrast needs a regFBbasis object.
 
+% Copyright (C) 2008, 2009, Alex Barnett and Timo Betcke
+
+
   M = Jexp.N;                       % get max order from regFB object
   sc = Jexp.Jrescalefactors(0:M);   % rescaling factors from regFB obj
   if ~Jexp.real
