@@ -22,10 +22,10 @@ function i = inpolywrapper(p, v)
 % uncomment one of the following calls...
 
 %   Matlab's native inpolygon
-%i = inpolygon(real(p), imag(p), real(v), imag(v));
+i = inpolygon(real(p), imag(p), real(v), imag(v));
 
 %   Darren Engwirda's inpoly
 %i = utils.inpoly([real(p(:)),imag(p(:))], [real(v),imag(v)]);
 
 %   MEX interface to Wm. Randolph Franklin's C code:
-i = logical(utils.inpolyc(p, v));   % converts int to logical
+% i = logical(utils.inpolyc(p, v));   % converts int to logical

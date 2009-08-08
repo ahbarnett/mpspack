@@ -192,5 +192,29 @@ classdef scattering < bvp & handle
       if o.bdry, pr.showbdry; end
     end % func
     
+    function showfullfield(pr, o)
+    % SHOWFULLFIELD - plot u_i+u_s on the grid
+    %
+    %   opts.imag = true, plots imag instead of real part
+    %   opts.bdry = true, shows boundary too
+
+      if nargin<2, o = []; end
+      if ~isfield(o, 'imag'), o.imag = 0; end
+      if ~isfield(o, 'bdry'), o.bdry = 0; end
+    
+      [ui gx gy di] = pr.gridincidentwave(o);
+      u=pr.gridsolution(o);
+      u=ui+u;
+      figure;
+      if o.imag
+          imagesc(gx, gy, imag(u));title('Im[u]');
+      else
+          imagesc(gx,gy,real(u)); title('Re[u]');
+      end
+      c = caxis; caxis([-1 1]*max(c));
+      axis equal tight;colorbar; set(gca,'ydir','normal'); hold on;
+      if o.bdry, pr.showbdry; end
+    end      
+      
   end % methods
 end
