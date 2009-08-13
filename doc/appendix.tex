@@ -443,7 +443,7 @@ matrix of normal derivatives of fundamental solutions
 
 \newpage
 
-\paragraph{QUADR} static class of quadrature rules
+\paragraph{\tt QUADR} static class of quadrature rules
 
 \textbf{Methods}
 
@@ -465,7 +465,57 @@ corrected trapezoidal quadrature formula on [0,1]
 {\tt Rjn = kress\_Rjn(n)} (Static Method) Kress weights
 
 {\tt D = perispecdiffrow(N)} (Static Method) row 1 of N-pt spectral
-2pi-periodic differentiation matrix
+$2\pi$-periodic differentiation matrix
+
+\newpage
+
+\paragraph{\tt PROBLEM (ABSTRACT)} abstract class defining interfaces for
+Helmholtz/Laplace BVPs
+
+\textbf{Methods}
+
+{\tt fillquadwei(pr)} compute sqrt of bdry quadrature weights vector
+for a problem
+
+{\tt [N noff] = setupbasisdofs(pr)} set up indices of all basis
+degrees of freedom in problem
+
+{\tt A = fillbcmatrix(pr, opts)} computes matrix mapping basis coeffs
+to bdry mismatch
+
+{\tt [u di] = pointsolution(pr, p)} evaluate solution to a problem on
+a pointset, given coeffs
+
+{\tt [u gx gy di] = gridsolution(pr, o)} evaluate solution to a
+problem over a grid, given coeffs
+
+{\tt o = gridboundingbox(pr, o)} set default options giving grid spacing
+and bound box
+
+{\tt h = showbdry(pr)} shows boundary segments in a problem, with
+their natural sense
+
+{\tt h = showbasesgeom(pr)} plot geometry of all basis objects in a problem object
+
+{\tt h = plot(pr)} show all geometry information in a problem object
+
+{\tt setoverallwavenumber(pr, k)} set problem k, in each domain using
+refactive index
+
+{\tt updateN(pr,N)} Update the number of basis functions in each basis set
+
+{\tt [u gx gy di h] = showsolution(pr, o)} plot figure with solution Re u
+over all domains in problem
+
+\newpage
+
+
+
+
+ 
+ 
+ 
+
 
 
 

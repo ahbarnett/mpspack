@@ -1,6 +1,6 @@
-% PROBLEM - abstract class defining interfaces for Helmholtz/Laplace BVPs/EVPs
+% PROBLEM - abstract class defining interfaces for Helmholtz/Laplace BVPs
 
-% Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
+% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
 classdef problem < handle
   properties
     segs                    % array of handles of segments in problem
@@ -267,7 +267,7 @@ classdef problem < handle
     end
     
     function h = plot(pr)
-    % PLOT - show all geometry in a problem object: segments, basis geoms...
+    % PLOT - show all geometry information in a problem object
       h = [pr.showbdry; pr.showbasesgeom];
     end
     
