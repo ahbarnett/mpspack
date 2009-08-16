@@ -1,29 +1,29 @@
 # GNU Makefile for MEX compilation for MPSPack MATLAB toolbox's @utils directory
 #
-# Currently linux OS (glnx86) only. Needs GNU Scientific Library (gsl) installed
+# Currently linux OS only. Needs GNU Scientific Library (gsl) installed
 #
-# Barnett 9/5/08
+#
+# Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
 
-CC = gcc
-FC = gfortran
+include ../make.inc
 
 default: all
 
-all: gslbesselj.mexglx gslbesseljnu.mexglx greengardrokhlinhank103.mexglx inpolyc.mexglx
-special: greengardrokhlinhank106.mexglx
+all: gslbesselj gslbesseljnu greengardrokhlinhank103 inpolyc
+special: greengardrokhlinhank106
 
 .PHONY: all special clean
 
-gslbesselj.mexglx: gslbesselj.c
-	mex gslbesselj.c -lgsl -lblas
+gslbesselj: gslbesselj.c
+	mex gslbesselj.c $(GSL) $(BLAS)
 
-gslbesseljnu.mexglx: gslbesseljnu.c
-	mex gslbesseljnu.c -lgsl -lblas
+gslbesseljnu: gslbesseljnu.c
+	mex gslbesseljnu.c $(GSL) $(BLAS)
 
-greengardrokhlinhank103.mexglx: greengardrokhlinhank103.c hank103.o
+greengardrokhlinhank103: greengardrokhlinhank103.c hank103.o
 	mex greengardrokhlinhank103.c hank103.o LD=$(FC)
 
-greengardrokhlinhank106.mexglx: greengardrokhlinhank106.c hank103.o hank106.o
+greengardrokhlinhank106: greengardrokhlinhank106.c hank103.o hank106.o
 	mex greengardrokhlinhank106.c hank103.o hank106.o LD=$(FC)
 
 hank103.o: hank103.f
@@ -32,8 +32,9 @@ hank103.o: hank103.f
 hank106.o: hank106.f
 	$(FC) -fPIC -c hank106.f -O3
 
-inpolyc.mexglx: inpolyc.c
+inpolyc: inpolyc.c
 	mex inpolyc.c
 
 clean:
-	rm *.o *.mexglx
+	rm -f *.o *.mexglx *.mexa64
+

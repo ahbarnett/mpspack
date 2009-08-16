@@ -4,6 +4,9 @@
 %   (doms is a row vec of domain handles), using their segments and the
 %   boundary conditions they carry, and the basis sets associated with the
 %   domains.
+%
+% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
+
 
 classdef bvp < problem & handle
   properties
@@ -25,6 +28,7 @@ classdef bvp < problem & handle
     end
 
     function rhs = fillrighthandside(pr)   % ............... make RHS vector
+        % FILLRIGHTHANDSIDE - create right-hand side vector
       if isempty(pr.sqrtwei), error('must fill quadrature weights first'); end
       rhs = [];                 % get ready to stack stuff onto it as a big col
       for s=pr.segs
@@ -47,11 +51,13 @@ classdef bvp < problem & handle
     end
     
     function co = linsolve(pr) % ........................ linear solve
+        % LINSOLVE - Solve the linear sysem
       co = pr.A \ pr.rhs;
       if nargout==0, pr.co = co; end   % only store internally if no output
     end
     
     function co = solvecoeffs(pr) % ................. fill and linear solve
+        % SOLVECOEFFS - Create system and solve it
       pr.fillquadwei;
       pr.fillrighthandside;
       pr.fillbcmatrix;
@@ -60,6 +66,7 @@ classdef bvp < problem & handle
     end
     
     function r = bcresidualnorm(pr)    % ............... L2 bdry error
+        % BCRESIDUALNORM - Return L2 boundary error
       r = norm(pr.A * pr.co - pr.rhs);
     end
     

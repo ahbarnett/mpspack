@@ -1,0 +1,24 @@
+Requirements: Matlab version 7.6 (2008a) or newer is needed,
+since we make heavy use of recent object-oriented programming features.
+No other Matlab toolboxes are needed.
+If you wish to use faster regular Bessel functions you may want to
+install the GNU Scientific Library.
+
+The project is hosted at the repository {http://code.google.com/p/mpspack
+
+There are some optional fast basis and other math libraries
+(C and Fortran with MEX interfaces), which should be compiled
+in a UNIX environment as follows: Adapt the location of your 
+GSL and BLAS librares in the file "make.inc" in
+the MPSPACK directory. Then from this directory type "make".
+
+You should now add the MPSPACK
+directory to your Matlab path, for instance by adding the line
+
+	  addpath 'path/to/mpspack';
+
+to your MATLAB startup.m file.
+You are now ready to use MPSPACK !
+
+For further info see the documentation and tutorial in MPSPACK\doc.
+

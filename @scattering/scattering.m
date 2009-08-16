@@ -7,6 +7,8 @@
 %   domain handles, although doms may be empty (scattering off metallic object).
 %
 % See also BVP, PROBLEM
+%
+% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
 
 classdef scattering < bvp & handle
   properties
@@ -132,11 +134,12 @@ classdef scattering < bvp & handle
     function showthreefields(pr, o)
     % SHOWTHREEFIELDS - plot figure with u_i, u_s and u_t on subplot grids (Re)
     %
-    %   if opts.testtransparent is true, then the final plot is error from
+    %   if o.testtransparent is true, then the final plot is error from
     %    transparency, reports L2 error estimated over grid too.
-    %   if opts.imag = true, plots imag instead of real part
-    %   opts.bdry = true, shows boundary too
-    %   opts.sepfigs: if true, make three separate figures
+    %   if o.imag = true, plots imag instead of real part
+    %   o.bdry = true, shows boundary too
+    %   o.sepfigs: if true, make three separate figures
+    %   o.all = fals: if true, plot incident field over all domains
     %
       if nargin<2, o = []; end
       if ~isfield(o, 'imag'), o.imag = 0; end
@@ -195,8 +198,8 @@ classdef scattering < bvp & handle
     function showfullfield(pr, o)
     % SHOWFULLFIELD - plot u_i+u_s on the grid
     %
-    %   opts.imag = true, plots imag instead of real part
-    %   opts.bdry = true, shows boundary too
+    %   o.imag = true, plots imag instead of real part
+    %   o.bdry = true, shows boundary too
 
       if nargin<2, o = []; end
       if ~isfield(o, 'imag'), o.imag = 0; end

@@ -509,6 +509,60 @@ over all domains in problem
 
 \newpage
 
+\paragraph{\tt BVP : PROBLEM} define a Helmholtz or Laplace boundary
+value problem from domains
+
+\textbf{Constructors}
+
+{\tt pr = bvp(doms)} creates a BVP object pr which comprises the
+domains doms (doms is a row vec of domain handles), using their segments and the
+   boundary conditions they carry, and the basis sets associated with the
+   domains.
+
+\textbf{Methods}
+
+{\tt rhs = fillrighthandside(pr)} Create right-hand side vector
+
+{\tt co = linsolve(pr)} Solve the linear system
+
+{\tt co = solvecoeffs(pr)} Create system and solve it
+
+{\tt r = bcresidualnorm(pr)} Return L2 boundary error
+
+\newpage
+
+\paragraph{\tt SCATTERING : BVP} define a frequency-domain scattering problem
+
+\textbf{Constructors}
+
+{\tt pr = scattering(airdoms, doms)} creates a scattering problem
+object pr which comprises the `air domains' (exterior parts of domain which
+will have incident field in them) airdoms, and other interior domains doms
+which will have zero incident field. airdoms and doms are row vecs of
+domain handles, although doms may be empty (scattering off metallic object).
+
+See also: {\tt BVP}, {\tt PROBLEM}
+
+\textbf{Methods}
+
+{\tt setincidentwave(pr, t)} choose plane wave or u\_incident field,
+compute f,g BCs
+
+{\tt [u di] = pointincidentwave(pr,p,o)} evaluate incident wave for a
+problem on a pointset
+
+{\tt [u gx gy di] = gridincidentwave(pr, o)} evaluate u\_inc over a grid
+
+{\tt showthreefields(pr, o)} plot figure with u\_i, u\_s and u\_t on
+subplot grids (Re)
+
+{\tt showfullfield(pr, o)} plot u\_i+u\_s on the grid
+
+
+
+
+
+
 
 
 
