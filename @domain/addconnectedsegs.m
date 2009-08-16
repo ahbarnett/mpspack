@@ -1,11 +1,11 @@
+function d = addconnectedsegs(d, s, pm, o)
 % ADDCONNECTEDSEGMENTS - append a domain's params, corners given conn seg list 
 %
 %  This is a helper routine for domain constructor. Doc to be written.
 %
 %  If pm has length 1 it will be expanded to a vector of the correct length.
-%  Note: changed 8/14/08 so seg.dom cell order is +,- to match seg.a, etc.
 
-function d = addconnectedsegs(d, s, pm, o)
+% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
 
 if nargin<4, o = []; end
 if ~isfield(o, 'hole'), o.hole = 0; end    % default is an outer bdry (+ve area)
@@ -41,7 +41,7 @@ i = (1-pm)/2+1;
 % now make shifted versions of the above 3 lists, for the previous segment...
 prevs = circshift(s, [0 1]); prevpm = circshift(pm, [0 1]);
 previ = (1+prevpm)/2+1; % ind (1 or 2) for segment behind each corner
-eps = 1e-15;                     % max allowed corner position error
+eps = 1e-14;                     % max allowed corner position error
 for j=1:length(s)                          % loop over possible corners in list
   d.cloc = [d.cloc s(j).eloc(i(j))];       % append to corner loc list
   if abs(d.cloc(end) - prevs(j).eloc(previ(j))) > eps

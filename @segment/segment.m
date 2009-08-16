@@ -1,17 +1,19 @@
 % SEGMENT - create segment object
 %
-%  s = SEGMENT(M, [xi xf]) create line segment object from xi to xf, both C#s.
+%  s = SEGMENT(M, [xi xf]) creates a line segment object from xi to xf, both
+%  complex numbers.
 %
-%  s = SEGMENT(M, [xc R ti tf]) create circular arc segment, center xc (C-#),
-%   radius R, from angle ti to tf. Order is important: if tf>ti then goes CCW,
-%   otherwise CW.
-%
-%  s = SEGMENT(M, {Z, Zp}) analytic curve given by image of analytic function
-%   Z:[0,1]->C. Zp must be the derivative function Z'. Note the argument is a
-%   1-by-2 cell array of function handles. If instead the 2nd argument is
-%   {Z, Zp, Zpp} where Zpp is the 2nd derivative Z'', curvature information is
-%   also generated (which is useful for layer potentials).
-%
+%  s = SEGMENT(M, [xc R ti tf]) creates a circular arc segment with center
+%  xi, radius R and angles from ti to tf. The order is important. If tf>ti
+%  the orientation is counter-clockwise, otherwise clockwise.
+%  
+%  s = SEGMENT(M, {Z, Zp}) creats an analytic curve given by the image of 
+%  the analytic function Z:[0,1]->C. Zp must be the derivative of Z. 
+%  Z and Zp are function handles. 
+%  
+%  s = SEGMENT(M, {Z, Zp, Zpp}) works as above but also takes the second
+%  derivative Z'' of Z. This is useful for layer potentials.
+% 
 %  s = SEGMENT(M, p, qtype) where p is any of the above, chooses quadrature type
 %   qtype = 'p': periodic trapezoid (appropriate for periodic segments, M pts)
 %           't': trapezoid rule (ie, half each endpoint, M+1 pts)
@@ -23,6 +25,9 @@
 %  s = SEGMENT() creates an empty segment object.
 %
 % See also: POINTSET, segment/PLOT
+
+% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
+
 
 classdef segment < handle & pointset
     properties
@@ -113,9 +118,6 @@ classdef segment < handle & pointset
             quadrule = @quadr.clencurt;
            case 'g',
             quadrule = @quadr.gauss;  % note via eig returns increasing x order
-            if M>100
-              fprintf('warning: finding >100 gauss quadr pts slow O(M^3)!\n');
-            end
            otherwise,
             error(sprintf('requadrature: unknown quadrature type %s!', qtype));
           end
@@ -320,6 +322,42 @@ classdef segment < handle & pointset
           end
           s.eloc = a * s.eloc; s.eang = a * s.eang;
           s.approxv = a * s.approxv;
+        end
+      end % func
+      
+     function newseg = reflect(seg, ax)  % ............. reflect a segment
+      % REFLECT - reflect a segment (or list of segments) about x or y axis
+      %
+      % reflect(seg, ax) changes the segment (or array of segments) seg by
+      %   reflecting through either ax='x' (default if ax empty or not given)
+      %   or 'y' axis.
+      %
+      % newseg = reflect(seg, ax) instead returns a new segment (or list)
+      %   obtained by reflecting the segment (or list) seg.
+        if nargin<2 || isempty(ax), ax='x'; end              % default
+        if nargout>0                             % make a duplicate
+          newseg = [];
+          for s=seg; newseg = [newseg utils.copy(s)]; end
+        else
+          newseg = seg;                          % copy handle, modify original
+        end
+        for s=newseg
+          if ax=='x'
+          s.x = conj(s.x); s.nx = -conj(s.nx);    % note sense change!
+          Z = s.Z; Zp = s.Zp; Zn = s.Zn;
+          s.Z = @(t) conj(Z(t));
+          s.Zp = @(t) conj(Zp(t)); s.Zn = @(t) -conj(Zn(t));  % note sense!
+          if ~isempty(s.Zpp)
+            Zpp = s.Zpp;
+            s.Zpp = @(t) conj(Zpp(t));
+          end
+          s.eloc = conj(s.eloc); s.eang = conj(s.eang);
+          s.approxv = conj(s.approxv);
+          elseif ax=='y'
+            error('y-reflection not yet implemented');
+          else
+            error('unknown reflection axis!');
+          end
         end
       end % func
       

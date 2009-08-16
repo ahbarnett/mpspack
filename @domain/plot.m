@@ -1,4 +1,5 @@
-% PLOT - show domain on current figure
+function h = plot(d, o)
+% PLOT - show domain (or list of domains) on current figure
 %
 %  h = PLOT(d) draws many geometry features of a domain onto the current figure.
 %   h is a column vector of handles to all objects plotted.
@@ -9,11 +10,14 @@
 %
 %   Also all options in SHOWSEGMENTS have effect.
 %
-% To do: filled patch for domain (somehow handle non-simply connected patch?)
+% Also see: DOMAIN.SHOWDOMAINS which is the correct code for domain lists
 
-function h = plot(d, o)
+% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
 
 if nargin<2, o = []; end
+if numel(d)>1, domain.showdomains(d, o); return; end
+% the rest of code handles a single domain object...
+
 if ~isfield(o, 'gridinside'), o.gridinside=0; end  % default no grid
 if ~isfield(o, 'approxp'), o.approxp = 1; end  % default show polygon
 if ~isfield(o, 'filled'), o.filled=0; end   % to show domains as solid ?? to do

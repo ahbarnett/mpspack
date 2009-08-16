@@ -26,12 +26,10 @@
 %  d = DOMAIN(s, pm, si, pmi) combines the above features, creating a bounded
 %   domain with excluded region(s).
 %
-% Notes / issues:
-%  1) should diam, center, x, w, boundingbox, etc, be precomputed on
-%     construction, only recomputed if a segment changes? Currently not.
-%     Not a big deal.
-%
 % See also: SEGMENT, domain/PLOT
+
+% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
+
 
 classdef domain < handle
     properties
@@ -101,18 +99,26 @@ classdef domain < handle
       
       function i = inside(d, p) % .................................... inside
       % INSIDE - return true (false) for points inside (outside) a domain
+      %
+      % i = INSIDE(d, p) returns a logical array of values specifying if
+      %   each point in the list of complex numbers p is inside (1) or outside
+      %   (0) the domain d. The output i is the same shape as input p.
+      %
+      % Issues/notes:
+      %  * Uses fast inpolygon implementations in inpolywrapper
         if d.exterior
-          i = logical(ones(size(p)));
+          i = logical(ones(size(p(:))));
         else                                % interior domain
           js = find(d.spiece==0);           % indices of segs outer bdry piece
           v = domain.approxpolygon(d.seg(js), d.pm(js));
-          i = inpolygon(real(p), imag(p), real(v), imag(v));
+          i = utils.inpolywrapper(p(:), v);
         end
         for piece=1:max(d.spiece)         % kill pts from each interior piece
           js = find(d.spiece==piece);
           v = domain.approxpolygon(d.seg(js), d.pm(js));
-          i = i & ~inpolygon(real(p), imag(p), real(v), imag(v)); % NB logical
+          i = i & ~utils.inpolywrapper(p(:), v);
         end
+        i = reshape(i, size(p));
       end
 
       function x = x(d) % ................. get all quadr pts assoc w/ domain
@@ -210,7 +216,7 @@ classdef domain < handle
       
       function clearbases(d) % .............. removes all basis sets from domain
       % CLEARBASES - remove all basis set associations from a domain
-        d.bas = {};
+        d.bas = {};    % possibly we should also kill any d.bas{:}.doms == d
       end
       
       function showbasesgeom(d) % ................. show geometry of basis objs
@@ -223,11 +229,12 @@ classdef domain < handle
       % methods defined by separate files...
       addconnectedsegs(d, s, pm, o)  % helper routine for constructor
       h = plot(d, o)                     % domain plot: o is plot opts struct
-      addregfbbasis(d, origin, N, opts) % add reg FB basis object
-      addnufbbasis(d,origin,nu,offset,branch,N,opts) % add irreg. FB basis
-      addrpwbasis(d, N, opts)           % add real PW basis
-      addmfsbasis(d, Z, tau, N, opts)   % add MFS basis
-      b = addlayerpotbasis(d, a, segs, opts) % add layer-potential basis
+      addregfbbasis(d, varargin) % add reg FB basis object
+      addnufbbasis(d,varargin) % add irreg. FB basis
+      addcornerbases(d, N, opts)  % add multiple nu-FB's at corners
+      addrpwbasis(d, varargin)           % add real PW basis
+      addmfsbasis(d, varargin)   % add MFS basis
+      b = addlayerpot(d, segs, a, opts) % add layer-potential basis
       [A A1 A2] = evalbases(d, p, opts)    % evaluate all basis funcs in domain
       setrefractiveindex(doms, n)
       

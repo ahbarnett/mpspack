@@ -7,6 +7,8 @@
 %   domain handles, although doms may be empty (scattering off metallic object).
 %
 % See also BVP, PROBLEM
+%
+% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
 
 classdef scattering < bvp & handle
   properties
@@ -47,6 +49,7 @@ classdef scattering < bvp & handle
       if nargin==2
         if isempty(pr.k), error('scattering problem must have wavenumber set'); end
         kvec = pr.k*exp(1i*t);                % set up a plane-wave field
+        pr.incang = t;
         ui = @(x) exp(1i*real(conj(kvec) .* x));
         uix = @(x) 1i*real(kvec)*ui(x); uiy = @(x) 1i*imag(kvec)*ui(x);
       end
@@ -122,21 +125,22 @@ classdef scattering < bvp & handle
     
       o = pr.gridboundingbox(o);
       gx = o.bb(1):o.dx:o.bb(2); gy = o.bb(3):o.dx:o.bb(4);  % plotting region
-      [xx yy] = meshgrid(gx, gy); zz = xx + 1i*yy;  % keep zz rect array
+      [xx yy] = meshgrid(gx, gy); zz = xx(:) + 1i*yy(:);  % keep zz rect array
       [u di] = pr.pointincidentwave(pointset(zz),o);
+      u=reshape(u,size(xx,1),size(xx,2));
+      di=reshape(di,size(xx,1),size(xx,2));      
     end % func
     
     function showthreefields(pr, o)
     % SHOWTHREEFIELDS - plot figure with u_i, u_s and u_t on subplot grids (Re)
     %
-    %   if opts.testtransparent is true, then the final plot is error from
+    %   if o.testtransparent is true, then the final plot is error from
     %    transparency, reports L2 error estimated over grid too.
-    %   if opts.imag = true, plots imag instead of real part
-    %   opts.bdry = true, shows boundary too
-    %   opts.sepfigs: if true, make three separate figures
+    %   if o.imag = true, plots imag instead of real part
+    %   o.bdry = true, shows boundary too
+    %   o.sepfigs: if true, make three separate figures
+    %   o.all = fals: if true, plot incident field over all domains
     %
-    %  Need to * make a real/complex flag
-    %          * store Ad eval matrices for later access (expensive to fill)?
       if nargin<2, o = []; end
       if ~isfield(o, 'imag'), o.imag = 0; end
       if ~isfield(o, 'bdry'), o.bdry = 0; end
@@ -176,14 +180,14 @@ classdef scattering < bvp & handle
         uiR = pr.ui(zz);                  % u_i eval over whole R^2
         uerr = ui+us-uiR;
         if o.imag
-          imagesc(gx, gy, imag(uerr));title('Im[u_{err}] = Im[u_t - u_i(R^2)]');
+          imagesc(gx, gy, imag(uerr));title('Im[u_{err}] = Im[u - u_i(R^2)]');
         else
-          imagesc(gx, gy, real(uerr));title('Re[u_{err}] = Re[u_t - u_i(R^2)]');
+          imagesc(gx, gy, real(uerr));title('Re[u_{err}] = Re[u - u_i(R^2)]');
         end
         fprintf('L2 transparency error est on grid = %g\n', o.dx*norm(uerr))
       else
-        if o.imag, imagesc(gx, gy, imag(ui+us)); title('Im[u_t] = Im[u_i+u_s]');
-        else, imagesc(gx, gy, real(ui+us)); title('Re[u_t] = Re[u_i+u_s]'); end
+        if o.imag, imagesc(gx, gy, imag(ui+us)); title('Im[u] = Im[u_i+u_s]');
+        else, imagesc(gx, gy, real(ui+us)); title('Re[u] = Re[u_i+u_s]'); end
       end
       %c = caxis; caxis([-1 1]*max(c));
       caxis(2*[-1 1]*max(c));                  % choose double caxis hack
@@ -191,5 +195,29 @@ classdef scattering < bvp & handle
       if o.bdry, pr.showbdry; end
     end % func
     
+    function showfullfield(pr, o)
+    % SHOWFULLFIELD - plot u_i+u_s on the grid
+    %
+    %   o.imag = true, plots imag instead of real part
+    %   o.bdry = true, shows boundary too
+
+      if nargin<2, o = []; end
+      if ~isfield(o, 'imag'), o.imag = 0; end
+      if ~isfield(o, 'bdry'), o.bdry = 0; end
+    
+      [ui gx gy di] = pr.gridincidentwave(o);
+      u=pr.gridsolution(o);
+      u=ui+u;
+      figure;
+      if o.imag
+          imagesc(gx, gy, imag(u));title('Im[u]');
+      else
+          imagesc(gx,gy,real(u)); title('Re[u]');
+      end
+      c = caxis; caxis([-1 1]*max(c));
+      axis equal tight;colorbar; set(gca,'ydir','normal'); hold on;
+      if o.bdry, pr.showbdry; end
+    end      
+      
   end % methods
 end

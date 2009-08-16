@@ -1,3 +1,4 @@
+function h = plot(s, pm, o)
 % PLOT - plots a directed segment on current figure, using its quadrature pts
 %
 %  h = PLOT(seg) plots a segment, quadrature points, etc. Also plots an array
@@ -12,23 +13,26 @@
 %
 % See also: pointset/PLOT, domain/SHOWSEGMENTS
 
-function h = plot(s, pm, o)
+% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
+
 if nargin<2, pm = 1; end                       % default sense is positive
 if nargin<3, o = []; end
 if ~isfield(o, 'arrow'), o.arrow = 1; end % default is show arrow
 if ~isfield(o,'normals'), o.normals=1; end % default is show normals
 lt = '.-';                                 % default is show quad pt blobs
-if isfield(o,'blobs') & ~o.blobs, lt='-'; end % switch off blobs
-closed = (abs(s.Z(0)-s.Z(1))<1e-15);       % hack to tell if segment is closed
-
+if isfield(o,'blobs') && ~o.blobs, lt='-'; end % switch off blobs
+if numel(s)==1, 
+    closed = (abs(s.Z(0)-s.Z(1))<1e-15);  % hack to tell if segment is closed
+end
+    
 g = gcf;
 figure(g); hold on;
 
 if numel(s)>1                       % vectorize using domain routine
-  domain.showsegments(s, pm, o);
+  h = domain.showsegments(s, pm, o);
 else                                % just one seg, plot it!
   if closed, h = plot(real([s.x; s.x(1)]), imag([s.x; s.x(1)]), lt);
-  else, h = plot(real(s.x), imag(s.x), lt);
+  else h = plot(real(s.x), imag(s.x), lt);
   end
   if o.normals,
     l = 0.1;                                       % show normals... length

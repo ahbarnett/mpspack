@@ -32,6 +32,8 @@
 %\newcommand{\crk}{C_{s}} %C_{R,k}         % const for exponential s(m) bnd
 \newcommand{\bmp}[1]{\begin{minipage}{#1}}
 \newcommand{\emp}{\end{minipage}}
+\newcommand{\re}{\mbox{Re}\,}
+\newcommand{\im}{\mbox{Im}\,}
 
 \newtheorem{thm}{Theorem}
 \newtheorem{cnj}{Conjecture}
@@ -47,7 +49,6 @@
 \newcommand{\ep}{\hfill $\square$ \vspace{1ex} \\} % {\end{proof}}
 % note elsart ones horrible: \pr and \endpr
 \newcommand{\bmal}{{\bm \alpha}}             % bold alpha
-\newcommand{\xx}{\mbf{x}}             % bold x
 \newcommand{\splt}[2]{$\left\{\begin{array}{l}\mbox{#1}\\\mbox{#2}\end{array}\ri
 ght.$}
 \newcommand{\lo}{{L^2(\Omega)}}
@@ -60,14 +61,16 @@ ght.$}
 \newcommand{\tw}{\textwidth}
 \newcommand{\vg}{\vspace{2ex}}
 
-% brand names... 
+% brand names... the problem with putting a trailing space here is that then
+% punctuation following the word cannot be correct. To use these with correct
+% trailing space, use as \mpspack\ or \matlab\ or with ending period, \matlab.
 \newcommand{\mpspack}{{\tt MPSpack}}            % name of this package
-\newcommand{\matlab}{{M{\scriptsize ATLAB}}}            % name of MATLAB
+\newcommand{\matlab}{{M{\small ATLAB}}}            % name of MATLAB
 
 % code formatting... (nearly ok, gets multiple-line padding wrong)
 \newcommand{\co}[1]{\vspace{.5ex}
 \\
-\mbox{}\hspace{5ex}\begin{minipage}{\textwidth}{\tt #1}\end{minipage}%
+\mbox{}\hspace{2ex}\begin{minipage}{\textwidth}{\tt #1}\end{minipage}%
 \vspace{.5ex}%
 \\}
 

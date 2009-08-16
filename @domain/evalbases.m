@@ -18,6 +18,9 @@
 %   object, jump relations will be taken into account, corresponding to
 %   evaluation on the interior (limit approaching from inside) of the domain.
 
+% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
+
+
 function [A Ax Ay] = evalbases(d, p, opts)
 
 A = []; Ax = []; Ay = [];   % matrices will be stacked as columns

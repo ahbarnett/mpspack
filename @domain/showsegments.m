@@ -1,3 +1,4 @@
+function h = showsegments(segs, pm, o)
 % SHOWSEGMENTS - plot signed segment list to current figure (domain helper)
 %
 %  h = SHOWSEGMENTS(s, pm) plots segment pointers s with senses pm to
@@ -9,7 +10,8 @@
 %
 %  See also: domain/PLOT, segment/PLOT
 
-function h = showsegments(segs, pm, o)
+% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
+
 if nargin<3, o = []; end
 if nargin<2, pm = ones(size(segs)); end        % default is +
 if numel(pm)==1, pm = pm*ones(size(segs)); end

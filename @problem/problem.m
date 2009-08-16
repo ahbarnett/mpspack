@@ -1,5 +1,6 @@
-% PROBLEM - abstract class defining interfaces for Helmholtz/Laplace BVPs/EVPs
+% PROBLEM - abstract class defining interfaces for Helmholtz/Laplace BVPs
 
+% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
 classdef problem < handle
   properties
     segs                    % array of handles of segments in problem
@@ -17,6 +18,13 @@ classdef problem < handle
   
    function fillquadwei(pr)   % ............... fill quadrature weights vector
    % FILLQUADWEI - compute sqrt of bdry quadrature weights vector for a problem
+   %
+   % p.fillquadwei where p is a problem object fills the column vector p.sqrtwei
+   %   with the square-root of quadrature weights for the segment BC / matching
+   %   points in a problem. The ordering matches the row ordering of p.A matrix
+   %   and p.rhs right-hand side vector.
+   %
+   % See also: BVP.SOLVECOEFFS
       pr.sqrtwei = [];        % get ready to stack stuff onto it as a big row
       for s=pr.segs
         if s.bcside==0          % matching condition
@@ -55,8 +63,8 @@ classdef problem < handle
     %
     %   A = FILLBCMATRIX(pr) returns the matrix mapping all basis degrees of
     %   freedom in the problem to all segment boundary or matching condition
-    %   mismatch functions. With no output argument the answer is written to
-    %   the problem's property A.
+    %   inhomogeneity functions. With no output argument the answer is written
+    %   to the problem's property A.
     %
     %   A = FILLBCMATRIX(pr, opts) allows certain options including:
     %   opts.doms: if present, restricts to contrib from only domain list doms.
@@ -68,7 +76,8 @@ classdef problem < handle
     %    in some problem domain.
     %    (The above three are needed by blochmodeproblem)
     %
-    %    Notes: faster version, based on basis dofs rather than domain dofs
+    %  Issues/Notes:
+    %  * is now faster version, based on basis dofs rather than domain dofs
       if nargin<2, opts=[]; end
       if ~isfield(opts, 'doms'), opts.doms = []; end
       if ~isfield(opts, 'trans'), trans = []; else trans = opts.trans; end
@@ -154,6 +163,32 @@ classdef problem < handle
     %   boundary.
     %
     % See also GRIDSOLUTION.
+    
+    % Split up the computation if list of points is longer than nmax.
+    % Ensures that not too much memory is eaten up by the computation.
+    nmax=1e4;          % since nmax=100 had big 20% speed hit
+    if length(p.x)>nmax,
+        Np=length(p.x);
+        itcount=floor(Np/nmax);
+        r=mod(Np,nmax);
+        u=zeros(Np,1); di=zeros(Np,1);
+        for j=1:itcount+1,
+            if j<=itcount,
+                indrange=(j-1)*nmax+1:j*nmax;
+            elseif r>0,
+                indrange=(j-1)*nmax:Np;
+            else break
+            end
+            if ~isempty(p.nx),             
+                ptemp=pointset(p.x(indrange),p.nx(indrange));
+            else
+                ptemp=pointset(p.x(indrange));
+            end
+            [ut,dit]=pr.pointsolution(ptemp);
+            u(indrange)=ut; di(indrange)=dit;
+        end
+        return
+    end
       di = NaN*zeros(size(p.x));                    % NaN indicates in no domain
       u = di;                                       % solution field
       for n=1:numel(pr.doms)
@@ -213,6 +248,7 @@ classdef problem < handle
       end
       o.bb(1) = o.dx * floor(o.bb(1)/o.dx);         % quantize to grid through 0
       o.bb(3) = o.dx * floor(o.bb(3)/o.dx);         % ... make this optional?
+      o.bb(1) = o.bb(1) + 1e-12; o.bb(3) = o.bb(3) + 1e-12; % jog grid (inside) 
     end
     
     function h = showbdry(pr)   % ........................ crude plot bdry
@@ -221,11 +257,18 @@ classdef problem < handle
     end
     
     function h = showbasesgeom(pr)   % ................ crude plot bases geom
+    % SHOWBASESGEOM - plot geometry of all basis objects in a problem object
+      h = [];   % dummy graphics handle for now
       pr.setupbasisdofs;
       for i=1:numel(pr.bas)
         opts.label = sprintf('%d', i);              % label by problem's bas #
         pr.bas{i}.showgeom(opts);
       end
+    end
+    
+    function h = plot(pr)
+    % PLOT - show all geometry information in a problem object
+      h = [pr.showbdry; pr.showbasesgeom];
     end
     
     function setoverallwavenumber(pr, k) % ................. overall k
@@ -237,10 +280,24 @@ classdef problem < handle
       pr.k = k;
       for d=pr.doms
         d.k = d.refr_ind * k;
-         % do basis sets, if any, in each domain...
-        for i=1:numel(d.bas), d.bas{i}.k = d.k; end
       end
     end
+    
+    function updateN(pr,N)
+    % UPDATEN - Update the number of basis functions in each basis set
+    %
+    % updateN(pr,N) sets the degree/number of basis functions in each
+    %   basis set of the problem pr to be N times the basis set's nmultiplier
+    %   property. This is useful for convergence studies when all basis degrees
+    %   should be changed in proportion.
+        for d=pr.doms,
+            for j=1:length(d.bas),
+                d.bas{j}.updateN(N); 
+            end
+        end
+        pr.setupbasisdofs;       % refreshes pr.N and pr.basnoff
+    end
+    
     
     function [u gx gy di h] = showsolution(pr, o) % ............. plot solution
     % SHOWSOLUTION - plot figure with solution Re u over all domains in problem
@@ -292,7 +349,6 @@ classdef problem < handle
       set(gca,'ydir','normal'); hold on;
       if o.bdry, pr.showbdry; end
     end % func
-    
     
     % *** Methods to be written ........... ****
     [u un] = bdrysolution(pr, seg, pm) % ........... evaluate soln on a bdry

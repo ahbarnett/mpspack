@@ -36,8 +36,10 @@ function [A Sker Dker_noang] = T(k, s, t, o);
 %  [T Sker Dker_noang] = T(...) also returns quad-unweighted
 %   kernel values matrices Sker, Dker_noang, when k>0 (empty for Laplace)
 %
-%  barnett 8/4/08, Tested by routine: testbasis.m, case 9 (non-self case only)
-%  Added Kress-Maue spectral quadr, absent the cot term, 1/21/09
+
+% Copyright (C) 2008, 2009, Alex Barnett and Timo Betcke
+
+
 if isempty(k) | isnan(k), error('T: k must be a number'); end
 if nargin<4, o = []; end
 if nargin<3, t = []; end
@@ -60,7 +62,7 @@ nx = repmat(t.nx, [1 N]);        % identical cols given by target normals
 csrx = conj(nx).*d;              % (cos th + i sin th).r
 clear d
 if ~isfield(o, 'Sker')
-  o.Sker = utils.fundsol(r, k);           % Phi
+  o.Sker = layerpot.fundsol(r, k);           % Phi
 end
 if ~self | s.qtype~='p' | o.quad~='m' % all but hypersing spectral quadr
   clear nx ny
@@ -72,9 +74,9 @@ if ~self | s.qtype~='p' | o.quad~='m' % all but hypersing spectral quadr
     cdor = real(csry.*csrx) ./ (r.*r.*r);   % cos(phi-th) / r
     clear csrx csry
     if ~isfield(o, 'Dker_noang')
-      [A o.Dker_noang] = utils.fundsol_deriv(r, -cdor, k); % compute n-deriv Phi
+      [A o.Dker_noang] = layerpot.fundsol_deriv(r, -cdor, k); % get n-deriv Phi
     else
-      [A o.Dker_noang] = utils.fundsol_deriv(r, -cdor, k, o.Dker_noang);
+      [A o.Dker_noang] = layerpot.fundsol_deriv(r, -cdor, k, o.Dker_noang);
     end
     % put all this together to compute the kernel value matrix...
     A = A + k^2 * cc .* o.Sker;
@@ -117,9 +119,9 @@ if self % ........... source curve = target curve; can be singular kernel
       % Do tangential deriv term (2nd term in Maue splitting eqn):
       spsinphi = imag(csrx)./r .* repmat(sp, [1 M]);  % -speed times sin phi 
       if ~isfield(o, 'Dker_noang')
-        [B o.Dker_noang] = utils.fundsol_deriv(r, -spsinphi, k);
+        [B o.Dker_noang] = layerpot.fundsol_deriv(r, -spsinphi, k);
       else
-        [B o.Dker_noang] = utils.fundsol_deriv(r, -spsinphi, k, o.Dker_noang);
+        [B o.Dker_noang] = layerpot.fundsol_deriv(r, -spsinphi, k,o.Dker_noang);
       end
       S1 = triu(besselj(1,k*triu(r,1)),1);  % use symmetry (arg=0 is fast)
       S1 = (k/4/pi)*(S1.'+S1) .* spsinphi;  % S1=N_1/2 of Kress, diag is 0
