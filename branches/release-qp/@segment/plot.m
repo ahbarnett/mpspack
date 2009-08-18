@@ -12,8 +12,8 @@ function h = plot(s, pm, o)
 %   opts.blobs: if true, show quadrature pt blobs (default true)
 %
 % See also: pointset/PLOT, domain/SHOWSEGMENTS
-%
-% Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
+
+% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
 
 if nargin<2, pm = 1; end                       % default sense is positive
 if nargin<3, o = []; end

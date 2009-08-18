@@ -9,7 +9,7 @@ function s = radialfunc(M, fs)
 %  s = radialfunc(M, {f fp fpp}) also includes 2nd-derivative, enabling
 %   curvature information to be created in the segment (for spectral quadr)
 %
-% Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
+% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
 
 f = fs{1};
 Z = @(s) exp(2i*pi*s).*f(2*pi*s);   % note conversion from 0<s<1 to 0<t<2pi

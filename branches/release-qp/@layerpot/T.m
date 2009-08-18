@@ -36,8 +36,10 @@ function [A Sker Dker_noang] = T(k, s, t, o);
 %  [T Sker Dker_noang] = T(...) also returns quad-unweighted
 %   kernel values matrices Sker, Dker_noang, when k>0 (empty for Laplace)
 %
-%  barnett 8/4/08, Tested by routine: testbasis.m, case 9 (non-self case only)
-%  Added Kress-Maue spectral quadr, absent the cot term, 1/21/09
+
+% Copyright (C) 2008, 2009, Alex Barnett and Timo Betcke
+
+
 if isempty(k) | isnan(k), error('T: k must be a number'); end
 if nargin<4, o = []; end
 if nargin<3, t = []; end

@@ -14,12 +14,10 @@ classdef layerpot < handle & basis
 %   Note that the discretization of the layerpot is given by that of the seg,
 %    apart from periodic segments where new quadrature weights may be used.
 %
-% Issues/notes:
-%  * real=1 case? don't bother.
 %
-% Also see: DOMAIN/ADDLAYERPOT, LAYERPOT/S, etc
+% See also: DOMAIN/ADDLAYERPOT
 
-%          Copyright (C) 2008, 2009, Alex Barnett and Timo Betcke
+% Copyright (C) 2008, 2009, Alex Barnett and Timo Betcke
   properties
     real                            % true if fund sol is Y_0, false for H_0^1
     seg                             % handle of segment on which density sits

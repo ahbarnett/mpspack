@@ -5,8 +5,8 @@ function v = approxpolygon(s, pm)
 %   C-numbers) for the approximating polygon of a segment list seg and sign
 %   list pm. If the segment list is not closed, v should not be interpreted
 %   as a closed polygon.
-%
-% Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
+
+% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
 
 
 v = [];

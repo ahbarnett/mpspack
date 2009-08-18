@@ -9,8 +9,8 @@ function h = showsegments(segs, pm, o)
 %   opts.label: if true, label each seg with its number in list (default true)
 %
 %  See also: domain/PLOT, segment/PLOT
-%
-% Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
+
+% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
 
 if nargin<3, o = []; end
 if nargin<2, pm = ones(size(segs)); end        % default is +

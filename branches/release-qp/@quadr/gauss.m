@@ -1,7 +1,8 @@
+  function [x,w] = gauss(N)
 % GAUSS  nodes x (Legendre points) and weights w
 %        for Gauss quadrature
 
-  function [x,w] = gauss(N)
+% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
   persistent xstore wstore Nstore
   if N==Nstore,
       x=xstore; w=wstore;

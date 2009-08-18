@@ -6,8 +6,8 @@ function h = showdomains(dlist, opts)
 %  structure in domains.plot
 %
 %  See also: domains/PLOT
-%
-% Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
+
+% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
 
 
 if nargin<2, opts = []; end

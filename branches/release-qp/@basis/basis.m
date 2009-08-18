@@ -4,6 +4,9 @@ classdef basis < handle
   % common for all basis objects. Also defines periodizing (qpunitcell)
   % basis and discrepancy evaluation methods that apply to generic bases.
 
+
+  % Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
+
   
   properties
     doms                    % array of handles of domains affected by basis

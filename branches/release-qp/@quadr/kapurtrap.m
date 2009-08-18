@@ -24,6 +24,8 @@ function [x,w,cs,ier]=kapurtrap(n,m)
 %         ier = 16   n < m
 %
 
+% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
+
 ier=0;
 
 T{1} = [1.825748064736159 -1.325748064736159];

@@ -7,8 +7,8 @@ function s = polyseglist(M, p, qtype)
 %   normals of segments point outwards.
 %
 %  s = POLYSEGLIST(M, p, qtype) uses specified quadrature type (see SEGMENT).
-%
-% Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
+
+% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
 
 p = reshape(p, [1 numel(p)]);
 nextp = circshift(p, [0 -1]);

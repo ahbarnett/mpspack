@@ -5,7 +5,8 @@ function h = plot(pts)
 %  the graphics handle.
 %
 % See also: POINTSET
-% Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
+
+% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
 
 g = gcf;
 figure(g); hold on;

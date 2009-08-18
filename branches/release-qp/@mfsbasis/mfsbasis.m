@@ -25,7 +25,7 @@ classdef mfsbasis < handle & basis
 %  opts.real  - (false) If true, use real part of Hankel functions only
 %  opts.tau   - (0) Creates charge curve Z(t+i.tau) rather than Z(t)
 
-% Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
+% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
 
 properties
     Z                     % function handle for charge curve
