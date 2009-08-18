@@ -1,5 +1,5 @@
 % test constructors, how slow, eg for segments
-% barnett 8/11/08
+% barnett 8/11/08. changed for k-free interface 8/18/09
 
 clear classes; N = 10; n = 300;
 x = rand(100,1); nx = rand(100,1);
@@ -27,7 +27,7 @@ end
 fprintf('segment translate making new: %.2g ms\n', toc*1000/n);
 tic;
 for i=1:n
-  lp = layerpot(s(i), 's', 10);
+  lp = layerpot(s(i), 's');
 end
 fprintf('layerpot create: %.2g ms\n', toc*1000/n);
 c = cell(1, n); for i=1:n, c{i} = s(i); end

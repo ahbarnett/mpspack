@@ -1,12 +1,12 @@
 % test insertion of basis sets within domains, and plotting inside domains
-% barnett 7/8/08. Is now a bit obsolete due to bases not residing in domains.
+% barnett 7/8/08. converted to k-free basis creator 8/18/09.
 
 clear classes
 M = 20; s = segment.polyseglist(M, [1 1i exp(4i*pi/3)]);  % CCW tri from INCL
 d = domain(s, 1);
-k = 10; opts.real = 1; opts.fast = 0;
-d.addregfbbasis(0, 10, k, opts);
-d.addrpwbasis(10, k, opts);
+k = 10; d.k = k; opts.real = 1; opts.fast = 0;
+d.addregfbbasis(0, 10, opts);
+d.addrpwbasis(10, opts);
 js = 1:d.Nf;                       % which basis func indices to plot
 
 [zz ii gx gy] = d.grid(0.01);      % set up grid then evaluate
