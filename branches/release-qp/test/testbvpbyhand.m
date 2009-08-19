@@ -1,13 +1,13 @@
 % try basic interior BVP 'by hand' in order to see best way to do bvp class.
 % also see testbasisdomain.m
-% barnett 7/10/08. Now somewhat obsolete, since bases no longer inside domains.
+% barnett 7/10/08. Now somewhat obsolete. changed to k-free interface 8/18/09
 
 clear all classes
 verb = 1;
 M = 40; s = segment.polyseglist(M, [1 1i exp(4i*pi/3)]);  % CCW tri from INCL
 d = domain(s, 1);
 k = 10; N = 30;
-opts.real = 1; d.addrpwbasis(N, k, opts);
+d.k = k; opts.real = 1; d.addrpwbasis(N, opts);
 
 % set up BCs...
 %dirfunc = @(x) besselj(0, k*abs(x - 0.3 + .2i));   % boundary Dirichlet data
