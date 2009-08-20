@@ -138,7 +138,7 @@ install the GNU Scientific Library \cite{GSL}.
 
 The project is hosted at the repository
 \co{http://code.google.com/p/mpspack}
-There are two alternative methods to download and unpack:
+There are three alternative methods to download and unpack:
 \ben
 \item
 Ensure you have subversion ({\tt svn}) installed.
@@ -160,22 +160,27 @@ unpack this with
 \co{tar zxvf mpspack-1.0.tar.gz}
 This creates the directory {\tt mpspack} containing the toolbox.
 
-%TODO: ALSO MAKE AVAILABLE ZIP ARCHIVE
+\item Get a zip-compressed archive from
+\co{http://code.google.com/p/mpspack/downloads/list}
 
 \een
 There are some optional fast basis and other math libraries
-(C and Fortran with MEX interfaces), which should be compiled
-in a UNIX environment as follows:
+(C and Fortran with MEX interfaces), which although not needed for
+\mpspack\ to work, should improve efficiency (see Section \ref{s:tweak}).
+These can be compiled in a UNIX environment as follows
+(we have not yet tried them in other operating systems):
 from the {\tt mpspack} directory type {\tt make}.
-(If GSL \cite{GSL} is not installed, you will need to remove the
-references to {\tt gsl} codes in {\tt @utils/Makefile} before
-executing {\tt make}).
+You may first need to adjust the library locations in {\tt make.inc},
+as explained in that file
+(If GNU Scientific Library \cite{GSL} is not installed,
+you will need to remove the lines in {\tt @utils/Makefile} which
+compile codes using GSL before executing {\tt make}).
 
 You should now add the {\tt mpspack}
 directory to your \matlab\ path, for instance by adding the line
 \co{addpath 'path/to/mpspack';}
-to your MATLAB {\tt startup.m} file.
-You are now ready to use \mpspack\ !
+to your \matlab\ {\tt startup.m} file.
+You are now ready to start \matlab\ and use \mpspack\ !
 
 
 \subsection{What problems can \mpspack\ solve?}
@@ -887,8 +892,8 @@ the {\tt FMMToolbox} by MadMax Optics, Inc.,
 and the {\tt chebfun} system
 by L. N. Trefethen, Z. Battles, T. Driscoll, R. Pach\'{o}n, and R. Platte.
 Alex Barnett's work is supported by National Science Foundation
-grants DMS-0507614 and DMS-0811005.
-Timo Betcke's work is supported by XXX.
+grants DMS-0507614 and DMS-0811005., Timo Betcke's work is supported
+by Engineering and Physical Sciences Research Council Grant EP/F06795X/1.
 
 \mpspack\ is released under the GNU Public License, as follows:
 \begin{verbatim}

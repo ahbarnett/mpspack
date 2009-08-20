@@ -1,9 +1,8 @@
 classdef basis < handle
     
   % Basis class - Abstract class that defines the interfaces which are
-  % common for all basis objects. Also defines periodizing (qpunitcell)
+  % common for all basis objects. Also defines quasi-periodizing (qpunitcell)
   % basis and discrepancy evaluation methods that apply to generic bases.
-
 
   % Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
 
@@ -42,6 +41,9 @@ classdef basis < handle
     % Issues: need to generalize to basis sets that affect >1 domain.
       k = b.doms(1).k;       % note, given no further info, only knows 1st dom
     end
+
+    
+% ========= Below are methods needed only for quasi-periodic features =====
     
     function d = copiesdata(b, p, transl, nargs, opts) %.......eval copies data
     % COPIESDATA - data struct of basis func evals on many copies of pointset
@@ -58,6 +60,8 @@ classdef basis < handle
     %   be passed to basis.eval, such as:
     %    opts.dom: domain for basis evaluation.
     %          
+      if exist('qpunitcell','class')~=8
+        error('qpunitcell class is not found; exiting'); end
       if nargin<5, opts = []; end
       nc = numel(transl);
       N = b.Nf;
@@ -127,6 +131,8 @@ classdef basis < handle
     %  opts.dom gets passed through to basis.eval
     %
     % See also EVAL, COPIESDATA
+      if exist('qpunitcell','class')~=8
+        error('qpunitcell class is not found; exiting'); end
       if ~isa(uc, 'qpunitcell'), error('uc must be a qpunitcell object!'); end
       if nargin<4, opts = []; end
       if ~isfield(opts, 'poly'), opts.poly = 0; end       % default no poly
@@ -204,6 +210,8 @@ classdef basis < handle
     %   This struct may then be passed in as opts.data for future fast evals.
     %
     % See also QPUNITCELL.
+      if exist('qpunitcell','class')~=8
+        error('qpunitcell class is not found; exiting'); end
       if ~isa(uc, 'qpunitcell'), error('uc must be a qpunitcell object!'); end
       if nargin<3, opts = []; end
       if ~isfield(opts, 'poly'), opts.poly = 0; end       % default no poly
