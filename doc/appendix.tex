@@ -1,0 +1,487 @@
+\appendix
+
+\setlength{\parskip}{\baselineskip}
+\setlength{\parindent}{0pt}
+
+\section{Class Descriptions}
+
+
+\paragraph{\tt POINTSET}
+
+Create a pointset object with locations and normal vectors as
+complex numbers.
+
+A pointset is simple object containing a list of points in 2D, plus possibly
+associated normal directions.  It is used to store quadrature points on a
+segment, and also evaluation point lists. Coordinates are stored as 
+complex numbers.
+
+\textbf{Constructors}
+
+{\tt p = POINTSET()}
+creates an empty object.
+ 
+{\tt p = POINTSET(x)} where x is m-by-1 array, creates pointset with m points, where
+the ith point has Cartesian coordinates (Re x(i), Im x(i)).
+  
+{\tt p = POINTSET(x, nx)} where x is above and nx has same size as x, creates
+pointset with coordinates x (interpreted as above) and associated normals
+nx (interpreted in the same way). The Euclidean lengths of the vectors in
+nx are not required to be, nor changed to, unity.
+
+See also: {\tt POINTSET/plot}, {\tt SEGMENT} which builds on {\tt POINTSET}
+
+\textbf{Methods}
+
+none
+
+
+\newpage
+
+\paragraph{\tt SEGMENT} create segment object
+
+\textbf{Constructors}
+
+{\tt s = SEGMENT(M, [xi xf])}  creates a line segment object from xi to xf, both
+complex numbers.
+
+{\tt s = SEGMENT(M, [xc R ti tf])} creates a circular arc segment with center
+xi, radius R and angles from ti to tf. The order is important. If tf>ti
+the orientation is counter-clockwise, otherwise clockwise.
+  
+{\tt s = SEGMENT(M, {Z, Zp})} creats an analytic curve given by the image of 
+the analytic function Z:[0,1]->C. Zp must be the derivative of Z. 
+Z and Zp are function handles. 
+  
+{\tt s = SEGMENT(M, {Z, Zp, Zpp})} works as above but also takes the second
+derivative Z'' of Z. This is useful for layer potentials.
+ 
+{\tt s = SEGMENT(M, p, qtype)} where p is any of the above, chooses quadrature type\\
+    {\tt qtype = 'p'}: periodic trapezoid (appropriate for periodic segments, M pts)\\
+          {\tt 't'}: trapezoid rule (ie, half each endpoint, M+1 pts)\\
+           {\tt 'c'}: Clenshaw-Curtis (includes endpoints, M+1 pts)\\
+           {\tt 'g'}: Gauss (takes $O(M^3)$ to compute, M pts)\\
+
+If M is empty, a default value of 20 is used.
+
+{\tt s = SEGMENT()} creates an empty segment object.
+
+See also: {\tt POINTSET}, {\tt segment/PLOT}
+
+\textbf{Methods}
+
+{\tt requadrature(segs, M, qtype)} change a segment's quadrature
+scheme or number of points
+
+{\tt setbc(seg, pm, a, b, f)} set a (in)homogeneous boundary
+condition on a segment
+
+{\tt setmatch(seg, a, b, f, g)} set (in)homogeneous matching
+conditions across a segment 
+
+{\tt newseg = scale(seg, fac)} rescale (dilate) a segment (or list)
+about the origin
+
+{\tt newseg = translate(seg, a)} translate a segment (or list of segments)
+
+{\tt newseg = rotate(seg, t)} rotate a segment (or list of
+segments) about the origin
+
+{\tt newseg = reflect(seg, ax)} reflect a segment (or list of
+segments) about x or y axis
+
+{\tt disconnect(segs)} disconnect a segment or segment list from any domains
+
+{\tt h = plot(s, pm, o)} plots a directed segment on current
+figure, using its quadrature pts
+
+
+{\tt s = polyseglist(M, p, qtype)}\\
+{\tt s = polyseglist(M, p)}\\
+(Static Method) create closed list of segment objects from CCW polygon vertices
+
+{\tt s = radialfunc(M, fs)} (Static Method) closed segment from
+radial function r=f(theta) and derivatives
+
+{\tt s = smoothstar(M, a, w)} (Static Method) single-freq
+oscillatory radial function closed segment
+
+{\tt [a b] = dielectriccoeffs(pol, np, nm)} (Static Method) give a
+and b coeff pairs (1-by-2) from refractive indices
+
+
+ 
+\newpage
+
+\paragraph{\tt DOMAIN} create an interior/exterior domain possibly with
+excluded subregions
+
+A domain is an ordered connected list of segments defining the exterior
+boundary, with zero or more ordered connected lists of segments defining the
+boundaries of any interior excluded regions. If the exterior boundary is empty
+the domain from which interior regions are possibly excluded is taken to be
+the whole plane, resulting in an unbounded exterior domain.
+
+\textbf{Constructors}
+
+{\tt d = DOMAIN(s, pm)} creates an interior domain whose boundary is the list
+of handles of segment objects s, using the list of senses pm (each element
+is the number +1 or -1). A warning is given if the segments do not appear
+to connect up at corners. Normals should all point outwards, ie away from
+the domain, otherwise a warning is given. If pm has only 1 element, it will
+be duplicated as necessary to match the size of s.
+
+{\tt d = DOMAIN()}\\
+{\tt d = DOMAIN([], [])}\\
+creates an exterior domain equal to the
+whole plane $\mathbb{R}^2$.
+
+{\tt d = DOMAIN([], [], si, pmi)} creates an exterior domain equal to the whole
+plane minus an excluded region whose (non-intersecting) boundary is given
+by segment list si and sign list pmi (which have the same format as s, pm
+above). If si and pmi are instead cell arrays of segment lists and
+corresponding sign lists, each cell element is an excluded region. As
+above, warnings are given if intersections or incorrect normals are found.
+
+{\tt d = DOMAIN(s, pm, si, pmi)} combines the above features, creating a bounded
+domain with excluded region(s).
+
+See also: {\tt SEGMENT}, {\tt domain/PLOT}
+
+\textbf{Methods}
+
+{\tt norout = normalscheck(d)} check that senses of normals point
+away from a domain
+
+{\tt i = inside(d, p)} return true (false) for points inside
+(outside) a domain
+
+{\tt x = x(d)} return column vector of quadrature points on a domain boundary
+
+{\tt nx = nx(d)} return column vector of unit outward normals on a
+domain boundary
+
+{\tt w = w(d)} return row vector of quadrature weights for a domain
+boundary
+
+{\tt bb = boundingbox(d)} return bounding [xmin xmax ymin ymax] for
+interior domain
+
+{\tt xc = center(d)} return center x (as complex number) of bounding
+box of domain 
+
+{\tt diam = diam(d)} approximate diameter of an interior domain
+
+{\tt [zz ii gx gy] = grid(d, dx)} make grid covering interior
+domain, or some of exterior domain
+
+{\tt deletecorner(d,j)} remove a given corner number from a domain
+
+{\tt Nf = Nf(d)} total number of basis functions (dofs) associated
+with domain
+
+{\tt clearbases(d)} remove all basis set associations from a domain
+
+{\tt showbasesgeom(d)} show geometry of basis objs
+
+{\tt addconnectedsegs(d, s, pm, o)} append a domain's params,
+corners given conn seg list
+
+{\tt addregfbbasis(d, origin, N, opts)} create a regular
+Fourier-Bessel basis object in a domain
+
+{\tt addnufbbasis(d,origin,nu,offset,branch,N,opts)} create a
+fractional-order Fourier-Bessel basis set
+
+{\tt addcornerbases(d, N, opts)} add irreg Fourier-Bessel basis to
+each corner of a domain
+
+{\tt addrpwbasis(d, N, opts)} create a real plane wave basis object
+in a domain
+
+{\tt addmfsbasis(d, varargin} Add an MFS (fundamental solutions)
+basis to a domain
+
+{\tt b = addlayerpot(d, a, segs, opts)} create a layer-potential
+basis set object in a domain
+
+{\tt [A A1 A2] = evalbases(d, p, opts)} evaluate all basis sets in
+a domain object, on a pointset
+
+{\tt h = plot(d, o)} show domain (or list of domains) on current figure
+
+{\tt setrefractiveindex(doms, n)} sets n for a list of domains
+
+{\tt v = approxpolygon(seg, pm)} (Static Method) stack together
+approximating polygon vertices of segment list
+
+{\tt h = showsegments(seg, pm, o)} plot signed segment list to
+current figure (domain helper)
+
+{\tt x = stackquadpts(seg, pm)} helper routine, ordered quad pts
+from signed connected seg list 
+
+{\tt h = showdomains(dlist, opts)} plot all domains on current
+figure using a color for each
+
+\newpage
+
+\paragraph{\tt BASIS (ABSTRACT)} Abstract class that defines the
+interfaces which are common for all basis objects
+
+
+\textbf{Methods}
+
+{\tt [A, A1, A2] = eval(b, pts)} (abstract) evaluate a basis on a set of points
+
+{\tt Nf = Nf(b, opts)} (abstract) method returning number of degrees of freedom
+
+{\tt updateN(b,N)} set the number of basis functions
+
+{\tt k = k(b, opts)} looks up the basis wavenumber
+
+
+
+
+
+\newpage 
+
+\paragraph{\tt MFSBASIS : BASIS} create a fundamental solutions (MFS) basis
+set.
+
+\textbf{Constructors}
+
+{\tt b = MFSBASIS(Z, N, opts)} creates an MFS basis using charge points
+    at Z(t), where t are equally distributed in [0,1]. Z is a handle
+   to a function. If the charge curve is to be closed, then Z must be
+   1-periodic. N may be empty.
+
+{\tt b = MFSBASIS({Z, Zp}, N, opts)} is as above. But Zp additionally specifies
+   the derivative of Z. This is necessary if dipole-type charges (double
+   layer potentials) are used. N may be empty.
+
+{\tt b = MFSBASIS(p, opts)} describes MFS charge points in terms of a point
+   set object p. If double layer potentials are used then p also needs to
+   contain normal directions.
+
+{\tt b = MFSBASIS(s, N, opts)} uses the function handles from segment s to choose
+   N charge points. It is equivalent to b = MFSBASIS({s.Z, s.Zp}, N, opts).
+
+  In each of the above, opts is an optional structure with optional fields:\\
+  {\tt opts.eta}   - (inf) If eta=inf use single layer potential MFS basis. For
+               eta $\neq$ inf use linear combination of double and single layer
+               potential MFS basis\\
+  {\tt opts.fast}  - (0) Hankel evaluation method (0=matlab; 1,2=faster)\\
+  {\tt opts.real}  - (false) If true, use real part of Hankel functions only\\
+  {\tt opts.tau}   - (0) Creates charge curve Z(t+i.tau) rather than Z(t)\\
+
+\textbf{Methods}
+
+{\tt showgeom(bas, opts)} plots geometry of MFS basis charge points on current figure
+
+
+\newpage
+
+\paragraph{\tt NUFBBASIS : BASIS} create a fractional-order Fourier-Bessel
+basis set
+
+\textbf{Constructors}
+
+
+{\tt b = NUFBBASIS(origin, nu, offset, branch, N)} creates a basis of
+fractional- 
+   order Fourier-Bessel functions appropriate for expansion of the Helmholtz
+   equation in a wedge of angle pi/nu > 0. The orders are nu*(1:N) (for sine
+   angular functions) or nu*(0:N) (for cosine angular functions). The other
+   arguments are:\\ 
+     {\tt origin}: The origin of the Fourier-Bessel functions (as complex number)\\
+     {\tt offset}: The direction that corresponds to the angular variable theta=0\\
+     {\tt branch}: Direction of the branch cut (point on the unit circle);\\
+             it must not point into the affected domain.\\
+     {\tt N}     : degree of the basis set
+
+   The wedge lies counterclockwise from offset, spanning pi/nu in angle.
+   As with all basis types, the wavenumber k is determined by that of the
+   affected domain. k=0 gives fractional-power Laplace equation solutions.
+
+ {\tt b = NUFBBASIS(origin, nu, offset, branch, N, opts)} as above but permits
+   optional arguments to be selected. Currently supported is\\
+         {\tt opts.type}:\\    's'  Create basis of Fourier-Bessel sine fct.\\
+                          'c'  Create basis of Fourier-Bessel cosine fct.\\
+                          'cs' Create basis of Fourier-Bessel cosine and
+                               sine functions (default)\\
+   The reason for having 'cs' rather than using separate 's' and 'c' objects
+   is a factor of 2 in speed: the set of Bessel evaluations is reused.
+
+See also: DOMAIN/ADDNUFBBASIS
+
+\textbf{Methods}
+
+{\tt h = showgeom(nufb, opts)} 
+show corner wedge location, geometry and branch cut
+
+{\tt sc = Jrescalefactors(nufb, n)} given list of orders, return FB
+J-rescaling factors
+
+
+\newpage
+
+\paragraph{\tt REGFBBASIS : BASIS} create a regular Fourier-Bessel basis set
+
+\textbf{Constructors}
+
+{\tt b = REGFBBASIS(origin, N)} creates a regular Fourier-Bessel basis object
+   with given origin, and order N. As with all basis types, the wavenumber
+   k is determined by that of the affected domain, as follows:
+
+   $k=0$ gives harmonic polynomials,\\
+       $\{1, \text{Re} z, \text{Re} z^2, ..., \text{Re} z^N, \text{Im} z, ..., \text{Im} z^N\}$ (real case)\\
+    or $\{z^{-N}, z^{-N+1}, ..., z^N\}$ (complex case)\\
+  $k>0$ gives generalized harmonic polynomials,
+       $\{J_n(kr)\cos(n\theta)\}$ $n=0,..,N$ and
+       $\{J_n(kr)\sin(n\theta)\}$ $n=1,..,N$ (real case)\\
+    or $\{J_n(kr)\exp(1in\theta)\}$ $n=-N,..,N$ (complex case)
+
+  {\tt b = REGFBBASIS(origin, N, opts)} is as above, with options:\\
+   {\tt opts.real}: if true (default), use real values (cos, sin
+   type), otherwise use complex exponentials with orders -N through N.\\
+  {\tt opts.rescale\_rad}: if positive, rescales the basis coefficients i.e.
+              columns of evaluation matrix, such that the value at radius
+              rescale\_rad is O(1). (default is 0, giving no rescaling)\\
+   {\tt opts.besselcode}: math library to use for J Bessel evaluation ($k>0$)\\
+              {\tt 'r'} use downwards-recurrence in Matlab, fast, but
+                       relative accuracy not guaranteed.\\
+              {\tt 'm'} use Matlab's built-in besselj, is slower (default).\\
+              {\tt 'g'} use GNU Scientific Library via MEX interface, fast.
+
+See also: {\tt DOMAIN/ADDREGFBBASIS}
+
+\textbf{Methods}
+
+{\tt showgeom(regfb, opts)} plot regular FB basis set geometry info
+(just origin now)
+
+{\tt sc = Jrescalefactors(regfb, n)} given list of orders, return FB
+J-rescaling factors
+
+\newpage
+
+\paragraph{\tt RPWBASIS : BASIS} create a real (as opposed to evanescent)
+plane wave basis set
+
+\textbf{Constructors}
+
+{\tt b = RPWBASIS(N)} creates a real plane wave basis object, with N directions
+   $\theta_j$ equally spaced in $(0,\pi]$, i.e. $\theta_j = \pi j/N$. As with all basis
+   types, the wavenumber k is determined by that of the affected domain.
+   Basis functions are:\\
+      $\{\cos(k n_j z)\}$ $j=1,..,N$ and $\{\sin(k n_j.z)\}$ $j=1,..,N$       (real case)\\
+   $\{\exp(i k n_j z)\}$ $j=1,..,N$ and $\{\exp(-i k n_j z)\}$ $j=1,..,N$  (complex case)\\
+     where the direction unit vectors are $n_j = (\cos\theta_j, \sin\theta_j)$
+
+   If k=0 a warning is produced since this basis does not have a useful
+   limiting form as k tends to zero (regfbbasis should be used instead).
+
+  {\tt b = RPWBASIS(N, opts)} does the same, except allowing user options:\\
+   {\tt opts.real}: if true, real case (cos/sin type), otherwise complex case.
+
+See also: {\tt DOMAIN/ADDRPWBASIS}
+
+
+\textbf{Methods}
+
+{\tt showgeom(b, opts)} plot real plane wave basis set geometry information
+
+\newpage
+
+\paragraph{\tt LAYERPOT : BASIS} create a layer potential basis set on a segment
+
+\textbf{Constructors}
+
+{\tt b = LAYERPOT(seg, a, opts)} where {\tt a = 'single'} or {\tt
+  'double'} creates a layer
+   potential basis object with density on segment seg, with options:\\
+    {\tt opts.real}: if true, real valued ($Y_0$), otherwise complex
+    ($H_0$ outgoing).\\
+    {\tt opts.fast}: if 0 use matlab Hankel, 1 use fast fortran
+    Hankel, 2 faster.\\
+   If a is instead a 1-by-2 array, then a mixture of a(1) single plus a(2)
+   double is created, useful for Brakhage, Werner, Leis \& Panich type
+   combined representations. As usual for basis sets, the wavenumber k is
+   determined by that of the affected domain.
+
+   Note that the discretization of the layerpot is given by that of the seg,
+    apart from periodic segments where new quadrature weights may be used.
+
+See also: {\tt DOMAIN/ADDLAYERPOT},
+
+\textbf{Methods}
+
+{\tt showgeom(b, opts)} show discrete points of segments
+
+
+{\tt [A Sker] = S(k, s, t, o)} (Static Method) double layer potential
+discretization matrix for density on a segment
+
+{\tt [A Dker\_noang cosker] = D(k, s, t, o)} (Static Method) double
+layer potential discretization matrix for density on a segment
+
+{\tt [A Sker Dker\_noang] = T(k, s, t, o)} (Static Method) deriv of double layer
+potential discr matrix for density on a segment
+
+{\tt A = localfromSLP(s, Jexp)} (Static Method) return matrix taking SLP density
+values on seg to J (local) exp
+
+{\tt A = localfromDLP(s, Jexp)} (Static Method) return matrix taking DLP density
+values on seg to J (local) exp
+
+{\tt A = fundsol(r, k)} (Static Method) return matrix of fundamental
+solutions
+
+{\tt [B radderivs] = fundsol\_deriv(r, cosphi, k, radderivs)} (Static Method) return
+matrix of normal derivatives of fundamental solutions 
+
+\newpage
+
+\paragraph{QUADR} static class of quadrature rules
+
+\textbf{Methods}
+
+{\tt [x w] = peritrap(N)} (Static Method) trapezoid quadrature rule for periodic
+functions
+
+{\tt [x w] = traprule(N)} (Static Method) quadrature points and weights for composite
+N+1-point trapezoid rule
+
+{\tt [x,w] = gauss(N)} (Static Method) nodes x (Legendre points) and weights w 
+for Gauss quadrature
+
+{\tt [x w] = clencurt(N)} (Static Method) nodes x (Chebyshev points) and weights
+w for Clenshaw-Curtis quadrature
+
+{\tt [x,w,cs,ier]=kapurtrap(n,m)} (Static Method) nodes and weights of n-point
+corrected trapezoidal quadrature formula on [0,1]
+
+{\tt Rjn = kress\_Rjn(n)} (Static Method) Kress weights
+
+{\tt D = perispecdiffrow(N)} (Static Method) row 1 of N-pt spectral
+2pi-periodic differentiation matrix
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "manual"
+%%% End: 
