@@ -66,12 +66,13 @@ pr=scattering(ext, [d dr]); %figure; pr.plot; % setup problem & show everything!
 pr.setoverallwavenumber(k); pr.setincidentwave(-pi/10);
 pr.updateN(N); diff([pr.basnoff pr.N])          % spits out bas{:}.Nf
 
+disp('please wait 1 min for solution then 1 min for plotting...');
 % Solve and print solution
 tic; pr.solvecoeffs; fprintf('\tcoeffs done in %.2g sec\n', toc)
 fprintf('\tL2 bdry error norm = %g, coeff norm = %g\n', ...
         pr.bcresidualnorm, norm(pr.co))
 %figure; plot(real(pr.A*pr.co - pr.rhs)); title('residual vector');
-if 0, o.bb=1.3*[-1 1 -1 1]; o.dx=0.02;
+if 1, o.bb=1.3*[-1 1 -1 1]; o.dx=0.01;
 tic; [ui gx gy] = pr.gridincidentwave(o); u = pr.gridsolution(o); toc;
 figure; imagesc(gx, gy, real(ui+u)); c = caxis; caxis([-1 1]*max(c));
 axis equal tight; colorbar; set(gca,'ydir','normal'); end

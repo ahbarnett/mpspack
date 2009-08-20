@@ -1,7 +1,7 @@
 % Example codes from MPSpack tutorial, also generates EPS figures for this doc
 % SECTION 6: LAYER POTENTIALS
 
-clear all classes; verb = 1;          % if verb>0, generates EPS figures
+clear all classes; verb = 0;          % if verb>0, generates EPS figures
 tref = segment.radialfunc([], {@(q) 1 + 0.3*cos(3*q), @(q) -0.9*sin(3*q),...
                    @(q) -2.7*cos(3*q)});
 d = domain([], [], tref, -1); d.k = 10;
