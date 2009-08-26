@@ -112,7 +112,7 @@ classdef qpunitcell < handle & domain
       g = gcf; figure(g); hold on;
       bz = uc.recip * ([0 0 1 1 0; 0 1 1 0 0] - .5); % transformed unit square
       plot(bz(1,:), bz(2,:), 'k-'); xlabel('k_x'); ylabel('k_y');
-      if ~isempty(uc.kbloch)
+      if ~isempty(uc.kbloch) && (uc.a~=1 | uc.b~=1)
         hold on;
         plot([0 real(uc.kbloch)], [0 imag(uc.kbloch)], '-', 'linewidth', 5);
         plot(real(uc.kbloch), imag(uc.kbloch), 'r.', 'markersize', 30);
