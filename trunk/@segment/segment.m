@@ -361,14 +361,26 @@ classdef segment < handle & pointset
         end
       end % func
       
-     function disconnect(segs)  % ...... disconnect a seg list from any domains
-     % DISCONNECT - disconnect a segment or segment list from any domains
+    function disconnect(segs)  % ...... disconnect a seg list from any domains
+      % DISCONNECT - disconnect a segment or segment list from any domains
         for s=segs
           s.dom = {[] []};             % not bordering any domains
         end
       end
 
-      h = plot(s, pm, o)
+    function d = dist(s, t)  % ........... crude O(N^2) est of dist(s,t) 
+      % DISTANCE - crude estimate min distance from segment to segment/domain
+        if isa(t,'domain')  % recursively call dist on each segment in domain
+          d = Inf;
+          for i=1:numel(t.seg), di = s.dist(t.seg(i)); d = min(di,d); end
+        elseif isa(t,'segment')
+          ns = numel(s.x); nt = numel(t.x);                 % numbers of points
+          dd = repmat(s.x,[1 nt]) - repmat(t.x.',[ns 1]); % displacement matrix
+          d = min(abs(dd(:)));                              % Euclidean dist
+        end
+      end
+     
+     h = plot(s, pm, o)
     end % methods
 
     % --------------------------------------------------------------------

@@ -9,6 +9,8 @@
 %  uc = qpunitcell(e1, e2, k, M, quad) sets quadrature type as in SEGMENT.
 %
 %  See also SETBLOCH, DOMAIN
+%
+% (C) Alex Barnett
 classdef qpunitcell < handle & domain
   properties
     a, b                 % alpha, beta: QP phase factors
@@ -107,22 +109,36 @@ classdef qpunitcell < handle & domain
       h = domain.showsegments(uc.seg, 1, o);          % show 4 segments
     end
     
-    function showbrillouin(uc)
+    function showbrillouin(uc, opts)
     % SHOWBRILLOUIN - k-space plot with UC Brillouin zone and Bloch wavevector
+    %
+    % showbrillouin(uc) plots the 2D Brillouin zone for the unit cell's lattice
+    %   with Gamma, M, and X labeled.
+    %
+    % showbrillouin(uc, opts) allows user options to be changed, such as:
+    %   opts.zplane : set the z-height of everything plotted (default 0)
+    %   opts.cageh : set the max z height of cage bars (default 0, ie no cage)
+      if nargin<2, opts = []; end
+      zplane = 0; if isfield(opts, 'zplane'), zplane=opts.zplane; end
+      cageh = 0; if isfield(opts, 'cageh'), cageh=opts.cageh; end
       g = gcf; figure(g); hold on;
       bz = uc.recip * ([0 0 1 1 0; 0 1 1 0 0] - .5); % transformed unit square
-      plot(bz(1,:), bz(2,:), 'k-'); xlabel('k_x'); ylabel('k_y');
-      if ~isempty(uc.kbloch) && (uc.a~=1 | uc.b~=1)
+      plot3(bz(1,:), bz(2,:), zplane+0*bz(1,:), 'k-');
+      xlabel('k_x'); ylabel('k_y');
+      if cageh~=0, for i=1:4            % cage of 4 vertical dotted lines...
+          plot3(bz(1,i)*[1 1], bz(2,i)*[1 1], [zplane cageh], 'k:'); end, end
+      if ~isempty(uc.kbloch) && (uc.a~=1 | uc.b~=1)  % if nonzero k-bloch...
         hold on;
-        plot([0 real(uc.kbloch)], [0 imag(uc.kbloch)], '-', 'linewidth', 5);
-        plot(real(uc.kbloch), imag(uc.kbloch), 'r.', 'markersize', 30);
+        plot3([0 real(uc.kbloch)], [0 imag(uc.kbloch)], zplane*[1 1], '-', ...
+              'linewidth', 5);
+        plot3(real(uc.kbloch), imag(uc.kbloch), zplane, 'r.', 'markersize', 30);
+        hold on; plot3(0, 0, zplane, 'k.', 'markersize', 20);
       end
-      hold on; plot(0, 0, 'k.', 'markersize', 20);
       % label the standard zone points...
-      text(0,0,'\Gamma', 'fontsize', 12, 'Fontweight', 'demi');
-      text(real(uc.r1)/2, imag(uc.r1)/2, 'X', ...
+      text(0, 0, zplane, '\Gamma', 'fontsize', 12, 'Fontweight', 'demi');
+      text(real(uc.r1)/2, imag(uc.r1)/2, zplane, 'X', ...
            'fontsize', 12, 'Fontweight', 'demi');
-      text(real(uc.r1+uc.r2)/2, imag(uc.r1+uc.r2)/2, ...
+      text(real(uc.r1+uc.r2)/2, imag(uc.r1+uc.r2)/2, zplane, ...
            'M', 'fontsize', 12, 'Fontweight', 'demi');
     end % func
     
@@ -279,6 +295,17 @@ classdef qpunitcell < handle & domain
       f = min(abs(d-om));              % min dist to omega-circles at centers
     end
     
+    function requadrature(uc, M, qtype) % overloads domain.requadrature
+    % REQUADRATURE - reset # quadrature pts on L, B segments for UC & its bases
+    %
+    % Barnett 12/22/09
+      if nargin<2, M = 20; end       % default
+      if nargin<3, qtype = 'g'; end  % default for unit cell
+      uc.L.requadrature(M, qtype); uc.B.requadrature(M, qtype);
+      uc.setupbasisdofs;
+    end
+    
+    % external functions...
     d = datawrapR(uc, d, i)             % trial wrapping-over-R-wall of mat data
     
   end % methods

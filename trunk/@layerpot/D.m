@@ -30,6 +30,7 @@ function [A Dker_noang cosker] = D(k, s, t, o)
 %                      source-normals, which computes n-deriv of SLP instead.
 %    opts.close = distance below which adaptive quadrature is used to evaluate
 %                distant targets (slow). If not present, never adaptive.
+%    opts.closeacc = set relative tolerance for close eval (default 1e-12)
 %
 %  [D Dker_noang cosker] = D(...) also returns quad-unweighted kernel values
 %    matrix Dker_noang, and matrix of cos angle factors (cosphi or costh)
@@ -110,6 +111,7 @@ else % ............................ distant target curve, so smooth kernel
 
   % Now overwrite needed rows of A using very slow adaptive gauss quadrature...
   if 1 & isfield(o,'close') & k>0        % use adaptive quadr
+    if ~isfield(o,'closeacc'), o.closeacc=1e-12; end
     rows = find(min(r,[],2)<o.close);   % which eval target pts need adaptive
    %numel(rows)
     x = s.t;                            % source quadrature nodes in [0,1]
@@ -127,7 +129,7 @@ else % ............................ distant target curve, so smooth kernel
             f = @(y) Lagrange_DLP(y, xneqj, k, s, t.x(i));
           end
 %          fprintf('basis func %d:\n', j)
-          A(i,j) = w(j) * (1i*k/4)*quadgk(f, 0, 1, 'RelTol', 1e-9, 'AbsTol', 0);
+          A(i,j) = w(j) * (1i*k/4)*quadgk(f, 0, 1, 'RelTol', o.closeacc, 'AbsTol', 0, 'MaxIntervalCount', 1e3);
         end
       end
     end
