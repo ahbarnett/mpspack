@@ -54,10 +54,10 @@ properties
               opts=defaultopts;
           end
           % make hankel library code decisions here at creation time...
-          if opts.fast==2 & exist('@utils/greengardrokhlinhank106.mexglx')~=3
+          if opts.fast==2 & exist('greengardrokhlinhank106')~=3
             opts.fast = 1;    % downgrade the speed 2->1 if 106 not available
           end
-          if opts.fast==1 & exist('@utils/greengardrokhlinhank103.mexglx')~=3
+          if opts.fast==1 & exist('greengardrokhlinhank103')~=3
             opts.fast = 0;    % downgrade the speed 1->0 if 103 not available
           end
           b.fast=opts.fast;

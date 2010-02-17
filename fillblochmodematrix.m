@@ -1,11 +1,12 @@
 function [M data] = fillblochmodematrix(sys, b, uc, s, o, bo, opts)
 % temporary routine to do by-hand filling of single-segment systems
-% under test in testblockbyhand. (no early opts such as o.close, wrap, 3xUC)
-% Does empty, D/N metallic, dielectric. Will be superceded by @blochodeproblem
+% under test in testblockbyhand. (no early expts such as 3xUC, Dirichlet wrap)
+% Does empty, D/N metallic, dielectric. Will be superceded by @blochmodeproblem
 %
 % sys = system, b = array of basis objects, uc = unit cell, s = closed segment
 % o = opts for A,C,Q; bo = opts for B; opts = general opts for this routine
 % Eg opts.data contains A,B,C data as data.{dA,dB,dC}
+% bo.close : close evaluation (recommended only for B).
 %
 % Notes:
 %  1) sys='n' Neumann fails with BWLP since no cot() hypersingular term yet
@@ -13,7 +14,8 @@ function [M data] = fillblochmodematrix(sys, b, uc, s, o, bo, opts)
 % Barnett 1/27/08
 
 if nargin<7, opts = []; end
-if ~isfield(opts, 'verb'), opts.verb = 0; end, v = opts.verb;
+if ~isfield(opts, 'verb'), opts.verb = 0; end, v = opts.verb;   % verbosity
+if ~isfield(opts, 'wrap'), opts.wrap = 0; end, wr = opts.wrap;  % wrap flag
 isdata = isfield(opts, 'data'); if isdata, data = opts.data; end
 
 tic; Q = uc.evalbasesdiscrep(o);   % poly data storage kept in uc automatically

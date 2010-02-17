@@ -32,10 +32,10 @@ classdef layerpot < handle & basis
       if nargin<3, opts = []; end
       if ~isfield(opts, 'fast'), opts.fast = 2; end
       % TODO: speed up the following check which happens every time created...
-      if opts.fast==2 & exist('@utils/greengardrokhlinhank106.mexglx')~=3
+      if opts.fast==2 & exist('greengardrokhlinhank106')~=3
         opts.fast = 1;               % downgrade the speed if 106 not available
       end
-      if opts.fast==1 & exist('@utils/greengardrokhlinhank103.mexglx')~=3
+      if opts.fast==1 & exist('greengardrokhlinhank103')~=3
         opts.fast = 0;               % downgrade the speed if 103 not available
       end
       b.fast = opts.fast;

@@ -240,8 +240,8 @@ classdef domain < handle
       
       % ****** not yet implemented ***** ( low priority, mostly)
       checktopology(d)             % checks all pieces in interior, normals
-      requadrature(d, M, type, inds) % resets M, quadr, in some segments
-      subtract(d, dint)              % remove (exclude) domain dint from d
+      requadrature(d, M, qtype)    % resets M on all segments, quadr type
+      subtract(d, dint)            % remove (exclude) domain dint from d
     end % methods
     
     % --------------------------------------------------------------------

@@ -32,6 +32,7 @@ function [A Sker Dker_noang] = T(k, s, t, o);
 %   When k=0, the options Sker and Dker_noang have no effect.
 %    opts.close = distance below which adaptive quadrature is used to evaluate
 %                distant targets (slow). If not present, never adaptive.
+%    opts.closeacc = set relative tolerance for close eval (default 1e-12)
 %
 %  [T Sker Dker_noang] = T(...) also returns quad-unweighted
 %   kernel values matrices Sker, Dker_noang, when k>0 (empty for Laplace)
@@ -146,6 +147,7 @@ else % ............................ distant target curve, so smooth kernel
   
   % Now overwrite `close' rows of A, if any, using very slow adaptive gauss quadr...
   if isfield(o,'close') & k>0        % use adaptive quadr
+    if ~isfield(o,'closeacc'), o.closeacc=1e-12; end
     rows = find(min(r,[],2)<o.close);   % which eval target pts need adaptive
     x = s.t;                            % source quadrature nodes in [0,1]
     w = zeros(size(x));
@@ -157,7 +159,7 @@ else % ............................ distant target curve, so smooth kernel
         for j=1:N
           xneqj = x(find((1:numel(x))~=j));  % col vec of nodes excluding j
           f = @(y) Lagrange_DLP_deriv(y, xneqj, k, s, t.x(i), t.nx(i));
-          A(i,j) = w(j) * quadgk(f, 0, 1, 'RelTol', 1e-9, 'AbsTol', 0);
+          A(i,j) = w(j) * quadgk(f, 0, 1, 'RelTol', o.closeacc, 'AbsTol', 0, 'MaxIntervalCount', 1e3);
         end
       end
     end
@@ -178,3 +180,5 @@ cc = real(csry).*real(csrx) ./ (r.*r);      % cos phi cos th
 cdor = real(csry.*csrx) ./ (r.*r.*r);   % cos(phi-th) / r
 val = (1i*k/4)*besselh(1,k*r) .* (-cdor) + (1i*k*k/4)*cc.*besselh(0,k*r);
 f = reshape(f .* val .* abs(s.Zp(t(:))), size(t));
+
+%fprintf('%.16g\n', t);                 % for diagnostics of quadgk

@@ -26,6 +26,7 @@ function [A Sker] = S(k, s, t, o)
 %    opts.rdist = matrix of source-target distances, prevents recalculation.
 %    opts.close = distance below which adaptive quadrature is used to evaluate
 %                distant targets (slow). If not present, never adaptive.
+%    opts.closeacc = set relative tolerance for close eval (default 1e-12)
 %
 % [S Sker] = S(...) also returns quad-unweighted kernel values matrix Sker.
 %
@@ -110,6 +111,7 @@ else % ............................ distant target curve, so smooth kernel
   
   % Now overwrite needed rows of A using very slow adaptive gauss quadrature...
   if isfield(o,'close') & k>0        % use adaptive quadr
+    if ~isfield(o,'closeacc'), o.closeacc=1e-12; end
     rows = find(min(r,[],2)<o.close);   % which eval target pts need adaptive
     x = s.t;                            % source quadrature nodes in [0,1]
     w = zeros(size(x));
@@ -123,7 +125,7 @@ else % ............................ distant target curve, so smooth kernel
           f = @(y) reshape(prod(repmat(xneqj, [1 numel(y)])-repmat(y(:).',[N-1 1]),1).' .* abs(s.Zp(y(:))) .* besselh(0,k*abs(s.Z(y(:))-t.x(i))), size(y));
           %f = @(y) y*fprintf('%g\n', y);  % debug tool to see what y requested
           %f([.2 .3])                      % debug
-          A(i,j) = w(j) * (1i/4)*quadgk(f, 0, 1, 'RelTol', 1e-9, 'AbsTol', 0);
+          A(i,j) = w(j) * (1i/4)*quadgk(f, 0, 1, 'RelTol', o.closeacc, 'AbsTol', 0, 'MaxIntervalCount', 1e3);
         end
       end
     end
