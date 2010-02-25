@@ -255,6 +255,9 @@ classdef layerpot < handle & basis
       b.seg.plot;
     end
     
+    % methods in separate files...
+    [A Ax] = evalfty(b, f, o)                     % for 1.5D scatt, qpstrip
+   
   end % methods
   
   methods (Static) %...................... the beef: kernel evaluation routines

@@ -117,7 +117,7 @@ properties
         %        
         % [A An] = EVAL(p) also returns matrix An whose ij'th entry is
         %   d/dn_i Phi_j(z_i), the derivative in the ith normal direction in
-        %   the pointset.
+        %   the pointset. Note that normals are automatically normalized.
         %
         % [A Ax Ay] = EVAL(p) returns A as above, and matrices of basis function
         %    derivatives in the x- and y-directions. That is, Ax has ij'th
