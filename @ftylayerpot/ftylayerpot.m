@@ -8,21 +8,25 @@ classdef ftylayerpot < handle & basis
 %   at quadrature points in the 1D Fourier variable along the ray direction.
 %   As usual for basis sets, the wavenumber k is
 %   determined by that of the affected domain.
-%   Sommerfeld contour is used in complex k_y plane.
-%   Options: see requadrature.
+%   Sommerfeld contour is used in complex k_y plane. 
+%
+%   Options: opts.M sets # of quadrature points on Sommerfeld contour.
+%   Other options: see requadrature.
 
-% Copyright (C) 2008, 2009, 2010, Alex Barnett
+% Copyright (C) 2008-2010, Alex Barnett
   properties
     orig                            % location of ray origin (x, and y shift)
-    quad                            % quadrature type
-    ord                             % quadrature order (opts.ord in S,D,T)
+    quad, om, si                    % quad, om, nearsing params of Som. contour
     a                               % amounts of single and double layer
     kj, wj                          % k_y quadr nodes and weights
   end
 
   methods
     function b = ftylayerpot(orig, a, opts) %...................... constructor
+      if nargin<1, orig = 0; end               % default (needed so can copy)
+      if nargin<2, a = 's'; end                % default
       if nargin<3, opts = []; end
+      if ~isfield(opts, 'M'), opts.M = []; end
       if numel(orig)~=1, error('orig must be a single number!'); end
       b.orig = orig;
       if ~isnumeric(a)
@@ -39,7 +43,7 @@ classdef ftylayerpot < handle & basis
       b.a = a;
       if ~isfield(opts,'omega'), opts.omega = 1; end    % default freq
       b.nmultiplier = 1;                                % default
-      b.requadrature([], opts);     % construct quadrature points...
+      b.requadrature(opts.M, opts);     % construct quadrature points...
     end % func
     
     function Nf = Nf(b)  % ............... Nf method reads # quadr pts
@@ -52,29 +56,42 @@ classdef ftylayerpot < handle & basis
     % Uses freq omega from the first affected domain.
     % For curve details, see Hankel_integral.m
     %   Options:
-    %    opts.omega = overrides freq for choosing Sommerfeld quadrature curve
+    %    opts.omega = overrides freq for choosing Sommerfeld quadrature contour
+    %    opts.nearsing = distance to nearest singularity on Re axis.
+    %    opts.quad = overrides quadrature for Sommerfeld contour:
+    %        't' tanh-sinh curve, 'a' alpert on real k, 'u' uniform
+    %
     % To do: * put in more options for curve, based on xmin, etc.
       if nargin<2 || isempty(N), N = 100; end                % default N
       if N<1, error('N must be at least 1!'); end
       if nargin<3, opts = []; end
       if isfield(opts,'omega'), om = opts.omega; else om = ba.k; end
-      xmin = 1.0;             % make an opts !
+      if isfield(opts,'nearsing'), si = opts.nearsing; else si = om/2; end
+      if isfield(opts,'quad'), qu = opts.quad; else qu = 'b'; end
+      ba.quad = qu; ba.om = om; ba.si = si;          % store params in object
+      xmin = 1.0;             % make an opts too !
       % parameters of contour...
       L = sqrt((log(1e-16)/xmin)^2 + om^2); % Re[k] s.t. x-decay died to e_mach
-      d = 4;                  % tanh imaginary dist (scales as O(1))
-      de = max(d,om);          % width-scale of tanh: keep slope <1
-      % params of remapping through sinh...
-      b = max(2,real(om)^1.2); % b expansion growth rate
-      g = min(real(om)/2,1);   % g bunching fac, for be->a var change params.
+      if qu=='b'    % Alex's quadr tanh curve, with sinh bunching............
+        d = 4;                  % tanh imaginary dist (scales as O(1))
+        de = max(d,si);          % width-scale of tanh: keep slope <1
+        % params of remapping through sinh...
+        b = max(2,real(si)^1.2); % b expansion growth rate
+        g = min(real(si)/2,1);   % g bunching fac, for be->a var change params.
       
-      h = b*asinh(L/g/b) / (N/2-1);  % stopping at beta s.t. alpha stops at L
-      be = (-N/2:(N+1)/2)*h;         % beta values (periodic trap rule)
-      be = be(1:N);                  % clip to be exactly N
-      wj = [1/2 ones(1,numel(be)-2) 1/2]*h; % weights
-      a = g*b*sinh(be/b); wj = wj.*g.*cosh(be/b);  % transform be->a
-      % change variable from real axis to contour shape (w/ imag part)...
-      ba.kj = a - 1i*d*tanh(a/de); ba.wj = wj.*(1-1i*d/de*sech(a/de).^2);
+        h = b*asinh(L/g/b) / (N/2-1);  % stopping at beta s.t. alpha stops at L
+        be = (-N/2:(N+1)/2)*h;         % beta values (periodic trap rule)
+        be = be(1:N);                  % clip to be exactly N
+        wj = [1/2 ones(1,numel(be)-2) 1/2]*h; % weights
+        a = g*b*sinh(be/b); wj = wj.*g.*cosh(be/b);  % transform be->a
+        % change variable from real axis to contour shape (w/ imag part)...
+        ba.kj = a - 1i*d*tanh(a/de); ba.wj = wj.*(1-1i*d/de*sech(a/de).^2);
+      elseif qu=='u'    % uniform, crude ....................................
+        h = L/(N/2-1); ba.kj = ((1:N)-N/2)*h;  % compound trapezoid rule
+        ba.wj = ones(1,numel(ba.kj))*h;
+      end
       ba.N = N;
+      %ba.kj = ba.kj + 2;    % ***** hack to avoid k=0 ? *** check it
     end
     
     function updateN(b,N) % ................ overloads from basis
@@ -98,6 +115,9 @@ classdef ftylayerpot < handle & basis
 %  [A Ax Ay] = EVAL(bas, p, opts) instead returns x- and y-derivatives,
 %   ignoring the normals in p.
 %
+%  Options: opts.side = col vec of signs overriding which side eval occurs on
+%               (+1, -1 means eval pt is to right, resp. left, of FTyLP).
+%
 % TODO: * make it use J-filter, or a version which returns J coeffs instead.
 %         (would need to specify xloc of origin for J exp).
       if nargin<3, o = []; end
@@ -108,7 +128,9 @@ classdef ftylayerpot < handle & basis
       x = real(d); y = imag(d);                          % eval pts rel to orig
       som = sqrt(om^2 - b.kj.^2);                        % Sommerfeld, row vec
       Aexp = exp(1i*(y*b.kj + abs(x)*som));  % matrix of exp factor in integrand
-      xnonneg = isempty(find(x<0)); xnonpos = isempty(find(x>0)); % often true
+      if isfield(o, 'side'), signx = o.side; else signx = sign(x); end
+      signx(find(signx==0)) = +1;                        % break symm if needed
+      xnonneg = isempty(find(signx==-1)); xnonpos = isempty(find(signx==+1));
       
       if xnonneg
         A =  Aexp .* repmat((1i*b.a(1)./som + b.a(2)).*b.wj/2, size(x));
@@ -116,7 +138,7 @@ classdef ftylayerpot < handle & basis
         A =  Aexp .* repmat((1i*b.a(1)./som - b.a(2)).*b.wj/2, size(x));
       else                                   % general mixed signs of x case
         A = Aexp .* (repmat(1i*b.a(1)./som.*b.wj/2,size(x)) + ...
-                     (b.a(2)*sign(x)/2)*b.wj);     % make faster when b.a(2)=0?
+                     (b.a(2)*signx/2)*b.wj);     % make faster when b.a(2)=0?
       end
       if nargout>1        % any derivs needed? if so, compute x-,y-derivs
         if xnonneg
@@ -124,7 +146,7 @@ classdef ftylayerpot < handle & basis
         elseif xnonpos
           Ax = Aexp .* repmat((b.a(1) + 1i*b.a(2).*som).*b.wj/2, size(x));
         else
-          Ax = Aexp .* (-(b.a(1)*sign(x)/2)*b.wj + ...
+          Ax = Aexp .* (-(b.a(1)*signx/2)*b.wj + ...
                         repmat(1i*b.a(2).*som.*b.wj/2, size(x)));
         end
         Ay = A .* repmat(1i*b.kj, size(x));   % y-deriv simple mult in k_y
@@ -151,14 +173,14 @@ classdef ftylayerpot < handle & basis
       d = real(st.e) * (1+2*st.buffer);       % x-displacement across strip
       som = sqrt(om^2 - b.kj.^2);             % Sommerfeld, row vec
       exf = exp(1i*som*d);                    % decay factors, row vec
-      Q = [diag((b.a(1)*1i*(1-1/a)./som + b.a(2)*(-1-1/a)).*exf/2); ...
-           diag((b.a(1)*(1+1/a) + b.a(2)*1i*(1-1/a)*som).*exf/2)];
+      Q = [diag((b.a(1)*1i*(a-1/a)./som + b.a(2)*(-a-1/a)).*exf/2); ...
+           diag((b.a(1)*(a+1/a) + b.a(2)*1i*(a-1/a)*som).*exf/2)];
       i = diagind(Q); Q(i) = Q(i) + b.a(2);   % jump relations add identities
       i = diagind(Q,N); Q(i) = Q(i) - b.a(1);
     end
     
     function showgeom(b, opts) % .................. crude show location of ray
-      vline(real(b.orig), 'r-');
+      vline(real(b.orig), 'k-');
     end
     
   end % methods

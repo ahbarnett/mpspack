@@ -5,6 +5,9 @@
 %   k is the wavenumber in the strip. Left side wall passes through origin,
 %   right side wall through e.
 %
+% st = qpstrip(e, k, opts) includes the following options:
+%    opts.M = sets # quadr nodes on Sommerfeld contour for each FTy LP.
+%
 % ISSUES:
 %  * Will they exclude interior regions? Or allow upper/lower segment bdry?
 %  * make better strip plot, etc
@@ -24,11 +27,12 @@ classdef qpstrip < handle & domain
   end
   
   methods
-    function st = qpstrip(e, k, opts) % ........................... constructor
+    function st = qpstrip(e, k, o) % ........................... constructor
+      if nargin<3, o = []; end
       if real(e)<=0, error('lattice vector must have x component > 0!'); end
       st = st@domain();           % use R^2 domain
       st.perim = Inf; st.exterior = nan;   % since walls infinite extent in y
-      st.Lo = 0; st.Ro = e;
+      st.Lo = -e/2; st.Ro = e/2;
       st.e = e;
       st.buffer = 0;
       st.a = 1;  % default (don't need st.setbloch method)
@@ -51,14 +55,16 @@ classdef qpstrip < handle & domain
       uc.N = N; uc.basnoff = noff;   % store stuff as unit cell properties
     end
 
-    function addqpftylayerpots(st, varargin) % ...............................
+    function addqpftylayerpots(st, o) % ...............................
     % ADDQPFTYLAYERPOTS - add SLP+DLP FT-y layer potentials to L in qpstrip
-      if st.buffer==0
-        st.bas = {st.bas{:}, ftylayerpot(st.Lo, 'd', varargin{:}), ...
-                  ftylayerpot(st.Lo, 's', varargin{:})};
-      else
-        error('buffer>0 not implemented!');
-      end
+    %
+    % All calling opts are passed to ftylayerpot, apart from opts.omega which
+    % is inherited from the qpstrip domain.
+      if ~isfield(o,'omega'), o.omega = st.k; end      % inherit wavenumber
+      % compute distance from origin to nearest singularity given Bloch params:
+      o.nearsing=min(abs(sqrt(st.k^2-(log(st.a)/1i+(-100:100)*2*pi/st.e).^2)));
+      st.bas = {st.bas{:}, ftylayerpot(st.Lo, 'd', o), ...
+                ftylayerpot(st.Lo, 's', o)};
       for i=0:1, st.bas{end-i}.doms = st; end  % make strip the affected domain
       st.setupbasisdofs;
     end
@@ -79,7 +85,7 @@ classdef qpstrip < handle & domain
     function h = plot(s, varargin) % .................... plot it
     % PLOT - plot geometry of a qpstrip domain
       h = [plot@domain(s, varargin{:}); ...
-           vline(s.Lo, 'r-', 'L'); vline(s.Ro, 'r-', 'R')]; %do as domain
+           vline(s.Lo, 'k-', 'L'); vline(s.Ro, 'k-', 'R')]; %do as domain
     end
     
     function Q = evalbasesdiscrep(st, opts) % .................... Q
