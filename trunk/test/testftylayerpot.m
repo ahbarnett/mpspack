@@ -7,7 +7,7 @@ b = ftylayerpot(0, 's', struct('omega', om));  % make basis set to be tested
 e = domain(); e.k = om; b.doms = e; % hook to an R^2 domain
 %b.updateN(150);   % bump up according to various omega (eg <<1 or >>1)
 
-if 1 % evaluation error test, using analytic derivatives...
+if 0 % evaluation error test, using analytic derivatives...
 m = mfsbasis(pointset(0, 1)); m.doms = e; m.eta = Inf; % choose S/D (eta=Inf,0)
 dx = 0.03; x = -2:dx:-.5; %.5:dx:2;                    % choose + or - for x
 y = -2:dx:2; [xx yy] = meshgrid(x,y);                  % choose grid
@@ -32,7 +32,7 @@ if 1, t = qpstrip(1, om); %figure; t.plot; % test qpstrip & Q matrix...
   t.addqpftylayerpots;
 
 % test Q matrix --------------------------------------------------------------
-t.setbloch(exp(1i*pi/3));    % random Bloch, will dep on u_inc plane wavevector
+t.setbloch(exp(1i*pi/7));    % random Bloch, will dep on u_inc plane wavevector
 Q = t.evalbasesdiscrep(); min(svd(Q)) % test Q goes singular where predicted...
 t.setbloch(exp(1i*om*(real(t.e)))); Q = t.evalbasesdiscrep(); min(svd(Q))
 if 0, ps = -pi:0.1:pi; ss = nan*ps;  % sweep Bloch phase & plot min sing val

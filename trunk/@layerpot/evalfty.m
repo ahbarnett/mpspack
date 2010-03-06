@@ -29,8 +29,9 @@ som = sqrt(om^2 - k.^2);                       % Sommerfeld, row vec
 exf = exp(1i*som.'*abs(x).');                  % decay matrix (outer prod)
 pha = exp(-1i*k.'*y.');                        % y-translation mat (outer prod)
 
-% need to add in DLP
 B = pha .* exf .* repmat(b.seg.w/4/pi, [M 1]); % common to all cases (inc 1/4pi)
+
+% the following could be sped up my testing if b.a(1)==0 or b.a(2)==0 ...
 A = B .* (repmat(b.a(1)*1i./som.', [1 N]) + ...        % SLP
           repmat(-b.a(2)*nx.'.*sign(x).', [M 1]) + ... % DLP x-deriv part
           (b.a(2)*k./som).'*ny.');                     % y-deriv via outer prod

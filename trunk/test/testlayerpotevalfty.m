@@ -1,8 +1,9 @@
 % test layerpot.evalfty by computing coeffs for y-slice lp rep in half-space,
 % for some layerpot source on the other half-space.
 % ............ relies on ftylayerpot.eval being correct
-% barrnett 2/24/10
+% barnett 2/24/10
 
+clear all classes
 src = 'd';      % 's' or 'd' for the source density type
 rep = 's';      % 's' or 'd' for testing the half-space rep type by y-ray LP
 side = -1;      % +-1, which side of x=0 the source is to be
@@ -15,7 +16,8 @@ co = (6+24*(src=='s'))*ones(size(s.x));           % scale so u field is O(1)
 dx = 0.03; x = -1:dx:1.5; y = -3:dx:3; [xx yy] = meshgrid(x,y);
 p = pointset(xx(:)+1i*yy(:));
 A = l.eval(p); u = reshape(A*co, size(xx)); % show only refl src
-[F Fx] = l.evalfty(b); E = b.eval(p);  % get the FTy u & u_n eval matrices
+o=[]; %o.side = -sign(real(p.x));           % force the FTyLP evaluation side
+[F Fx] = l.evalfty(b); E = b.eval(p,o);  % get the FTy u & u_n eval matrices
 if rep=='d'
   ulp = -2*side*reshape(E*(F*co), size(xx)); % use FTy-DLP with tau = 2u
 else ulp = 2*side*reshape(E*(Fx*co), size(xx)); end % or Fty-DLP, sig = -2u_n
