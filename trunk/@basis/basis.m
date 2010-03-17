@@ -277,5 +277,26 @@ classdef basis < handle
       end
     end % func
     
+    function C = evalboundedstripdiscrep(b, s, opts) % ... bounded qp strip
+    % EVALBOUNDEDSTRIPDISCREP - matrix mapping basis coeffs to discrepancy
+    %
+    %  Generic routine for bases which don't know anything special about the UC
+    %  opts.nei = 0,1,2... sets up cancellation of terms in a the C matrix
+      if exist('boundedqpstrip','class')~=8
+        error('boundedqpstrip class is not found; exiting'); end
+      if ~isa(s, 'boundedqpstrip')
+        error('s must be a boundedqpstrip object!'); end
+      if nargin<3, opts = []; end
+      if ~isfield(opts, 'nei'), opts.nei=0; end; nei = opts.nei;
+      d = s.e;                               % strip width
+      M = numel(s.L.x);                      % # rows in f and fp blocks of C
+      N = b.Nf;                              % # cols in C
+      C = zeros(2*M, N); f = 1:M; fp = f+M;  % indices for rows of C
+      [C(f,:) C(fp,:)] = b.eval(s.L.translate(-nei*d)); % or do w/ copylists
+      [CR CRn] = b.eval(s.R.translate(nei*d));
+      C(f,:) = s.a^nei * C(f,:) - CR / s.a^(1+nei);
+      C(fp,:) = s.a^nei * C(fp,:) - CRn / s.a^(1+nei);
+    end % func
+    
   end % methods
 end

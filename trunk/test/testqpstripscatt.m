@@ -2,11 +2,11 @@
 % barnett 2/26/10. tried wobbly Dirichlet wall, 3xUC, 3/3/10
 
 clear all classes; v = 0;        % verbosity
-thi = -pi*0.37; om = 10; %7.76644415490187; %(t.a=1) % inc ang, overall freq
+%thi = -pi/5; om = 10; %7.76644415490187; %(t.a=1) % inc ang, overall freq
 %thi = -pi/3; om = 4*pi; % 'double' Woods anomaly, with Bloch a=1
-%om = 10; thi = -acos(1 - 2*pi/om); % 'single' Wood's anomaly (generic Bloch a)
-N = 50; M = 100;                 % N on obst LP, M on FTy LPs.
-o.nei = 1; o.buf = 0;            % scheme params: direct sum dist, strip buffer
+om = 10; thi = -acos(1 - 2*pi/om); % 'single' Wood's anomaly (generic Bloch a)
+N = 80; M = 300;                 % N on obst LP, M on FTy LPs (M>300 for Wood)
+o.nei = 2; o.buf = 0;            % scheme params: direct sum dist, strip buffer
 kvec = om*exp(1i*thi);
 ui = @(x) exp(1i*real(conj(kvec) .* x)); %uix = @(x) 1i*real(kvec)*ui(x);
 d=1; t = qpstrip(d*(1+2*o.buf), om); % d = x-periodicity (not t.e for buf>0)
@@ -44,8 +44,8 @@ for n=o.nei-2*o.buf:o.nei   % general o.buf case (o.nei>=o.buf)
   C = C - a^(-1-2*o.buf-n)*[Cj;Cxj]; end  % careful, since L's phase = 1 always
 Q = t.evalbasesdiscrep();
 E = [A B; C Q]; fprintf('E filled in %g s\n', toc); 
-fprintf('||E||_1=%g, cond(E)=%g, min sing val Q = %g\n', ...
-        norm(E,1), cond(E), min(svd(Q)));
+%fprintf('||E||_1=%g, cond(E)=%g, min sing val Q = %g\n', ...
+%        norm(E,1), cond(E), min(svd(Q)));
 tic; co = E \ [-ui(s.x); zeros(size(Q,1),1)];      % RHS is [-u_inc; 0]
 fprintf('linear solve done in %g s\n', toc); 
 %co = rand(N+2*M, 1);           % dummy for now
@@ -71,12 +71,13 @@ colormap(jet(256)); set(gca,'ydir','normal'); axis equal tight; caxis([-2 2]);
 %print -depsc2 s.14_a1_w7.76_first.eps
 end  % note field inside obst, or below the wobbly wall, is plotted wrong.
 
-p = pointset(0.3+tr+1i); Ag = l.eval(p); % print value at a single test point
+loc = 0.3+0.8i; p = pointset(loc+tr); Ag = l.eval(p); % val at single test point
 for n=[-o.nei:-1 1:o.nei], Ag = Ag + a^n * l.eval(pointset(p.x-d*n)); end
 Lg = [t.bas{1}.eval(p) + t.a*t.bas{1}.eval(pointset(p.x-t.e)), ...  %FTyLP eval
       t.bas{2}.eval(p) + t.a*t.bas{2}.eval(pointset(p.x-t.e))];   % buf=0
 u = Ag*co(1:N) + Lg*co(N+1:end);  % compute u_s
-fprintf('val at (.3,1) is %.16g + %.16g i\n', real(u), imag(u));
+fprintf('u_s (tau+FTyLP) at (%.3g,%.3g) = %.16g + %.16g i\n', ...
+        real(loc),imag(loc), real(u), imag(u));
 
 y=-1:.01:1; % Test: eval on L,R themselves: use opts.side in ftylp.eval ...
 pt = pointset([t.Lo+1i*y'; t.Ro+1i*y'], 1+0*[y y]'); % L & R, rightwards normal

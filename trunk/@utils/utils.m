@@ -25,6 +25,7 @@ classdef utils
     u = unique(c)
     i = isin(b, c)
     s = merge(s1,s2)
+    [f0 err N] =  extrap(f, hmax, opts)
   end
 
 end

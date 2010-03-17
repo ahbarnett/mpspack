@@ -158,7 +158,7 @@ classdef domain < handle
         x = d.x;
         bb = [min(real(x)), max(real(x)), min(imag(x)), max(imag(x))];
         if isempty(bb), bb = zeros(1,4); end    % only if d is whole plane
-        if d.exterior
+        if isnan(d.exterior) || d.exterior
           pad = 0.5;                      % pad exterior region for ext domains
           bb = bb + pad*[-1 1 -1 1];
         end
@@ -227,15 +227,16 @@ classdef domain < handle
       end
       
       % methods defined by separate files...
-      addconnectedsegs(d, s, pm, o)  % helper routine for constructor
+      addconnectedsegs(d, s, pm, o)      % helper routine for constructor
       h = plot(d, o)                     % domain plot: o is plot opts struct
-      addregfbbasis(d, varargin) % add reg FB basis object
-      addnufbbasis(d,varargin) % add irreg. FB basis
-      addcornerbases(d, N, opts)  % add multiple nu-FB's at corners
+      addregfbbasis(d, varargin)         % add reg FB basis object
+      addnufbbasis(d,varargin)           % add irreg. FB basis
+      addcornerbases(d, N, opts)         % add multiple nu-FB's at corners
       addrpwbasis(d, varargin)           % add real PW basis
-      addmfsbasis(d, varargin)   % add MFS basis
-      b = addlayerpot(d, segs, a, opts) % add layer-potential basis
-      [A A1 A2] = evalbases(d, p, opts)    % evaluate all basis funcs in domain
+      addmfsbasis(d, varargin)           % add MFS basis
+      addqprayleighbasis(d, seg, pm, varargin) % add QP Rayleigh basis
+      b = addlayerpot(d, segs, a, opts)  % add layer-potential basis
+      [A A1 A2] = evalbases(d, p, opts)  % evaluate all basis funcs in domain
       setrefractiveindex(doms, n)
       
       % ****** not yet implemented ***** ( low priority, mostly)

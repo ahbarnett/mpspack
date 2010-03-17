@@ -1,21 +1,15 @@
   function [x,w] = clencurt(N)
 % CLENCURT  nodes x (Chebyshev points) and weights w
-%           for Clenshaw-Curtis quadrature
+%           for Clenshaw-Curtis quadrature. FFT version.
 %
-%   Trefethen book, modified by Barnett to return x in increasing order
+%   (was: Trefethen book, modified by Barnett to return x in increasing order)
+%
+%   Now: FFT version using Fourier series for |sin(theta)|, by Barnett
 
-% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
-theta = pi*(0:N)'/N; x = cos(theta);
-  w = zeros(1,N+1); ii = 2:N; v = ones(N-1,1);
-  if mod(N,2)==0 
-    w(1) = 1/(N^2-1); w(N+1) = w(1);
-    for k=1:N/2-1, v = v - 2*cos(2*k*theta(ii))/(4*k^2-1); end
-    v = v - cos(N*theta(ii))/(N^2-1);;
-  else
-    w(1) = 1/N^2; w(N+1) = w(1);
-    for k=1:(N-1)/2, v = v - 2*cos(2*k*theta(ii))/(4*k^2-1); end
-  end
-  w(ii) = 2*v/N;
-  % now flip the order...
-  x = x(end:-1:1); w = w(end:-1:1);
-  
+% Copyright (C) 2008, 2009, 2010, Alex Barnett, Timo Betcke
+
+theta = pi*(N:-1:0)'/N; x = cos(theta); % note order opposite to Trefethen
+W = kron(-1./((1:floor(N/2)).^2-1/4), [0 1]);   % works for even or odd
+if mod(N,2)==1, W = [W 0]; end  % include extra pi-freq term if odd
+w = ifft([4 W W(end-1:-1:1)]);  % 4 is the zero-freq term
+w = [w(1)/2 w(2:N) w(1)/2];     % endpoints get 1/2 weight since want 1/2 circle
