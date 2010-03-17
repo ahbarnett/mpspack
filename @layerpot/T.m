@@ -87,7 +87,10 @@ end
 
 if self % ........... source curve = target curve; can be singular kernel
   
-  if s.qtype=='p' & o.quad=='k' % Kapur-Rokhlin (ignores diagonal value)
+  if isfield(o, 'self')
+    A = o.self.T;                  % spit back the stored self-int mat
+    
+  elseif s.qtype=='p' & o.quad=='k' % Kapur-Rokhlin (ignores diagonal value)
     A(diagind(A)) = 0;
     [s w] = quadr.kapurtrap(N+1, o.ord);  % Zydrunas-supplied K-R weights
     w = 2*pi * w;                 % change interval from [0,1) to [0,2pi)
@@ -148,6 +151,7 @@ else % ............................ distant target curve, so smooth kernel
   % Now overwrite `close' rows of A, if any, using very slow adaptive gauss quadr...
   if isfield(o,'close') & k>0        % use adaptive quadr
     if ~isfield(o,'closeacc'), o.closeacc=1e-12; end
+ %r   
     rows = find(min(r,[],2)<o.close);   % which eval target pts need adaptive
     x = s.t;                            % source quadrature nodes in [0,1]
     w = zeros(size(x));
@@ -159,7 +163,7 @@ else % ............................ distant target curve, so smooth kernel
         for j=1:N
           xneqj = x(find((1:numel(x))~=j));  % col vec of nodes excluding j
           f = @(y) Lagrange_DLP_deriv(y, xneqj, k, s, t.x(i), t.nx(i));
-          A(i,j) = w(j) * quadgk(f, 0, 1, 'RelTol', o.closeacc, 'AbsTol', 0, 'MaxIntervalCount', 1e3);
+          A(i,j) = w(j) * quadgk(f, 0, 1, 'RelTol', o.closeacc, 'AbsTol', o.closeacc, 'MaxIntervalCount', 1e4);
         end
       end
     end

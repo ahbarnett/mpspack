@@ -13,3 +13,4 @@ function addregfbbasis(d, varargin)
 d.bas  = {d.bas{:}, regfbbasis(varargin{:})}; % append cell arr of basis handles
 
 d.bas{end}.doms = d;                    % tell this basis it affects this domain
+d.setupbasisdofs;                       % why not, for convenience?

@@ -27,6 +27,7 @@ function [A Sker] = S(k, s, t, o)
 %    opts.close = distance below which adaptive quadrature is used to evaluate
 %                distant targets (slow). If not present, never adaptive.
 %    opts.closeacc = set relative tolerance for close eval (default 1e-12)
+%    opts.self = self-interaction matrices, only self.S will be used.
 %
 % [S Sker] = S(...) also returns quad-unweighted kernel values matrix Sker.
 %
@@ -61,7 +62,10 @@ end
 
 if self % ........... source curve = target curve; can be singular kernel
   
-  if s.qtype=='p' & o.quad=='k'  % Kapur-Rokhlin (kills diagonal values)
+  if isfield(o, 'self')
+    A = o.self.S;                  % spit back the stored self-int mat
+    
+  elseif s.qtype=='p' & o.quad=='k'  % Kapur-Rokhlin (kills diagonal values)
     A(diagind(A)) = 0;
     [s w] = quadr.kapurtrap(N+1, o.ord);  % Zydrunas-supplied K-R weights
     w = 2*pi * w;                 % change interval from [0,1) to [0,2pi)
@@ -125,7 +129,7 @@ else % ............................ distant target curve, so smooth kernel
           f = @(y) reshape(prod(repmat(xneqj, [1 numel(y)])-repmat(y(:).',[N-1 1]),1).' .* abs(s.Zp(y(:))) .* besselh(0,k*abs(s.Z(y(:))-t.x(i))), size(y));
           %f = @(y) y*fprintf('%g\n', y);  % debug tool to see what y requested
           %f([.2 .3])                      % debug
-          A(i,j) = w(j) * (1i/4)*quadgk(f, 0, 1, 'RelTol', o.closeacc, 'AbsTol', 0, 'MaxIntervalCount', 1e3);
+          A(i,j) = w(j) * (1i/4)*quadgk(f, 0, 1, 'RelTol', o.closeacc, 'AbsTol', o.closeacc, 'MaxIntervalCount', 1e3);
         end
       end
     end

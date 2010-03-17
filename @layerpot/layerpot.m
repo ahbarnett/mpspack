@@ -25,6 +25,8 @@ classdef layerpot < handle & basis
     quad                            % quadrature option (opts.quad in S,D,T)
     ord                             % quadrature order (opts.ord in S,D,T)
     fast                            % Hankel function evaluation method (0,1,2)
+    Jfilter                         % (optional) Jfilter structure
+    self                            % self-int matrix struct, w/ S, D, DT, T
   end
 
   methods
@@ -97,6 +99,10 @@ classdef layerpot < handle & basis
 %                  Jfilter.M = max order of local expansion
 %       (optional) Jfilter.rescale_rad = radius to rescale J-exp to be O(1) at
 %       (optional) Jfilter.origin = center of J-expansion
+%
+%  To do: make it handle a segment list, with correct accounting of self-eval.
+%
+% (c) Alex Barnett 2008-2010
       if nargin<3, o = []; end
       if ~isfield(o, 'fast'), o.fast = b.fast; end    % default given in b obj
       if ~isempty(b.quad), o.quad = b.quad; end % pass quadr type to S,D,T eval
@@ -110,12 +116,17 @@ classdef layerpot < handle & basis
         approachside = -1;           % - sign since normals point away from dom
         if o.dom==p.dom{1}, approachside = +1; end  % instead dom on + normal
         p = [];              % tell S, D, etc to use self-interaction
+        if ~isempty(b.self), o.self = b.self; end    % pass in self-int mats
       end
       k = b.k;               % method gets k from affected domain
 
-      if isfield(o, 'Jfilter')  % ========== J-expansion filter
+      % opts takes precedence, but otherwise use Jfilter in basis properties:
+      if ~isempty(b.Jfilter) & ~isfield(o, 'Jfilter'), o.Jfilter=b.Jfilter; end
+      if isfield(o, 'Jfilter') & ~isempty(p)  % ==== J-expansion filter, nonself
         
-        if isempty(p), error 'layerpot.eval J-filter cannot do self-eval!', end
+        if isempty(p), p=b.seg;      % experiment to do self-eval w/ J-filter
+          warning 'layerpot.eval J-filter cannot do self-eval!'% probably true!
+        end
         if isfield(o.Jfilter, 'rescale_rad')
           Jopts.rescale_rad = o.Jfilter.rescale_rad; % same resc for S2L as J
         end

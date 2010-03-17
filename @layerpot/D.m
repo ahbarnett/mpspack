@@ -129,7 +129,7 @@ else % ............................ distant target curve, so smooth kernel
             f = @(y) Lagrange_DLP(y, xneqj, k, s, t.x(i));
           end
 %          fprintf('basis func %d:\n', j)
-          A(i,j) = w(j) * (1i*k/4)*quadgk(f, 0, 1, 'RelTol', o.closeacc, 'AbsTol', 0, 'MaxIntervalCount', 1e3);
+          A(i,j) = w(j) * (1i*k/4)*quadgk(f, 0, 1, 'RelTol', o.closeacc, 'AbsTol', o.closeacc, 'MaxIntervalCount', 1e3);
         end
       end
     end
