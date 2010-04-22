@@ -81,7 +81,8 @@ classdef qpstrip < handle & domain
     % is inherited from the qpstrip domain.
       if ~isfield(o,'omega'), o.omega = st.k; end      % inherit wavenumber
       % compute distance from origin to nearest singularity given Bloch params:
-      o.nearsing=min(abs(sqrt(st.k^2-(log(st.a)/1i+(-100:100)*2*pi/st.e).^2)));
+      if ~isfield(o,'nearsing')
+        o.nearsing=min(abs(sqrt(st.k^2-(log(st.a)/1i+(-100:100)*2*pi/st.e).^2))); end
       % append the two types of layerpot to existing bases...
       st.bas = {st.bas{:}, ftylayerpot(st.Lo, 'd', o), ...
                 ftylayerpot(st.Lo, 's', o)};
@@ -137,7 +138,11 @@ classdef qpstrip < handle & domain
       Q = zeros(M,N);                          % preallocate
       for i=1:numel(st.bas)           % loop over basis set objects in unit cell
         b = st.bas{i}; ns = noff(i)+(1:b.Nf);
-        Q(:,ns) = b.evalftystripdiscrep(st); % currently only for ftylayerpots
+        if ~isa(b,'rpwbasis')
+          Q(:,ns) = b.evalftystripdiscrep(st); % currently only for ftylayerpots
+        else
+          Q(:,ns) = zeros(M, numel(ns)); % PW (delta in k) no effect on contour
+        end
       end
     end % func
 

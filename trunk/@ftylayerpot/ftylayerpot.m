@@ -58,6 +58,7 @@ classdef ftylayerpot < handle & basis
     %   Options:
     %    opts.omega = overrides freq for choosing Sommerfeld quadrature contour
     %    opts.nearsing = distance to nearest singularity on Re axis.
+    %    opts.shift = translation applied to all kj quadr pts
     %    opts.quad = overrides quadrature for Sommerfeld contour:
     %        't' tanh-sinh curve, 'a' alpert on real k, 'u' uniform
     %
@@ -67,6 +68,7 @@ classdef ftylayerpot < handle & basis
       if nargin<3, opts = []; end
       if isfield(opts,'omega'), om = opts.omega; else om = ba.k; end
       if isfield(opts,'nearsing'), si = opts.nearsing; else si = om/2; end
+      if ~isfield(opts,'shift'), opts.shift = 0; end
       if isfield(opts,'quad'), qu = opts.quad; else qu = 'b'; end
       ba.quad = qu; ba.om = om; ba.si = si;          % store params in object
       xmin = 1.0;             % make an opts too !
@@ -91,7 +93,7 @@ classdef ftylayerpot < handle & basis
         ba.wj = ones(1,numel(ba.kj))*h;
       end
       ba.N = N;
-      %ba.kj = ba.kj + 2;    % ***** hack to avoid k=0 ? *** check it
+      ba.kj = ba.kj + opts.shift;    % ***** hack to avoid k=0 ? *** check it
     end
     
     function updateN(b,N) % ................ overloads from basis
@@ -166,6 +168,8 @@ classdef ftylayerpot < handle & basis
     %   transl ops are diag in FTy rep.
     % 
     % ISSUES: check the non-x-parallel e case.
+    %
+    % * Obviously should make a multiply-by-Q routine since it's block diagonal!
       if ~isa(st, 'qpstrip'), error('st must be a qpstrip object!'); end
       N = b.Nf;
       om = b.k;                               % get omega from basis (ie domain)

@@ -15,14 +15,15 @@ classdef rpwbasis < handle & basis
 %
 %  b = RPWBASIS(N, opts) does the same, except allowing user options:
 %   opts.real: if true, real case (cos/sin type), otherwise complex case.
-%
+%   opts.half: if non-negative, 0 (1) selects only the first (second) type 
 %
 % See also: DOMAIN/ADDRPWBASIS
 
-% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
+% Copyright (C) 2008-2010 Alex Barnett, Timo Betcke
 
   properties
-    real     % true if sin/cos, false for complex exponentials
+    real     % true if sin/cos, false for complex exponentials (fwd/bck)
+    half     % if non-negative, 0 (1) selects only the first (second) type
     dirs     % row vec of directions as complex numbers on unit circle
   end
 
@@ -31,9 +32,10 @@ classdef rpwbasis < handle & basis
       if nargin<1, N = 20; end        % Default degree
       if nargin<2, opts = []; end
       if ~isfield(opts,'real'), opts.real = 1; end   % default is real
+      if ~isfield(opts,'half'), opts.half = -1; end  % default is both halves
       if ~isfield(opts,'nmultiplier'), opts.nmultiplier=1; end
       b.nmultiplier=opts.nmultiplier;
-      b.real = opts.real;
+      b.real = opts.real; b.half = opts.half;
       b.updateN(N);           % sets up overall N, and PW angles
     end
  
@@ -45,6 +47,7 @@ classdef rpwbasis < handle & basis
         
     function Nf = Nf(b)
       Nf = 2*b.N;                     % since two funcs per direction
+      if b.half>=0, Nf = Nf/2; end    % unless use only half the basis set
     end
     
     function [A Ax Ay] = eval(b, p, opts) % .............. evaluator at points p
@@ -69,10 +72,12 @@ classdef rpwbasis < handle & basis
       kdotx = real( repmat(ks, size(p.x)) .* conj(repmat(p.x, size(ks))) );
       c = cos(kdotx); s = sin(kdotx);  % NB kdotx is matrix of k dot x
       clear kdotx
+      h = b.half; if b.real && h>=0, error 'opts.half>=0 not yet implemented for real case!'; end
       if b.real
         A = [c s];
       else
-        A = c+1i*s; A = [A conj(A)];   % fwd & bkwd travelling waves
+        A = c+1i*s; if h<0, A = [A conj(A)];   % fwd & bkwd travelling waves
+          elseif h>0, A = conj(A); end         % only bkwd
       end
       if nargout==2
         kdotn = real( repmat(ks, size(p.nx)) .* conj(repmat(p.nx, size(ks))) );
@@ -81,7 +86,8 @@ classdef rpwbasis < handle & basis
         else
           Ax = 1i*kdotn.*A(:,1:N);
           clear kdotn
-          Ax = [Ax conj(Ax)]; % fwd & bkd trav waves
+          if h<0, Ax = [Ax conj(Ax)];          % fwd & bkd trav waves
+            elseif h>0, Ax = conj(Ax); end     % only bkwd
         end
       elseif nargout==3
         if b.real
@@ -91,11 +97,14 @@ classdef rpwbasis < handle & basis
           Ay = [-kc.*s kc.*c];
         else
           kc = real( repmat(ks, size(p.nx)) );  % x-component of k vectors
-          Ax = 1i*kc.*A(:,1:N); Ax = [Ax conj(Ax)];
+          Ax = 1i*kc.*A(:,1:N);
+          if h<0, Ax = [Ax conj(Ax)];          % fwd & bkd trav waves
+            elseif h>0, Ax = conj(Ax); end     % only bkwd
           kc = imag( repmat(ks, size(p.nx)) );  % y-component of k vectors
           Ay = 1i*kc.*A(:,1:N);
           clear kc
-          Ay = [Ay conj(Ay)];
+          if h<0, Ay = [Ay conj(Ay)];          % fwd & bkd trav waves
+            elseif h>0, Ay = conj(Ay); end     % only bkwd
         end
       end
     end % func

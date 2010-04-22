@@ -38,6 +38,7 @@ classdef regfbbasis < handle & basis
                            %  (changed from rescale_arg by barnett 7/14/09)
         besselcode         % character controlling special function library used
         fastang            % if true, use recurrent trig funcs (not implemented)
+        ViS         % experimental, preconditions coeffs, ie postmultiply A, etc
     end
 
     methods
@@ -177,6 +178,12 @@ classdef regfbbasis < handle & basis
                     A2(:,2:N+1)+1i*A2(:,N+2:end)];
               end
             end
+
+            if ~isempty(regfb.ViS), A = A*regfb.ViS; % precond, experimental...
+              if nargout>1, A1 = A1*regfb.ViS; end 
+              if nargout>2, A2 = A2*regfb.ViS; end
+            end                                      % ...end experimental!
+
         end   % ....................... end function eval
         
         function showgeom(regfb, opts) % ...................... show basis geom
