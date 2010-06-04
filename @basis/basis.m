@@ -34,12 +34,19 @@ classdef basis < handle
     end
     
     function k = k(b, opts) % .................... looks up the basis wavenumber
-    % K - look up a basis set's wavenumber from the domain(s) it affects
+    % K - look up a basis set's wavenumber from the domain it affects
     %
-    % k = k(bas) returns the wavenumber in the domain affected by basis set bas.
+    % k = k(bas) returns wavenumber in the first domain affected by basis set
+    %   bas.
     %
-    % Issues: need to generalize to basis sets that affect >1 domain.
-      k = b.doms(1).k;       % note, given no further info, only knows 1st dom
+    % k = k(bas, opts) returns wavenumber in the domain opts.dom, if it is
+    %   affected by basis set bas.
+      if nargin<2 || ~isfield(opts,'dom')
+        k = b.doms(1).k;      % note, given no further info, only knows 1st dom
+      else
+        k = opts.dom.k;
+      end
+      %k = []; for i=1:numel(b.doms), k = [k b.doms(i).k]; end % row-vec version
     end
 
     

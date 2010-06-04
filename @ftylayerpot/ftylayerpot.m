@@ -16,7 +16,7 @@ classdef ftylayerpot < handle & basis
 % Copyright (C) 2008-2010, Alex Barnett
   properties
     orig                            % location of ray origin (x, and y shift)
-    quad, om, si                    % quad, om, nearsing params of Som. contour
+    quad, om, si, maxy, minx, shift % quad, om, nearsing(=si), etc, Som. contour
     a                               % amounts of single and double layer
     kj, wj                          % k_y quadr nodes and weights
   end
@@ -59,28 +59,34 @@ classdef ftylayerpot < handle & basis
     %    opts.omega = overrides freq for choosing Sommerfeld quadrature contour
     %    opts.nearsing = distance to nearest singularity on Re axis.
     %    opts.shift = translation applied to all kj quadr pts
+    %    opts.maxy = largest vertical location for evaluation (controls quadr)
+    %    opts.minx = smallest x distance for evaluation (controls quadr)
     %    opts.quad = overrides quadrature for Sommerfeld contour:
-    %        't' tanh-sinh curve, 'a' alpert on real k, 'u' uniform
-    %
-    % To do: * put in more options for curve, based on xmin, etc.
-      if nargin<2 || isempty(N), N = 100; end                % default N
-      if N<1, error('N must be at least 1!'); end
+    %        't' tanh-sinh curve, 'u' uniform, 'a' alpert real k [to implement] 
       if nargin<3, opts = []; end
-      if isfield(opts,'omega'), om = opts.omega; else om = ba.k; end
-      if isfield(opts,'nearsing'), si = opts.nearsing; else si = om/2; end
-      if ~isfield(opts,'shift'), opts.shift = 0; end
-      if isfield(opts,'quad'), qu = opts.quad; else qu = 'b'; end
-      ba.quad = qu; ba.om = om; ba.si = si;          % store params in object
-      xmin = 1.0;             % make an opts too !
-      % parameters of contour...
-      L = sqrt((log(1e-16)/xmin)^2 + om^2); % Re[k] s.t. x-decay died to e_mach
-      if qu=='b'    % Alex's quadr tanh curve, with sinh bunching............
-        d = 4;                  % tanh imaginary dist (scales as O(1))
-        de = max(d,si);          % width-scale of tanh: keep slope <1
+      if isfield(opts,'omega'), ba.om = opts.omega;
+      elseif isempty(ba.om), ba.om = ba.k; end               % default
+      if isfield(opts,'nearsing'), ba.si = opts.nearsing;
+      elseif isempty(ba.si), ba.si = ba.om/2; end            % "
+      if isfield(opts,'shift'), ba.shift = opts.shift;
+      elseif isempty(ba.shift), ba.shift = 0; end
+      if isfield(opts,'maxy'), ba.maxy = opts.maxy;
+      elseif isempty(ba.maxy), ba.maxy = 1; end
+      if isfield(opts,'minx'), ba.minx = opts.minx;
+      elseif isempty(ba.minx), ba.minx = 1; end
+      if isfield(opts,'quad'), ba.quad = opts.quad;
+      elseif isempty(ba.quad), ba.quad = 'b'; end
+      % estimate parameters of contour...
+      L = sqrt((log(1e-16)/ba.minx)^2 + ba.om^2); % Re[k] st x-decay to e_mach
+      if ba.quad=='b'  % Alex's quadr tanh curve, with sinh bunching............
+        d = min(4,6/ba.maxy);       % tanh imaginary dist (scales as O(1/maxy))
+        de = d;          % max(d,ba.si), width-scale of tanh: keep slope <=1
         % params of remapping through sinh...
-        b = max(2,real(si)^1.2); % b expansion growth rate
-        g = min(real(si)/2,1);   % g bunching fac, for be->a var change params.
-      
+        b = max(2,real(ba.si)^1.2); % b expansion growth rate
+        g = min(real(ba.si)/2,1); % g bunching fac, for be->a var change params
+        if isempty(N) || N==0,    % estimate N... om>>1 effect, om<<1 effect
+          Ns = [100, 3*max(ba.om,3)*ba.maxy, 16*b*asinh(L/g/b)];
+          N = ceil(max(Ns)); end
         h = b*asinh(L/g/b) / (N/2-1);  % stopping at beta s.t. alpha stops at L
         be = (-N/2:(N+1)/2)*h;         % beta values (periodic trap rule)
         be = be(1:N);                  % clip to be exactly N
@@ -88,12 +94,14 @@ classdef ftylayerpot < handle & basis
         a = g*b*sinh(be/b); wj = wj.*g.*cosh(be/b);  % transform be->a
         % change variable from real axis to contour shape (w/ imag part)...
         ba.kj = a - 1i*d*tanh(a/de); ba.wj = wj.*(1-1i*d/de*sech(a/de).^2);
-      elseif qu=='u'    % uniform, crude ....................................
+      elseif ba.quad=='u'  % uniform, crude ....................................
+        if nargin<2 || isempty(N), N = 100; end                % default N
         h = L/(N/2-1); ba.kj = ((1:N)-N/2)*h;  % compound trapezoid rule
         ba.wj = ones(1,numel(ba.kj))*h;
       end
+      if N<1, error('N (either given or computed) must be at least 1!'); end
       ba.N = N;
-      ba.kj = ba.kj + opts.shift;    % ***** hack to avoid k=0 ? *** check it
+      ba.kj = ba.kj + ba.shift;    % cool contour x-shift, non-Sommerfeld
     end
     
     function updateN(b,N) % ................ overloads from basis

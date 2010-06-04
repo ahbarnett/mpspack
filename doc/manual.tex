@@ -446,9 +446,11 @@ accordingly).
 
 A basis set object {\tt b} affects the
 function values inside the domain in the pointer {\tt b.doms}.%
-  \footnote{In fact, {\tt doms} may be a list, but currently only obscure
-    layer potential objects have the power to influence more than
-    one domian. Therefore we discuss only the simpler
+  \footnote{In fact, {\tt doms} may be a row vector of more than one domains,
+but currently the only command
+    which can create this is
+    {\tt segment.addinoutlayerpots}. This adds a `two-sided' layer potential
+which influences domains on both its sides, generally with different wavenumbers. Therefore we discuss only the simpler
     case of one affected domain.}
 When a basis set is {\em added} to a basis-set-free domain {\tt d},
 two things happen: i) a new instance of the appropriate basis class
@@ -787,6 +789,9 @@ a variety of domains.
 scattering problem on a variety of domains.
 \item {\tt testinpolywrapper.m} validates the MEX interface to point-in-polygon
 checking.
+\item {\tt testdielscatrokh.m} calculates a transmission scattering problem
+using Rokhlin's hyper-singular cancelling scheme, via setting up layer potentials
+which each affect {\em two} domains.
 \ei
 There are several other more specific test routines in the directory
 that we do not list here.

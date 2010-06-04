@@ -1,7 +1,7 @@
 % Example codes from MPSpack tutorial, also generates EPS figures for this doc
 % SECTION 6: LAYER POTENTIALS
 
-clear all classes; verb = 0;          % if verb>0, generates EPS figures
+clear all classes; verb = 1;          % if verb>0, generates EPS figures
 tref = segment.radialfunc([], {@(q) 1 + 0.3*cos(3*q), @(q) -0.9*sin(3*q),...
                    @(q) -2.7*cos(3*q)});
 d = domain([], [], tref, -1); d.k = 10;
@@ -28,8 +28,8 @@ if verb,       % generate f.lp a,b
   print -depsc2 ../doc/lpeig.eps
 end
 
-% Demo BWLP combined-field...
-p.bas{1}.a = [1i*d.k 1];           % sneaky way to change SLP,DLP coeffs
+% Demo BWLP combined-field... (note I changed -ikS sign on Timo's suggestion)
+p.bas{1}.a = [-1i*d.k 1];           % sneaky way to change SLP,DLP coeffs
 p.fillbcmatrix;
 cond(p.A)
 if verb,       % regenerate f.lp a, and generate f.lp c
@@ -40,9 +40,9 @@ if verb,       % regenerate f.lp a, and generate f.lp c
   figure(g); hold on; semilogy(N, e, 'go--'); axis tight;
   print -depsc2 ../doc/lpconv.eps
   figure; plot(eig(diag(1./p.sqrtwei)*p.A), '+'); set(gca,'fontsize', 20);
-  axis equal tight; axis(1.05*axis);
   hold on; t=0:0.01:2*pi; plot(0.5 + 0.5*exp(1i*t), 'r-');
-  xlabel('Re[\lambda(1/2+D+ikS)]'); ylabel('Im[\lambda(1/2+D+ikS)]');
+  axis equal tight; axis(1.05*axis);
+  xlabel('Re[\lambda(1/2+D-ikS)]'); ylabel('Im[\lambda(1/2+D-ikS)]');
   set(gcf,'paperposition', [.25 .25 6 8]);
   print -depsc2 ../doc/lpeig_bwlp.eps
 end
