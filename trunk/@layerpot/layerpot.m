@@ -118,8 +118,8 @@ classdef layerpot < handle & basis
         p = [];              % tell S, D, etc to use self-interaction
         if ~isempty(b.self), o.self = b.self; end    % pass in self-int mats
       end
-      k = b.k;               % method gets k from affected domain
-
+      k = b.k(o);               % method gets k from affected domain (o.dom)
+      
       % opts takes precedence, but otherwise use Jfilter in basis properties:
       if ~isempty(b.Jfilter) & ~isfield(o, 'Jfilter'), o.Jfilter=b.Jfilter; end
       if isfield(o, 'Jfilter') & ~isempty(p)  % ==== J-expansion filter, nonself

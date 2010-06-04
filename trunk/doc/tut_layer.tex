@@ -13,7 +13,7 @@ b) Spectrum of $(\frac{1}{2}I + D)$ in the complex plane (for $M=80$).
 We have superimposed a circle of radius 1/2 centered at 1/2, to which the
 eigenvalues appear to
 condense in the $k\to\infty$ limit---to prove this is an open problem!
-c) Spectrum of $(\frac{1}{2}I + D + ikS)$ relevant for combined-field
+c) Spectrum of $(\frac{1}{2}I + D - ikS)$ relevant for combined-field
 formulation.
 }{f:lp}
 \efi
@@ -96,10 +96,10 @@ It is well-known that $\frac{1}{2}I + D$ goes singular when $k^2$ is
 a Dirichlet eigenvalue of the interior domain \cite{coltonkress}.
 This leads to blow-up of the condition number, hence non-robustness.
 A cure due to Brakhage, Werner, Leis and Panich \cite{coltonkress}
-is to use a combined-field representation of DLP plus $ik$ times SLP,
+is to use a combined-field representation of DLP minus $ik$ times SLP,
 which is done by replacing the above basis setup by
-\co{d.addlayerpot(tref, [1i*d.k 1]);}
-Delightfully, the spectrum of $\frac{1}{2}I + D + ikS$ avoids
+\co{d.addlayerpot(tref, [-1i*d.k 1]);}
+Delightfully, the spectrum of $\frac{1}{2}I + D - ikS$ avoids
 zero like the plague (Fig.~\ref{f:lp}c) and now {\tt cond(p.A)} is reduced to 5.
 
 In a future edition we will discuss

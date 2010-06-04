@@ -30,7 +30,7 @@ Sec.~\ref{s:ext}, we set up and solve the sound-soft scattering
 problem as follows,
 \begin{verbatim}
 opts.tau = 0.05; d.addmfsbasis(tref, 200, opts);  % basis set for ext domain
-s.setbc(1, 'D', []);                  % homogeneous Dirichlet BCs: sound-soft
+tref.setbc(1, 'D', []);               % homogeneous Dirichlet BCs: sound-soft
 p = scattering(d, []);
 k = 30; p.setoverallwavenumber(k);
 p.setincidentwave(pi/6);              % incident plane wave with given angle
@@ -51,8 +51,8 @@ by trial and error, examining the charge point locations and solution quality.
 We may trivially switch to other physical boundary conditions by replacing
 the {\tt setbc} command with either of the following,
 \begin{verbatim}
-s.setbc(1, 'N', []);                  % homogeneous Neumann: sound-hard
-s.setbc(1, 1i*k, 1);                  % homogeneous Robin: impedance
+tref.setbc(1, 'N', []);               % homogeneous Neumann: sound-hard
+tref.setbc(1, 1i*k, 1);               % homogeneous Robin: impedance
 \end{verbatim}
 In the latter case a boundary condition $iku + u_n=0$ is applied, which
 strongly absorbs incident waves.

@@ -380,7 +380,9 @@ classdef segment < handle & pointset
         end
       end
      
+     % ----------------------- methods in other m-files -----------------
      h = plot(s, pm, o)
+     b = addinoutlayerpots(seg, a, opts)
     end % methods
 
     % --------------------------------------------------------------------
@@ -391,4 +393,3 @@ classdef segment < handle & pointset
       [a b] = dielectriccoeffs(pol, np, nm)
     end % methods
 end
-

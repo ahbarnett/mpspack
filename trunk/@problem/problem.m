@@ -34,6 +34,7 @@ classdef problem < handle
           pr.sqrtwei = [pr.sqrtwei, sqrt(s.w)]; 
         end
       end
+      if isempty(pr.sqrtwei), warning('p.sqrtwei empty: probably you forgot to specify any BCs via setbc!'); end
     end % func
     
     function [N noff] = setupbasisdofs(pr)
@@ -78,6 +79,7 @@ classdef problem < handle
     %
     %  Issues/Notes:
     %  * is now faster version, based on basis dofs rather than domain dofs
+    %  * generalized to multiple affected domains per basis set, 6/4/10
       if nargin<2, opts=[]; end
       if ~isfield(opts, 'doms'), opts.doms = []; end
       if ~isfield(opts, 'trans'), trans = []; else trans = opts.trans; end
@@ -109,7 +111,7 @@ classdef problem < handle
               o.dom = dp;
               if isempty(opts.doms) | utils.isin(o.dom, opts.doms) % restrict?
                 [Ab Abn] = b.eval(c, o);  % + side contrib
-                A(ms, ns) = repmat(pr.sqrtwei(ms).', [1 b.Nf]) .* [s.a(1)*Ab; s.b(1)*Abn]; % overwrite block, g stacked below f
+                A(ms, ns) = A(ms, ns) + repmat(pr.sqrtwei(ms).', [1 b.Nf]) .* [s.a(1)*Ab; s.b(1)*Abn]; % add block, g stacked below f
               end
               o.dom = dm;
               if isempty(opts.doms) | utils.isin(o.dom, opts.doms) % restrict?

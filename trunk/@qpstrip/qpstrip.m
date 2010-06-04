@@ -79,6 +79,7 @@ classdef qpstrip < handle & domain
     %
     % All calling opts are passed to ftylayerpot, apart from opts.omega which
     % is inherited from the qpstrip domain.
+      if nargin<2, o = []; end
       if ~isfield(o,'omega'), o.omega = st.k; end      % inherit wavenumber
       % compute distance from origin to nearest singularity given Bloch params:
       if ~isfield(o,'nearsing')
@@ -138,7 +139,7 @@ classdef qpstrip < handle & domain
       Q = zeros(M,N);                          % preallocate
       for i=1:numel(st.bas)           % loop over basis set objects in unit cell
         b = st.bas{i}; ns = noff(i)+(1:b.Nf);
-        if ~isa(b,'rpwbasis')
+        if ~isa(b,'rpwbasis') && ~isa(b,'epwbasis')
           Q(:,ns) = b.evalftystripdiscrep(st); % currently only for ftylayerpots
         else
           Q(:,ns) = zeros(M, numel(ns)); % PW (delta in k) no effect on contour
