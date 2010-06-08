@@ -168,6 +168,7 @@ classdef problem < handle
     
     % Split up the computation if list of points is longer than nmax.
     % Ensures that not too much memory is eaten up by the computation.
+    % (Timo Betcke)
     nmax=1e4;          % since nmax=100 had big 20% speed hit
     if length(p.x)>nmax,
         Np=length(p.x);
@@ -250,12 +251,14 @@ classdef problem < handle
       end
       o.bb(1) = o.dx * floor(o.bb(1)/o.dx);         % quantize to grid through 0
       o.bb(3) = o.dx * floor(o.bb(3)/o.dx);         % ... make this optional?
-      o.bb(1) = o.bb(1) + 1e-12; o.bb(3) = o.bb(3) + 1e-12; % jog grid (inside) 
+      tiny = 1e-12;                      % infinitesimal jog for stability
+      o.bb(1) = o.bb(1) + tiny; o.bb(3) = o.bb(3) + tiny; % jog grid (inside) 
     end
     
-    function h = showbdry(pr)   % ........................ crude plot bdry
+    function h = showbdry(pr, o)   % ........................ crude plot bdry
     % SHOWBDRY - shows boundary segments in a problem, with their natural sense
-      h = domain.showsegments(pr.segs, ones(size(pr.segs)));
+      if nargin<2, o = []; end
+      h = domain.showsegments(pr.segs, ones(size(pr.segs)), o);
     end
     
     function h = showbasesgeom(pr)   % ................ crude plot bases geom
@@ -274,13 +277,15 @@ classdef problem < handle
     end
     
     function setoverallwavenumber(pr, k) % ................. overall k
-    % SETOVERALLWAVENUMBER - set problem k, in each domain using refactive index
+    % SETOVERALLWAVENUMBER - set problem k in each domain using refractive index
     %
     %  setoverallwavenumber(pr, k) propagates overall wavenumber k to each
     %   domain, and its basis sets. If a domain has refractive index n, then
     %   its wavenumber will become nk.
+      if isnan(k), error('k must be a number!'); end
       pr.k = k;
       for d=pr.doms
+        if isnan(d.refr_ind), error('each domain index must be a number!'); end
         d.k = d.refr_ind * k;
       end
     end
