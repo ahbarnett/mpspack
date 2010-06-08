@@ -17,6 +17,7 @@ classdef scattering < bvp & handle
   
   methods % ---------------------------------- methods particular to scattering
     function pr = scattering(airdoms, doms) % .............. constructor
+      if nargin==0, airdoms = []; doms = []; end     % needs empty constructor
       pr = pr@bvp([airdoms doms]);      % make an instance of a BVP (see Docu)
       if ~isempty([airdoms doms])       % if not an empty constructor...
         if numel(airdoms)==0, error('must be at least one air domain'); end
@@ -45,7 +46,7 @@ classdef scattering < bvp & handle
     %   data f, g stored on any of the problem's segments. However it preserves
     %   existing a, b BC or matching coeffs (which must be set up on entry).
       if nargin==2
-        if isempty(pr.k), error('scattering problem must have wavenumber set'); end
+        if isempty(pr.k), error('please set wavenumber before choosing incident plane wave angle!'); end
         kvec = pr.k*exp(1i*t);                % set up a plane-wave field
         pr.incang = t;
         ui = @(x) exp(1i*real(conj(kvec) .* x));
@@ -119,7 +120,6 @@ classdef scattering < bvp & handle
     %   gridpoint is in are done using domain.inside, which may be approximate.
     %
     % See also POINTINCIDENTWAVE, GRIDBOUNDINGBOX
-
     
       o = pr.gridboundingbox(o);
       gx = o.bb(1):o.dx:o.bb(2); gy = o.bb(3):o.dx:o.bb(4);  % plotting region
@@ -193,23 +193,24 @@ classdef scattering < bvp & handle
     end % func
     
     function showfullfield(pr, o)
-    % SHOWFULLFIELD - plot u_i+u_s on the grid
+    % SHOWFULLFIELD - plot u_t = u_i+u on the grid
     %
     %   opts.imag = true, plots imag instead of real part
     %   opts.bdry = true, shows boundary too
 
+    % Notes: Timo's idea.
       if nargin<2, o = []; end
       if ~isfield(o, 'imag'), o.imag = 0; end
       if ~isfield(o, 'bdry'), o.bdry = 0; end
     
       [ui gx gy di] = pr.gridincidentwave(o);
       u=pr.gridsolution(o);
-      u=ui+u;
+      u=ui + u;
       figure;
       if o.imag
-          imagesc(gx, gy, imag(u));title('Im[u]');
+          imagesc(gx, gy, imag(u));title('Im[u_{tot}]');
       else
-          imagesc(gx,gy,real(u)); title('Re[u]');
+          imagesc(gx, gy, real(u)); title('Re[u_{tot}]');
       end
       c = caxis; caxis([-1 1]*max(c));
       axis equal tight;colorbar; set(gca,'ydir','normal'); hold on;

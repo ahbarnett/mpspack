@@ -16,18 +16,17 @@
 %  * Will they exclude interior regions? Or allow upper/lower segment bdry?
 %  * make better strip plot, etc
 %
-% See also DOMAIN
-%
+% See also DOMAIN, QPSCATT
+
 % (C) 2010 Alex Barnett
 classdef qpstrip < handle & domain
   properties
-    a                             % alpha QP phase factor
+    a                             % alpha QP phase factor for strip (neq pr.a?)
     e                             % horizontal lattice vector (complex #)
     r                             % reciprocal lattice vector (complex #)
     Lo, Ro                    % ftylayerpot origins for L, R walls 
     N                    % total # degrees of freedom in QP basis sets
     basnoff              % dof offsets for QP basis sets (numeric list)
-    buffer               % 0,1: simple discrepancy or 3-unit-cell discrepancy
     up                   % +1 when seg is lower bdry, -1 if upper, 0 if no seg
     % Also seg, pm : L-to-R or R-to-L boundary segment & sense (optional)
   end
@@ -40,7 +39,6 @@ classdef qpstrip < handle & domain
       st.perim = Inf; st.exterior = nan;   % since walls infinite extent in y
       st.Lo = -e/2; st.Ro = e/2;
       st.e = e;
-      st.buffer = 0;
       st.a = 1;  % default (don't need st.setbloch method)
       st.k = k;
       st.r = 2*pi/st.e;  % works for real e at least
@@ -75,18 +73,19 @@ classdef qpstrip < handle & domain
     end
 
     function addqpftylayerpots(st, o) % ...............................
-    % ADDQPFTYLAYERPOTS - add SLP+DLP FT-y layer potentials to L in qpstrip
+    % ADDQPFTYLAYERPOTS - add SLP+DLP QP FT-y layer potential pairs to qpstrip
     %
-    % All calling opts are passed to ftylayerpot, apart from opts.omega which
+    % All calling opts are passed to qpftylayerpot, apart from opts.omega which
     % is inherited from the qpstrip domain.
       if nargin<2, o = []; end
       if ~isfield(o,'omega'), o.omega = st.k; end      % inherit wavenumber
+      if isempty(o.omega) || isnan(o.omega), warning('bad things will happen since omega empty or NaN!'); end
       % compute distance from origin to nearest singularity given Bloch params:
       if ~isfield(o,'nearsing')
         o.nearsing=min(abs(sqrt(st.k^2-(log(st.a)/1i+(-100:100)*2*pi/st.e).^2))); end
       % append the two types of layerpot to existing bases...
-      st.bas = {st.bas{:}, ftylayerpot(st.Lo, 'd', o), ...
-                ftylayerpot(st.Lo, 's', o)};
+      st.bas = {st.bas{:}, qpftylayerpot(st, 'd', o), ...
+                qpftylayerpot(st, 's', o)};
       for i=0:1, st.bas{end-i}.doms = st; end  % make strip the affected domain
       st.setupbasisdofs;
     end
@@ -139,8 +138,8 @@ classdef qpstrip < handle & domain
       Q = zeros(M,N);                          % preallocate
       for i=1:numel(st.bas)           % loop over basis set objects in unit cell
         b = st.bas{i}; ns = noff(i)+(1:b.Nf);
-        if ~isa(b,'rpwbasis') && ~isa(b,'epwbasis')
-          Q(:,ns) = b.evalftystripdiscrep(st); % currently only for ftylayerpots
+        if ~isa(b,'rpwbasis') && ~isa(b,'epwbasis') % exclude plane wave bases
+          Q(:,ns) = b.evalftystripdiscrep(st); % currently only qpftylayerpots
         else
           Q(:,ns) = zeros(M, numel(ns)); % PW (delta in k) no effect on contour
         end

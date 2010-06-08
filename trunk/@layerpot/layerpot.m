@@ -17,7 +17,7 @@ classdef layerpot < handle & basis
 %
 % See also: DOMAIN/ADDLAYERPOT
 
-% Copyright (C) 2008, 2009, Alex Barnett and Timo Betcke
+% Copyright (C) 2008-2010, Alex Barnett and Timo Betcke
   properties
     real                            % true if fund sol is Y_0, false for H_0^1
     seg                             % handle of segment on which density sits

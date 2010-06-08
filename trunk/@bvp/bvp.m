@@ -12,7 +12,7 @@ classdef bvp < problem & handle
   
   methods % ---------------------------------- methods particular to BVPs
     function pr = bvp(doms) % .................... constructor
-      if nargin==0, pr = []; return; end     % needs empty constructor
+      if nargin==0, return; end    % needs empty constructor
       pr.doms = doms;
       pr.segs = [];             % now build a list of segments, crude O(N^2)
       for d=doms

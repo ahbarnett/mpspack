@@ -167,30 +167,6 @@ classdef ftylayerpot < handle & basis
       end
     end % func
     
-    function Q = evalftystripdiscrep(b, st) % ........... overloads from basis
-    % EVALFTYSTRIPDISCREP - Q submatrix giving FTy LP effect on FTy discrepancy 
-    %
-    % Q = EVALFTYSTRIPDISCREP(bas, st). bas is the basis set, st the strip
-    %   object. Currently supports standard ftylp's on L and copies on L+e, with
-    %   buffer=0,1... Q is a 2NxN matrix, with NxN diagonal subblocks, since
-    %   transl ops are diag in FTy rep.
-    % 
-    % ISSUES: check the non-x-parallel e case.
-    %
-    % * Obviously should make a multiply-by-Q routine since it's block diagonal!
-      if ~isa(st, 'qpstrip'), error('st must be a qpstrip object!'); end
-      N = b.Nf;
-      om = b.k;                               % get omega from basis (ie domain)
-      a = st.a;                               % Bloch phase
-      d = real(st.e) * (1+2*st.buffer);       % x-displacement across strip
-      som = sqrt(om^2 - b.kj.^2);             % Sommerfeld, row vec
-      exf = exp(1i*som*d);                    % decay factors, row vec
-      Q = [diag((b.a(1)*1i*(a-1/a)./som + b.a(2)*(-a-1/a)).*exf/2); ...
-           diag((b.a(1)*(a+1/a) + b.a(2)*1i*(a-1/a)*som).*exf/2)];
-      i = diagind(Q); Q(i) = Q(i) + b.a(2);   % jump relations add identities
-      i = diagind(Q,N); Q(i) = Q(i) - b.a(1);
-    end
-    
     function showgeom(b, opts) % .................. crude show location of ray
       vline(real(b.orig), 'k-');
     end
