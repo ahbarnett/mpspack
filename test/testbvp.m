@@ -7,7 +7,7 @@ verb = 1;          % verbosity: 0 for no figures, 1 for figures
 passdata = 0;      % 0 passes func handles, 1 passes data vectors
 k = 10;            % overall wavenumber
 
-for prob=1:9 % ===== loop over test problems ======
+for prob=8 % ===== loop over test problems ======
   
   switch prob      % choose segments, domains, basis sets, and exact solutions
    case {1,2,3,9} %    ...... interior polygon D & N (3: DLP, 9: test Greens th)
@@ -67,7 +67,7 @@ for prob=1:9 % ===== loop over test problems ======
     Z = @(s) exp(2i*pi*s).*R(2*pi*s);
     s = segment(M, {Z, @(s) 2*pi*(1i*Z(s) + exp(2i*pi*s).*Rt(2*pi*s))}, 'p');
     d = domain(s, 1); d(2) = domain([], [], s, -1); % int, ext domains
-    N = 50; d(2).addmfsbasis(s, N, struct('tau',0.05,'real',1));
+    N = 50; d(2).addmfsbasis(s, N, struct('tau',0.05,'real',1)); opts.real=1;
     d(1).refr_ind=2; Ni = 40; d(1).addregfbbasis(0, Ni, opts);   % int basis set
     dname = 'transmission';
     t = 1; kvec = d(1).refr_ind*k*exp(1i*t);      % t is plane wave angle

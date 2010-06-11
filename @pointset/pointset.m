@@ -21,7 +21,7 @@
 %
 % See also: POINTSET/plot, SEGMENT which builds on POINTSET
 
-% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
+% Copyright (C) 2008-2010, Alex Barnett, Timo Betcke
 
 
 classdef pointset < handle
@@ -40,7 +40,7 @@ classdef pointset < handle
                 pts.x = vertcat(x.x); pts.nx = vertcat(x.nx);
               else
                 pts.x = x;
-                if size(x,2)~=1, error('x must be m-by-1'); end
+                if ~isempty(x) && size(x,2)~=1, error('x must be m-by-1'); end
               end
             end
             if nargin>1 && ~isempty(nx)

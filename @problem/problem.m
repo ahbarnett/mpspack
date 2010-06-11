@@ -152,6 +152,58 @@ classdef problem < handle
       if nargout==0, pr.A = A; end     % this only stores internally if no outp
     end % func
     
+    function [A Ax Ay] = evalbases(pr, p, opts) % .......... eval problem bases
+    % EVALBASES - evaluate all basis sets in a domain object, on a pointset
+    %
+    %  A = EVALBASES(pr, p) returns matrix A whose jth column is the jth basis
+    %   function in problem pr evaluated on the pointset p.
+    %
+    %  [A An] = EVALBASES(pr, p) returns also the normal derivatives using the
+    %   normals associated with the pointset.
+    %
+    %  [A Ax Ay] = EVALBASES(pr, p) returns A and the basis x- and y-partial
+    %   derivatives, ignoring the normals associated with the pointset
+    %
+    %  [A ...] = EVALBASES(pr, p, opts) allows options such as,
+    %    opts.dom : overrides evaluation domain for bases (eg p = layerpot seg)
+    %
+    % Notes: 1) Although thought obsolete for domains, evalbases as a problem
+    %   method is quite useful, esp. for periodic problems (nei>0, etc)
+    %   2) For layer potential basis sets, and if p is also a segment
+    %   object, jump relations will be taken into account if the opts.dom is
+    %   specified.
+    %   3) This routine can be viewed as PROBLEM.POINTSOLUTION without the
+    %   final multiplication by coefficient vector.
+    %   4) could make points lying outside all problem domains return NaN rows?
+    %
+    % See also: DOMAIN.EVALBASES, POINTSOLUTION, DOMAININDICES
+      if nargin<3, opts = []; end
+      if nargout>1 && isempty(p.nx), error('pointset needs normals!'); end
+      A = zeros(numel(p.x), pr.N);           % allocate
+      if nargin>1, Ax = A; end; if nargin>2, Ay = A; end % only allocate if need
+      di = NaN*zeros(size(p.x));             % NaN indicates in no domain
+      if isfield(opts, 'dom'), doms = opts.dom; else doms = pr.doms; end
+      for n=1:numel(doms)  % main loop is over domains, but bases are pr-indexed
+        d = doms(n);
+        ii = d.inside(p.x);
+        if nnz(ii)==0, continue; end         % Do nothing if there's no elements
+        di(ii) = n;                          % returns 1 if opts.dom override
+        opts.dom = d;                        % b.eval might need know which dom
+        pn = pointset(p.x(ii));              % points only in current dom
+        if nargout>1, pn.nx = p.nx(ii); end
+        for i=1:numel(pr.bas)                % loop over all bases...
+          b = pr.bas{i}; ns = pr.basnoff(i)+(1:b.Nf);
+          if utils.isin(b, d.bas)            % this bas talks to current dom?
+            if nargout==1, A(ii,ns) = b.eval(pn, opts); % the 3 output styles
+            elseif nargout==2, [Ad Adn] = b.eval(pn, opts);
+              A(ii,ns) = Ad; Ax(ii,ns) = Adn;
+            else, [Ad Adx Ady] = b.eval(pn, opts);
+              A(ii,ns) = Ad; Ax(ii,ns) = Adx; Ay(ii,ns) = Ady; end
+          end
+        end
+      end
+    end
+    
     function [u di] = pointsolution(pr, p) % ......eval soln on pointset
     % POINTSOLUTION - evaluate solution to a problem on a pointset, given coeffs
     %
@@ -163,35 +215,36 @@ classdef problem < handle
     %   Notes: 1) changed to reference dofs via bases rather than domains.
     %   2) A separate routine should be written for evaluation of u, u_n on
     %   boundary.
+    %   3) splits up the computation if list of points is longer than nmax.
+    %   Ensures that not too much memory is eaten up by the computation.
+    %   (Timo Betcke)
+    %   4) For some bases, could insert FMM or other fast eval methods here.
     %
     % See also GRIDSOLUTION.
-    
-    % Split up the computation if list of points is longer than nmax.
-    % Ensures that not too much memory is eaten up by the computation.
-    % (Timo Betcke)
-    nmax=1e4;          % since nmax=100 had big 20% speed hit
-    if length(p.x)>nmax,
-        Np=length(p.x);
-        itcount=floor(Np/nmax);
-        r=mod(Np,nmax);
-        u=zeros(Np,1); di=zeros(Np,1);
-        for j=1:itcount+1,
-            if j<=itcount,
-                indrange=(j-1)*nmax+1:j*nmax;
-            elseif r>0,
-                indrange=(j-1)*nmax:Np;
-            else break
-            end
-            if ~isempty(p.nx),             
-                ptemp=pointset(p.x(indrange),p.nx(indrange));
-            else
-                ptemp=pointset(p.x(indrange));
-            end
-            [ut,dit]=pr.pointsolution(ptemp);
-            u(indrange)=ut; di(indrange)=dit;
-        end
-        return
-    end
+      if isempty(pr.co), error('coefficient vector is empty!'); end
+      nmax=1e4;          % since nmax=100 had big 20% speed hit
+      if length(p.x)>nmax,
+          Np=length(p.x);
+          itcount=floor(Np/nmax);
+          r=mod(Np,nmax);
+          u=zeros(Np,1); di=zeros(Np,1);
+          for j=1:itcount+1,
+              if j<=itcount,
+                  indrange=(j-1)*nmax+1:j*nmax;
+              elseif r>0,
+                  indrange=(j-1)*nmax:Np;
+              else break
+              end
+              if ~isempty(p.nx),             
+                  ptemp=pointset(p.x(indrange),p.nx(indrange));
+              else
+                  ptemp=pointset(p.x(indrange));
+              end
+              [ut,dit]=pr.pointsolution(ptemp);
+              u(indrange)=ut; di(indrange)=dit;
+          end
+          return
+      end
       di = NaN*zeros(size(p.x));                    % NaN indicates in no domain
       u = di;                                       % solution field
       for n=1:numel(pr.doms)
@@ -213,6 +266,18 @@ classdef problem < handle
         end
       end
     end % func
+
+    function di = domainindices(pr, p)
+    % DOMAININDICES - return domain (problem) indices of points in pointset
+    %
+    % Note: just a helper routine extracting the di output part of pointsolution
+      di = NaN*zeros(size(p.x));              % NaN indicates in no domain
+      for n=1:numel(pr.doms)
+        d = pr.doms(n);
+        ii = d.inside(p.x);
+        di(ii) = n;
+      end
+    end
     
     function [u gx gy di] = gridsolution(pr, o) % ......... eval soln on grid
     % GRIDSOLUTION - evaluate solution to a problem over a grid, given coeffs
