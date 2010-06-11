@@ -96,6 +96,7 @@ classdef scattering < bvp & handle
     %   all domains.
     %
     % See also GRIDINCIDENTWAVE
+    if nargin<3, o=[]; end
     if ~isfield(o,'all'), o.all=0; end; % Evaluate wave over all domains
       di = NaN*zeros(size(p.x));                    % NaN indicates in no domain
       u = di;                                       % solution field
