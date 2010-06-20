@@ -416,8 +416,7 @@ classdef problem < handle
       else, h = imagesc(gx, gy, real(u), 'alphadata', ~isnan(di));
         %title('Re[u]');
       end
-      c = caxis; caxis([-1 1]*max(c));           % make colorscale symmetric
-      axis equal tight; colorbar; colormap(jet(256));
+      utils.goodcaxis(u); axis equal tight; colorbar; colormap(jet(256));
       set(gca,'ydir','normal'); hold on;
       if o.bdry, pr.showbdry; end
     end % func

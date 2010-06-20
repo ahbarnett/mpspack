@@ -86,7 +86,8 @@ classdef qpscatt < scattering & handle
     %   existing a, b BC or matching coeffs (which must be set up on entry).
       if nargin==2
         if isempty(pr.k), error('qpscatt problem needs wavenumber set'); end
-        t = mod(t,2*pi); if t<pi, warning('upwards incident angle untested');end
+        t = mod(t,2*pi);
+        if t<pi, error('upwards incident angle (use downwards)!');end
         setincidentwave@scattering(pr, t); % call superclass method
         om = pr.k; kvec = om*exp(1i*t); pr.a = exp(1i*real(conj(kvec) * pr.d));
         pr.t.setbloch(exp(1i*real(conj(kvec) * pr.t.e))); % set Bloch alpha
@@ -349,7 +350,9 @@ classdef qpscatt < scattering & handle
           d = utils.copy(d); pd.doms(i) = d; pd.extdom = d; end, end
       % now add the QP bases onto those in obst exterior domain...
       pd.extdom.bas = {pd.extdom.bas{:} pd.t.bas{:}}; % marry the bases lists
-      pd.setupbasisdofs;
+      pd.bas = {pr.bas{:} pd.t.bas{:}}; % append problem bases ...IN ORDER!
+      pd.basnoff = [pr.basnoff pr.N+pr.t.basnoff]; % effective setupbasisdofs
+      pd.N = pr.N + pr.t.N;            % finish up appending to pd basis setup
       [u di] = pointsolution@problem(pd, p);     % pass to usual evaluator
       extdomi = find([pr.doms.isair]);           % index of the extdom
       if numel(extdomi)~=1, error('there appears to be >1 exterior domain!');end
@@ -387,7 +390,9 @@ classdef qpscatt < scattering & handle
           d = utils.copy(d); pd.doms(i) = d; pd.extdom = d; end, end
       % now add the QP bases onto those in obst exterior domain...
       pd.extdom.bas = {pd.extdom.bas{:} pd.t.bas{:}}; % marry the bases lists
-      pd.setupbasisdofs;
+      pd.bas = {pr.bas{:} pd.t.bas{:}}; % append problem bases ...IN ORDER!
+      pd.basnoff = [pr.basnoff pr.N+pr.t.basnoff]; % effective setupbasisdofs
+      pd.N = pr.N + pr.t.N;            % finish up appending to pd basis setup
 
       % Evaluate all bases, 3 styles (no periodic direct image sums here)...
       if nargout==1, A = pd.evalbases@problem(p, opts);
@@ -444,13 +449,14 @@ classdef qpscatt < scattering & handle
         o.bb(1) = o.bb(1) - pr.d; o.bb(2) = o.bb(2) + pr.d; % widen the bb
         gx = [gx-pr.d gx gx+pr.d];              % needed for plotting
       else, u=pr.gridsolution(o); % let bb be chosen by default elsewhere
-        [ui gx gy di] = pr.gridincidentwave(o); u=ui+u; end % compute tot field
+        [ui gx gy di] = pr.gridincidentwave(o); u=ui+u;
+      end % compute tot field
         
       figure;
       if o.imag, imagesc(gx, gy, imag(u));title('Im[u_{tot}]');
       else, imagesc(gx, gy, real(u)); title('Re[u_{tot}]');
       end
-      caxis(2.0*[-1 1]*mean(abs(u(:))));
+      utils.goodcaxis(u);
       axis equal tight; colorbar; set(gca,'ydir','normal'); hold on;
       if o.bdry, pr.showbdry(struct('nei',1)); end
     end      
