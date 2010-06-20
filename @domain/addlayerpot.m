@@ -15,8 +15,7 @@ function bas = addlayerpot(d, seg, varargin)
 %
 % See also LAYERPOT, SEGMENT
 
-% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
-
+% Copyright (C) 2008-2010, Alex Barnett, Timo Betcke
 
 if isempty(seg), seg = d.seg; end
 bas = {};
@@ -25,4 +24,6 @@ for s=seg
   bas  = {bas{:}, b};                   % append cell arr of basis handles
 end
 d.bas = {d.bas{:}, bas{:}};             % append to domain's referred bases
-d.bas{end}.doms = d;                    % tell this basis it affects this domain
+for i=1:numel(seg)
+  d.bas{end+1-i}.doms = d;   % tell bases they affect this domain
+end

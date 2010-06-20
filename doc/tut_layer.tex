@@ -23,7 +23,8 @@ formulation.
 \label{s:layer}
 
 Layer potentials are representations of Helmholtz solutions
-involving an integral over a boundary \cite{coltonkress}.
+involving a weighted integral of a fundamental solution
+over a boundary \cite{coltonkress}.
 They are similar to the MFS representations discussed above, with the
 crucial advantage that a {\em second-kind}
 formulation is often possible, i.e. the operator involved is
@@ -77,7 +78,7 @@ themselves is needed; by default for periodic quadrature%
     and 10, which for non-FMM-accelerated problems sich as this are inferior
     to Kress'. For non-periodic open segments, no special quadratures are
     currently implemented.}
-the Martensen-Kussmaul scheme recommended by Kress is used \cite{coltonkress},
+the Martensen--Kussmaul scheme recommended by Kress is used \cite{coltonkress},
 and this requires $z''(t)$, hence the need for $R''$ in {\tt radialfunc}.
 \een
 The above scheme is called the {\em Nystr\"{o}m method} \cite{coltonkress}.
@@ -102,10 +103,68 @@ which is done by replacing the above basis setup by
 Delightfully, the spectrum of $\frac{1}{2}I + D - ikS$ avoids
 zero like the plague (Fig.~\ref{f:lp}c) and now {\tt cond(p.A)} is reduced to 5.
 
+\subsection{Transmission problems}
+\label{s:trans}
+
+We return now to the transmission problem from the end of Section~\ref{s:scatt}.
+The Rokhlin--M\"{u}ller scheme \cite{rokh83}
+for scattering from a dielectric obstacle
+uses independent single- and double-layer densities on the obstacle
+boundary curve, each of which is used to represent the field in
+both interior and exterior.
+This means that a single density must affect
+{\em two} domains in which, however, the wavenumbers are different.
+This is easy to set-up in \mpspack, and it contrasts the cases considered
+until now where a basis object may affect only a single domain.
+The advantage of this scheme is that
+the hypersingular kernels on the plus and minus sides of the surface
+cancel to give a second-kind Fredholm system.
+Some code for the below is found in {\tt examples/dielscatrokh.m}
+
+We create interior and exterior domains from a single segment
+(in fact the same one as in Sec.~\ref{s:ext}, using a simpler
+command), and
+enforce continuity conditions at their interface, as follows,
+\begin{verbatim}
+M = 330; s = segment.smoothstar(M, 0.3, 3);       % smooth closed segment
+di = domain(s, 1); di.setrefractiveindex(n);      % interior
+de = domain([], [], s, -1);                       % exterior
+setmatch(s, 'diel', 'TM');
+\end{verbatim}
+We use a new command to add `double-sided' layer-potentials to the segment,
+one DLP and one SLP,
+\begin{verbatim}
+s.addinoutlayerpots('d'); s.addinoutlayerpots('s');
+\end{verbatim}
+We may check that the DLP \verb+di.bas{1}+ affects both domains by
+checking that \verb+di.bas{1}.doms+ is a list of two domains.
+By default, a Kress quadrature scheme is used for closed segments---this
+can be changed in the options to the above calls.%
+  \footnote{currently, since they cancel,
+    the hypersingular parts of the $T$ operator
+    are not even included in the $T$ evaluation}.
+Given the above domains (and once boundary/matching conditions and
+basis sets have been chosen), we set up then solve the problem
+with the same parameters
+as in Section~\ref{s:scatt},
+\begin{verbatim}
+p = scattering(de, di);
+p.setoverallwavenumber(30);
+p.setincidentwave(pi/6);              % if just angle given, it's a plane wave
+p.solvecoeffs;
+\end{verbatim}
+A call to {\tt p.showthreefields} now reproduces Fig.~\ref{f:diel}.
+Note that in order to get 13 digits of accuracy at this medium wavenumber,
+we needed $M=330$, i.e.\ 660 degrees of freedom. (This is larger than the number
+needed in Section~\ref{s:scatt}, although the accuracy was lower there).
+At $k=8$, $M=110$ is sufficient for 14 digit accuracy.
+However, the linear system condition number {\tt cond(p.A)} is only
+$6\times 10^3$, enabling the use of iterative methods such as GMRES,
+in contrast to Sec.~\ref{s:scatt} in which it
+was highly ill-conditioned. The convergence rate is exponential.
+
+
 In a future edition we will discuss
-sound-hard scattering, direct formulations, and
-how to solve transmission problems
-with layer potentials. For now, the latter
-is implemented in {\tt test/testdielscatrokh.m}.
+sound-hard scattering and direct formulations.
 Please get in touch with the authors if you have any questions
 or suggestions!

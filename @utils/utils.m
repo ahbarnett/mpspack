@@ -26,6 +26,7 @@ classdef utils
     i = isin(b, c)
     s = merge(s1,s2)
     [f0 err N] =  extrap(f, hmax, opts)
+    c = goodcaxis(u)
   end
 
 end

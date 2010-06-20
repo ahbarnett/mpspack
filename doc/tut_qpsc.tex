@@ -1,0 +1,139 @@
+\section{Scattering from a periodic grating of obstacles}
+\label{s:qpsc}
+
+\bfi % ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+a)\raisebox{-1.7in}{\ig{width=0.54\textwidth}{qpsc.eps}}
+b)\raisebox{-1.7in}{\ig{width=0.5\textwidth}{qpsc_coated.eps}}
+\ca{
+a) Plane wave diffraction from an infinite one-dimensional grating of
+transmission (dielectric) obstacles, solved with the {\tt qpscatt} problem class
+as in Sec.~\ref{s:qpsc}.
+The real part of the full field is shown. The command
+{\tt p.showbdry(struct('arrow',0,'normals',0,'label',0,'blobs',0));}
+was used
+to overlay the boundaries of the central three scatterers plotted as simple
+lines.
+b) Lattice of Dirichlet obstacles coated with dielectric layer of index 1.5,
+with nearby Dirichlet discs
+which wrap around the unit cell wall, plotted in the same way.
+}{f:qpsc}
+\efi
+
+\mpspack\ includes recently-developed methods to periodize a scattering
+problem using layer-potentials on the unit-cell walls \cite{qpsc}.
+This means solving for the scattered field due to
+a {\em quasi-periodic} incident wave,
+such as a plane wave, from an infinite grating (one-dimensional array)
+of obstacles.
+Here we explain briefly how to set up and solve such problems, by building
+on layer-potential methods which solve the scattering problem for
+a single obstacle.
+
+We will build on the transmission scattering case of
+Sec.~\ref{s:trans}.
+We first set up many elements of the single-obstacle scattering problem:
+we define a curve with sufficient number of
+numerical quadrature points on it to define interior and exterior domains,
+add layer-potential bases to them, and set the surface matching conditions,
+\begin{verbatim}
+s = scale(segment.smoothstar(80, 0.3, 3), 0.35);    % smooth closed curve
+de = domain([], [], s, -1);                         % obstacle's exterior
+di = domain(s, 1); di.setrefractiveindex(1.5);      % interior, refractive index
+s.addinoutlayerpots('d'); s.addinoutlayerpots('s'); % add Rokhlin LP scheme 
+s.setmatch('diel', 'TM');                           % TM dielectric continuity
+\end{verbatim}
+Now comes the periodic ingredients of the problem, in particular the
+options parameters defining the Fourier-transform wall layer-potential
+representation.
+Here we give typical parameters which are good for low-wavenumber problems
+($k<30$ for a unit period).
+\footnote{{\tt nei} is the number of direct neighbor copies to sum,
+{\tt buf} the extra buffer size of the quasi-periodic strip domain,
+and {\tt M} half the number of degrees of freedom needed for periodizing.}
+These parameters are passed in as options
+when setting up the quasi-periodic problem, as follows,
+\begin{verbatim}
+d = 1.0;                                           % problem period
+o.nei = 2; o.buf = 1; o.M = 150;                    % FTy LP method params
+p = qpscatt(de, di, d, o);                          % set up the problem
+\end{verbatim}
+The unit period means that the vertical unit-cell walls will lie at $x=\pm 1/2$.
+We may then choose an incident field (which sets the quasi-periodic
+Bloch phase, hence determines other method parameters), and solve and plot,
+\begin{verbatim}
+p.setoverallwavenumber(10);                         % incident wavenumber
+p.setincidentwave(-pi/5);                           % incident plane wave angle
+p.solvecoeffs;                                      % fill matrices and solve
+p.showfullfield(struct('ymax', 1));                 % plot Re part of full field
+\end{verbatim}
+The call to {\tt p.solvecoeffs} %(matrix fill and linear solve together)
+took 0.5 sec, and
+computing the field for plotting took another 3.3 sec,
+which gives Fig.~\ref{f:qpsc}a.
+Three periods of the quasi-periodic full field are shown
+(one is computed and the others are phased copies of this one,
+so that one may check by eye that the quasi-periodicity condition is
+satisfied if the field shown appears smooth).
+The option {\tt ymax} controls the upper and lower $y$-axis
+limits of the plotting domain; if this omitted, a sensible default is
+used which contains the obstacle and a small vertical border.
+
+As with the non-periodic scattering problem, the total field values at points
+may now be found, e.g.\ at a single point via
+\begin{verbatim}
+p.pointsolution(pointset(0.3+0.7i))
+\end{verbatim}
+This takes 0.06 sec (there is some overhead in handling the
+objects in the \matlab\ implementation, which is dominant only when
+a small number of points is needed).
+Points lying outside the unit cell containing the origin%
+  \footnote{Or, when {\tt buf>0}, the contiguous set of
+{\tt 1+2*buf} unit cells centered at the origin.}
+will not give
+correct answers, so in order to evaluate at such points
+the user should fold the points back into this cell
+and multiply by the appropriate Bloch phase.
+It is easy to extract the fractions of incident power that is reflected
+into each of the propagating Bragg diffraction grating orders,
+\begin{verbatim}
+[u d n] = p.braggpowerfracs(struct('table',1));     % intensity of Bragg orders
+\end{verbatim}
+The sum of the flux fractions should be unity; the error from this is
+printed by the above, indicating an error of about $10^{-14}$.
+A plot of vectors showing incident and Bragg directions
+may also be overlaid on the current field plot with
+{\tt p.showbragg}; try it and see!
+
+We conclude with a more complicated example, to show that this is also
+easy to set up in \mpspack.
+We consider transmission obstacles as above, but now containing a Dirichlet
+obstacle inside, and an isolated nearby Dirichlet disc-shaped obstacle.
+This is set up from scratch as follows,
+\begin{verbatim}
+d = 1.0; s = scale(segment.smoothstar(130, 0.3, 3), 0.35);
+sm = s.scale(0.6); di = domain(s, 1, sm, -1);  % dielectric coating domain
+di.setrefractiveindex(1.5);
+c = segment(60, [.5-.6i, .2 0 2*pi]);          % small circle segment
+de = domain([], [], {s c}, {-1 -1});           % twice-punctured exterior domain
+s.addinoutlayerpots('d'); s.addinoutlayerpots('s');
+om = 20;                                       % incident wavenumber
+di.addlayerpot(sm, [-1i*om 1]); de.addlayerpot(c, [-1i*om 1]);         % CFIEs
+s.setmatch('diel', 'TM'); sm.setbc(1, 'D', []); c.setbc(1, 'D', []);   % BCs
+o.nei = 2; o.buf = 1; o.M = 150; p = qpscatt(de, di, d, o);    % set up problem
+\end{verbatim}
+In addition, we now have a higher wavenumber, and
+we choose an incident wave direction corresponding to
+a Wood's anomaly \cite{linton07}. The solution is completed by,
+\begin{verbatim}
+p.setoverallwavenumber(om); p.setincidentwave(-acos(1-2*pi/om)); % Wood's anom
+p.solvecoeffs; p.showfullfield(struct('ymax', 1.2));
+\end{verbatim}
+which produces Fig.~\ref{f:qpsc}b.
+The numbers of quadrature nodes have been chosen to give 13 digits of
+accuracy, giving ${\tt p.N}$ of 450 obstacle degrees of freedom
+(751 total degrees of freedom including the quasi-periodizing scheme).
+The solution time is 2 sec, the plotting time 7 sec.
+
+For those interested in the solution method,
+the Sommerfeld contour and poles for the Fourier-transform layer-potentials
+can be visualized via {\tt p.showkyplane}; see \cite{qpsc}.
