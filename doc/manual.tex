@@ -716,7 +716,7 @@ solution $u$ is usually evaluated for plotting; see the tutorial for examples.
 This class is a subclass of {\tt bvp}.
 It solves the frequency-domain
 scattering problem mentioned in the middle of Sec.~\ref{s:bvp}
-and defined in Sec.~8 of the tutorial, in \cite{polygonscatt},
+and defined in Sec.~7 of the tutorial, in \cite{polygonscatt},
 or in many standard texts \cite{coltonkress}.
 A BVP is solved for $u_s$, with right-hand side data {\tt rhs} deriving
 from the incident wave field $u_{inc}(\bx)$
@@ -737,6 +737,26 @@ $u_{inc}$, $u_s$ and $u$, as in Fig.~\ref{f:hard}.
 
 %An idea of the least squares boundary-condition functional $J(\mbf{c})$,
 %give integrals. ?
+
+\subsection{Quasi-periodic scattering problem class: {\tt qpscatt}}
+
+This class is a subclass of {\tt scattering}.
+It solves plane-wave diffraction problems from infinite one-dimensional
+gratings of obstacles, as illustrated in Sec.~8 of the tutorial,
+and as defined for instance in \ref{linton07}.
+Its use is very similar to the {\tt scattering} class discussed above,
+the additional information needed being the periodicity of the problem.
+Recently-developed methods detailed \cite{qpsc} are used,
+which are robust for all incident angles, and avoid the need for lattice sums.
+
+Various helper methods exist beyond those already available for
+{\tt scattering} problems, as illustrated in the tutorial.
+These include
+{\tt p.showbragg} which plots vectors showing the incident and Bragg
+diffraction angles; {\tt p.braggpowerfracs} which computes
+power fractions scattered into the various Bragg modes;
+and {\tt p.showkyplane} which shows the Sommerfeld quadrature
+nodes used in the complex $y$-direction wavenumber plane, see \cite{qpsc}.
 
 
 % --------------------------------------------------------------------------
@@ -889,20 +909,27 @@ to join the project!
 
 Almost all the code in \mpspack\ is written by 
 Alex Barnett and Timo Betcke.
+The computational methods built into the code includes
+work of Barnett--Betcke \cite{mfs,mush,polygonscatt},
+and Barnett--Greengard \cite{qplp,qpsc},
+as well as quadrature schemes of Kress \cite{coltonkress}.
 The concept and need for the package came out of our work in eigenvalue
 and scattering problems, using global basis methods.
-We have been influenced by, and learned useful tricks from,
+In terms of code design, we
+have been influenced by, and learned useful tricks from,
 the Schwarz-Christoffel toolbox by Toby Driscoll,
 the {\tt FMMToolbox} by MadMax Optics, Inc.,
 and the {\tt chebfun} system
 by L. N. Trefethen, Z. Battles, T. Driscoll, R. Pach\'{o}n, and R. Platte.
 Alex Barnett's work is supported by National Science Foundation
-grants DMS-0507614 and DMS-0811005., Timo Betcke's work is supported
+grants DMS-0507614, DMS-0811005, and the Class of '62 Fellowship at
+Dartmouth College.
+Timo Betcke's work is supported
 by Engineering and Physical Sciences Research Council Grant EP/F06795X/1.
 
 \mpspack\ is released under the GNU Public License, as follows:
 \begin{verbatim}
-Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
+Copyright (C) 2008 - 2010, Timo Betcke, Alex Barnett
 
 MPSpack is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -934,6 +961,7 @@ Copyright (C) 1970-2003, Wm.~Randolph Franklin.
 Darren Engwirda, 2005-2007.
 \item {\tt copy.m} makes deep copy of \matlab\ handle object,
 Doug M.~Schwarz, 6/16/08.
+\item {\tt utils/goodcaxis.m} includes code of B. Gustavsson 2005-02-09
 \ei
 
 \include{appendix}
