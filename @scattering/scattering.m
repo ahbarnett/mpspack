@@ -99,15 +99,13 @@ classdef scattering < bvp & handle
     if nargin<3, o=[]; end
     if ~isfield(o,'all'), o.all=0; end; % Evaluate wave over all domains
       di = NaN*zeros(size(p.x));                    % NaN indicates in no domain
-      u = di;                                       % solution field
+      u = zeros(size(di));                          % solution field
       for n=1:numel(pr.doms)
         d = pr.doms(n);
         ii = d.inside(p.x);
         di(ii) = n;
         if d.isair | o.all                          % here there's u_i wave
           u(ii) = pr.ui(p.x(ii));
-        else                                        % here there's 0 inc wave
-          u(ii) = 0;
         end
       end
     end % func

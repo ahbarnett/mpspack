@@ -27,6 +27,11 @@ classdef utils
     s = merge(s1,s2)
     [f0 err N] =  extrap(f, hmax, opts)
     c = goodcaxis(u)
+    h = arrow(x, y, varargin)
+    
+    % rootfinding helpers...
+    [x e y u] = intervalrootsboyd(f, int, o)
+    [r e] = trigpolyzeros(F, opts)
   end
 
 end

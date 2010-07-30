@@ -106,6 +106,8 @@ classdef domain < handle
       %
       % Issues/notes:
       %  * Uses fast inpolygon implementations in inpolywrapper
+      %  * inluded temporary hack to make semi-infinite strip domain if corners
+      %    don't connect up - the domain is officially borken then anyway!
         if d.exterior
           i = logical(ones(size(p(:))));
         else                                % interior domain
@@ -116,6 +118,7 @@ classdef domain < handle
         for piece=1:max(d.spiece)         % kill pts from each interior piece
           js = find(d.spiece==piece);
           v = domain.approxpolygon(d.seg(js), d.pm(js));
+          if isnan(d.cloc), v = [d.seg(js).eloc(2)-10i; v; d.seg(js).eloc(1); d.seg(js).eloc(1)-10i]; end % HACK which extends an excluded strip downwards! 
           i = i & ~utils.inpolywrapper(p(:), v);
         end
         i = reshape(i, size(p));

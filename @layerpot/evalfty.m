@@ -14,9 +14,11 @@ function [A Ax] = evalfty(b, f, o) % ...........for 1.5D scatt, qpstrip
 % 2) No close-evaluation is used - in fact there is no quadrature error here.
 % 3) Signs in the formulae were guessed by trial and error.
 %
-% Part of the 1.5D QP scatt tools. (C) Alex Barnett 2010
+% Part of the 1.5D QP scatt tools.
 %
 % See also: TESTLAYERPOTEVALFTY
+
+% (C) Alex Barnett 2010
 if nargin<3, o = []; end
 om = b.k;                                      % wavenumber (from layerpot)
 d = b.seg.x - f.orig;                          % displacements from slice origin
