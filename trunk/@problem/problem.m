@@ -222,7 +222,7 @@ classdef problem < handle
     %
     % See also GRIDSOLUTION.
       if isempty(pr.co), error('coefficient vector is empty!'); end
-      nmax=1e4;          % since nmax=100 had big 20% speed hit
+      nmax=1e5;          % since nmax=100 had big 20% speed hit
       if length(p.x)>nmax,
           Np=length(p.x);
           itcount=floor(Np/nmax);

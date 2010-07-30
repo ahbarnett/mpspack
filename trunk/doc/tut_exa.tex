@@ -106,8 +106,8 @@ x0=0; y0=0; opts.fast=1;
 for i=1:N1,
     x0=0;
     for j=1:N2
-        Z=@(w) rmfs*exp(2i*pi*w)+x0+1i*y0;
-        Zp=@(w) rmfs*2i*pi*w.*exp(2i*pi*w);
+        Z=@(w) Rmfs*exp(2i*pi*w)+x0+1i*y0;
+        Zp=@(w) Rmfs*2i*pi*exp(2i*pi*w);
         d.addmfsbasis({Z,Zp},N,opts);
         x0=x0+a;
     end

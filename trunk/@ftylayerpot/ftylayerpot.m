@@ -71,7 +71,7 @@ classdef ftylayerpot < handle & basis
       if isfield(opts,'shift'), ba.shift = opts.shift;
       elseif isempty(ba.shift), ba.shift = 0; end
       if isfield(opts,'maxy'), ba.maxy = opts.maxy;
-      elseif isempty(ba.maxy), ba.maxy = 1; end
+      elseif isempty(ba.maxy), ba.maxy = 0.5; end
       if isfield(opts,'minx'), ba.minx = opts.minx;
       elseif isempty(ba.minx), ba.minx = 1; end
       if isfield(opts,'quad'), ba.quad = opts.quad;
@@ -79,11 +79,12 @@ classdef ftylayerpot < handle & basis
       % estimate parameters of contour...
       L = sqrt((log(1e-16)/ba.minx)^2 + ba.om^2); % Re[k] st x-decay to e_mach
       if ba.quad=='b'  % Alex's quadr tanh curve, with sinh bunching............
-        d = min(4,6/ba.maxy);       % tanh imaginary dist (scales as O(1/maxy))
+        d = min(4,3/ba.maxy);       % tanh imaginary dist (scales as O(1/maxy))
+        %fprintf('requadrature: H=%.3g\n', d)
         de = d;          % max(d,ba.si), width-scale of tanh: keep slope <=1
         % params of remapping through sinh...
         b = max(2,real(ba.si)^1.2); % b expansion growth rate
-        g = min(real(ba.si)/2,1); % g bunching fac, for be->a var change params
+        g = min(real(ba.si)/2,1); % g bunching fac, for be->a var change params: really should be om/4 when ymax large, otherwise stay around 1
         if isempty(N) || N==0,    % estimate N... om>>1 effect, om<<1 effect
           Ns = [100, 3*max(ba.om,3)*ba.maxy, 16*b*asinh(L/g/b)];
           N = ceil(max(Ns)); end

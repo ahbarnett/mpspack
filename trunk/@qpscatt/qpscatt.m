@@ -16,6 +16,8 @@
 %    opts.nei = 0,1,2... how many direct sums to include on each side
 %    opts.buf = 0,1,2... how wide the qpstrip domain is including buffer size
 %
+% Issues: * Mt and safedist for the B,T segments should be controllable as opts
+%
 % See also PROBLEM, BVP, SCATTERING
 
 % Copyright (C) 2010 Alex Barnett
@@ -51,7 +53,7 @@ classdef qpscatt < scattering & handle
         % create a qpstrip... strip vector t.e may be larger than periodicity d
         pr.t = qpstrip(d*(1+2*pr.buf), 1.0);            % dummy/default omega 
         % choose a periodizing basis for the qpstrip...
-        pr.t.addqpftylayerpots(struct('M',pr.M,'nearsing',3)); % NB default!
+        pr.t.addqpftylayerpots(struct('M',pr.M,'nearsing',5)); % NB default!
         % create sensible B, T segments...
         Mt = 20; safedist = 0.5;          % Mt, safedist could dep on omega?
         yB = min(imag(airdoms.x)) - safedist;
@@ -96,7 +98,8 @@ classdef qpscatt < scattering & handle
         kpx = om*cos(t)+kpn*2*pi/pr.d; kpy = sqrt(om^2-kpx.^2); % kp y-compt
         [dum i] = sort(abs(kpy),'ascend');       % note +ve sqrt key here
         pr.kpx = kpx(i); pr.kpy = kpy(i); pr.kpn = kpn(i); % sorted lists
-        pr.ikpfix = []; shift = 0; toonear = 1.4; % dist scale for Wood anom.
+        pr.ikpfix = []; shift = 0;
+        toonear = 1.4 * min(om/10,1); % dist scale for Wood anom.
         k1 = abs(pr.kpy(1)); k2 = abs(pr.kpy(2)); % two poles closest to origin
         if k1<toonear                % polefix decision regions for (k1,k2)
           pr.ikpfix = 1;
@@ -342,8 +345,19 @@ classdef qpscatt < scattering & handle
     %  extdom which marries the bases from the obst extdom and the qpstrip,
     %  and also sums in the neighboring direct images of the extdom bases.
     %
+    % Currently when wraps to give correct interior fields, only uses neighbors
+    %  labeled {-1,0,1}.
+    %
     % See also PROBLEM.POINTSOLUTION, QPSCATT
-    
+ 
+      % wrap the points which fall into copies of non-air domains (obstacle)
+      extdomi = find([pr.doms.isair]);           % index of the extdom
+      dil = pr.domainindices(pointset(p.x + pr.d)); % li=true if in copy -1
+      li = find(dil~=extdomi); p.x(li) = p.x(li) + pr.d;
+      dir = pr.domainindices(pointset(p.x - pr.d)); % ri=true if in copy +1
+      ri = find(dir~=extdomi); p.x(ri) = p.x(ri) - pr.d;
+%      figure; p.plot; axis equal;
+      
       % make dummy problem with new extdom object (whose d.bas are as before)
       pd = utils.copy(pr); pd.A = []; % (a hack!). leave p.co since need it
       for i=1:numel(pd.doms), d = pr.doms(i); if d.isair, 
@@ -354,13 +368,49 @@ classdef qpscatt < scattering & handle
       pd.basnoff = [pr.basnoff pr.N+pr.t.basnoff]; % effective setupbasisdofs
       pd.N = pr.N + pr.t.N;            % finish up appending to pd basis setup
       [u di] = pointsolution@problem(pd, p);     % pass to usual evaluator
-      extdomi = find([pr.doms.isair]);           % index of the extdom
       if numel(extdomi)~=1, error('there appears to be >1 exterior domain!');end
       for n=[-pr.nei:-1 1:pr.nei]                % direct sum nei contribs
         uc = pointsolution@problem(pr, pointset(p.x-pr.d*n, p.nx));
         u = u + pr.a^n * uc .* (di==extdomi);    % only affects obst exterior
       end
+      % correct for displacement using Bloch phase, assuming quasi-periodic!
+      u(li) = u(li) * pr.a^(-1); u(ri) = u(ri) * pr.a;
     end
+
+    function [u di] = pointincidentwave(pr,p,o) % .......overloads @scattering
+    % POINTINCIDENTWAVE - evaluate incident wave for qpscatt problem on pointset
+    %
+    %  [ui di] = pointincidentwave(pr, pts) returns array of values ui, and
+    %   optionally, domain index list di (integer array of same shape as ui).
+    %   Decisions about which domain a gridpoint is in are done using
+    %   domain.inside, which may be approximate. di and ui are NaN outside of
+    %   all domains.
+    %
+    %  Notes: 1) for periodic problem, only counts neighbors {-1,0,1}
+    %   2) opts.all has no effect.
+    %
+    % See also QPSCATT, GRIDINCIDENTWAVE
+    if nargin<3, o=[]; end
+    if ~isfield(o,'all'), o.all=0; end; % Evaluate wave over all domains
+      di = NaN*ones(size(p.x));                  % NaN indicates in no domain
+      u = zeros(size(di));                       % solution field
+      for n=1:numel(pr.doms)
+        d = pr.doms(n);
+        if d.isair   % has to be in all 3 air regions to be counted as true air
+          ii = d.inside(p.x) & d.inside(p.x + pr.d) & d.inside(p.x - pr.d); %QP 
+          di(ii) = n;
+          u(ii) = pr.ui(p.x(ii));                % here there's u_i wave
+        else
+          ii = d.inside(p.x) | d.inside(p.x + pr.d) | d.inside(p.x - pr.d); %QP 
+          di(ii) = n;
+        end
+      end
+    end % func
+    
+    %function [u gx gy di] = gridincidentwave(pr, o) % ...overloads @scattering
+    %  if nargin<2, o = []; end
+    %  [u gx gy di] = gridincidentwave
+    
 
     function [A Ax Ay] = evalbases(pr, p, opts) % ........ eval obst + QP bases
     % EVALBASES - evaluate all basis sets in a domain object, on a pointset
@@ -418,7 +468,7 @@ classdef qpscatt < scattering & handle
       end
     end
 
-    function showfullfield(pr, o) % ................... overloads @scattering
+    function [u gx gy di] = showfullfield(pr, o) % ....... overloads @scattering
     % SHOWFULLFIELD - eval and plot u_i+u on grid (Re part), periodic wrapping
     %
     % By default, shows width of 3 periods, and wraps so u looks quasiperiodic
