@@ -252,7 +252,7 @@ classdef domain < handle
     methods(Static)    % these don't need domain obj to exist to call them...
       v = approxpolygon(seg, pm)
       h = showsegments(seg, pm, o)
-      x = stackquadpts(seg, pm)
+      [x nx] = stackquadpts(seg, pm)
       h = showdomains(dlist, opts)
     end
 end

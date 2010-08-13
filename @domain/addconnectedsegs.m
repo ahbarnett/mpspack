@@ -4,11 +4,17 @@ function d = addconnectedsegs(d, s, pm, o)
 %  This is a helper routine for domain constructor. Doc to be written.
 %
 %  If pm has length 1 it will be expanded to a vector of the correct length.
+%
+%  Estimation of a domain's perimeter and area is done here.
+%   (area accuracy improved to that of segment quadrature, 8/13/10, Alex).
+%  opts.areameth = 0 (default): use segment quadrature on x.n/2 integral
+%                  1 (old):     use matlab polyarea on quadrature pts polygon
 
 % Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
 
 if nargin<4, o = []; end
 if ~isfield(o, 'hole'), o.hole = 0; end    % default is an outer bdry (+ve area)
+if ~isfield(o, 'areameth'), o.areameth = 0; end  % default
 
 if isempty(s), return; end                 % nothing to do if no segments added
 s = reshape(s, [1 numel(s)]);
@@ -26,13 +32,19 @@ else
   if isempty(d.spiece), nextp = 1; else nextp = d.spiece(end)+1; end
   d.spiece = [d.spiece, nextp * ones(size(s))];  % next piece label
 end
-d.perim = d.perim + sum([s.w]);            % sum of all quadr weights
-allx = domain.stackquadpts(s, pm);         % get quad pts in s in correct order
-a = polyarea(real(allx), imag(allx));      % area: use all quadr pts as polygon
-if o.hole
-  d.area = d.area - a;
-else
-  d.area = d.area + a;
+d.perim = d.perim + sum([s.w]);            % perim = sum of all quadr weights
+if o.areameth==0                           % add to domain's area:
+  [ax anx] = domain.stackquadpts(s, pm);   % get quad pts in s in correct order
+  xdn = real(conj(ax).*anx);
+  d.area = d.area + sum([s.w].*xdn.')/2;   % area = integral of x.n/2
+else 
+  allx = domain.stackquadpts(s, pm);       % get quad pts in s in correct order
+  a = polyarea(real(allx), imag(allx));    % area: use all quadr pts as polygon
+  if o.hole
+    d.area = d.area - a;
+  else
+    d.area = d.area + a;
+  end
 end
 
 % create corners...
