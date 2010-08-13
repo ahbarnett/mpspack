@@ -25,7 +25,7 @@ function [x derr y u ier] = intervalrootsboyd(f, int, o)
 %
 % Also see: TRIGPOLYZEROS
 
-% (C) 2010, Alex Barnett
+% Copyright (C) 2010, Alex Barnett
 
 if nargin<3, o = []; end
 if ~isfield(o, 'Ftol'), o.Ftol = 1e-12; end
@@ -39,26 +39,34 @@ N = 4;                 % half minimum number of points on half-circle
 t = pi*(0:N)/N;        % angles theta
 u = nan(size(t));      % the data
 y = cen + rad*cos(t);  % ordinates
-for i=1:numel(y), u(i) = f(y(i)); if o.disp, fprintf('f(%.16g)=%.16g\n',y(i),u(i)), end, end  % initialize func evals
+for i=1:numel(y), u(i) = f(y(i));      % initialize func evals
+  if o.disp, fprintf('\tf(%.16g)=%.16g\n',y(i),u(i)), end  % report
+end
 F = [1 1];                 % dummy value greater than tol
 Fmetr = @(F) max(abs(F(1:2)))/max(abs(F));  % metric for decay to small F coeffs
 x = []; derr = []; 
 
 while N<o.Nmax && Fmetr(F)>o.Ftol  % large coeffs small?
+  if o.disp, fprintf('      Fourier decay %.2g: doubling to %d points...\n', Fmetr(F), 2*N); end
   N = 2*N; t = pi*(0:N)/N; y = cen + rad*cos(t); u(1:2:N+1) = u; % reuse f-evals
-  for i=1:N/2, u(2*i) = f(y(2*i)); if o.disp, fprintf('f(%.16g)=%.16g\n',y(2*i),u(2*i)), end, end     % fill in missing evals
+  for i=1:N/2, u(2*i) = f(y(2*i));     % fill in missing evals
+    if o.disp, fprintf('\tf(%.16g)=%.16g\n',y(2*i),u(2*i)), end % report
+  end
   ufold = [u(end:-1:2) u(1:end-1)];        % samples on -pi+2*pi*(0:N-1)/N
   %figure; plot(ufold); drawnow  % for debugging
   F = fftshift(fft(fftshift(ufold)));         % compute shifted Fourier coeffs
   if Fmetr(F)<=o.Ftol
+    if o.disp, fprintf('      Fourier decay %.2g: good.\n', Fmetr(F));
+      fprintf('      Boyd rootfinding (eig prob size %d)...\n',4*N);end
     [tz derr] = utils.trigpolyzeros(F, o);      % get theta roots in [-pi,pi)
     x = cen + rad*cos(tz);
   end
 end
 %figure; plot(abs(F)); title('|F_j|');   % debug
+if o.disp, fprintf('      done\n'); end
 
 ier = 0;                                 % output info
 if Fmetr(F)>o.Ftol
-  warning('stopped even though Fourier coeffs not sufficiently decayed!');
+  warning('Fourier coeffs never sufficiently decayed! Try smaller interval');
   ier = 1;
 end
