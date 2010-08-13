@@ -30,7 +30,7 @@ classdef utils
     h = arrow(x, y, varargin)
     
     % rootfinding helpers...
-    [x e y u] = intervalrootsboyd(f, int, o)
+    [x e y u ier] = intervalrootsboyd(f, int, o)
     [r e] = trigpolyzeros(F, opts)
   end
 
