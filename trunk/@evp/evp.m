@@ -15,8 +15,8 @@ classdef evp < problem & handle
     kj                        % eigenwavenumbers = sqrt(eigenvalues) (col vec)
     coj                       % basis coeffs (columns of array) of modes
     err                       % struct for error estimates errors of kj:
-                              %   err.ej - rootfinding errors
-                              %   err.minsigj - min sing vals
+                              %   err.ej - rootfinding errors (col vec)
+                              %   err.minsigj - min op sing vals (col vec)
     ndj                       % normal derivatives (cols of array) of modes
     kwin                      % wavenumber window in which kj were requested
   end
@@ -45,7 +45,7 @@ classdef evp < problem & handle
     %   Laplacian eigenvalues are simply the squares of the kj.
     %   The problem also stores the kj list as p.kj
     %
-    % [kj coj ndj err] = ... also returns basis coeffcients, normal derivatives,
+    % [kj err coj ndj] = ... also returns basis coeffcients, normal derivatives,
     %   and error estimates struct, if possible.
     %
     % [...] = SOLVESPECTRUM(p, [klo khi], meth, opts) allows one to choose the
@@ -168,19 +168,88 @@ classdef evp < problem & handle
       co = v ./ p.sqrtwei.';        % density, convert from l^2 to value vector
       % L sv's are R sv's w/ D^*, so u gives boundary function...
       s = p.segs;                   % assume only a single segment!
-      xdn = real(conj(s.x).*s.nx); w = sqrt(xdn/2); % Rellich bdry wei
+      xdn = real(conj(s.x).*s.nx); w = sqrt(xdn/2); % sqrt Rellich bdry wei
       u = u/max(u);                 % make real-valued (imag part is error est)
       u = k * u/norm(w.*u);         % Rellich-normalize
       nd = u ./ p.sqrtwei.';        % convert from l^2 to value vector        
     end
     
+    function [uj gx gy di js] = showmodes(p, o) % .............. plot all modes
+    % SHOWMODES - compute and plot eigenmodes given their eigenvalues and coeffs
+    %
+    % SHOWMODES(p) computes and plots all eigenfunctions (modes) given by basis
+    %   coefficients p.coj and eigenwavenumbers p.kj stored in evp problem
+    %   object p. Modes are plotted in rectangular grid of subplots.
+    %
+    % [uj gx gy di js] = SHOWMODES(p) also outputs 3d array of real-valued mode
+    %   values evaluated on a grid with x- and y-grids gx and gy, and where di
+    %   is the array of inside-domain indices (as in problem.showsolution).
+    %   js is the list of indices (ie wrt p.kj) that were computed in uj.
+    %
+    % SHOWMODES(p, opts) allows control of certain options including:
+    %   opts.dx, opts.bb, opts.bdry - grid spacing, bounding-box, and whether
+    %               to plot boundary, as in problem.showsolution.
+    %   opts.eval - 'basis' uses existing basis for evaluation, 'grf' uses
+    %               Green's rep. formula on p.ndj (Dirichlet BC only) (default)
+    %   opts.kwin - only computes modes in given wavenumber window
+    %   opts.inds - only computes modes in given (unordered) index set
+    %
+    % Notes/issues:
+    %  * Normalization hasn't been considered much. For GRF case, they are
+    %    correctly L2-normalized over the domain. Phase removal is a bad hack!
+    %  * Degeneracies!
+    %  * No account taken of non-simply connected domains (needs GRF for
+    %    this to be set up...)
+    %  * Neumann, Robin ... ?
+    %  * Close-evaluation (J-expansion projection) for layer-potentials...?
+    %
+    % See also: EVP, PROBLEM.SHOWSOLUTION
+      if nargin<2, o = []; end
+      if ~isfield(o, 'eval'), o.eval='grf'; end, grf = strcmp(o.eval,'grf');
+      if ~isfield(o, 'kwin'), o.kwin=p.kwin; end
+      if ~isfield(o, 'inds'), o.inds=1:numel(p.kj); end
+      if ~isfield(o, 'bdry'), o.bdry = 0; end
+      wantdata = nargout>0;
+      inlist = 0*p.kj; inlist(o.inds) = 1;         % true if in index list
+      js = find(p.kj>o.kwin(1) & p.kj<o.kwin(2) & inlist); % indices to plot
+      if isempty(js), warning('no modes found in evp, or list or window!'); end
+      
+      n = numel(js);
+      figure; nac = ceil(sqrt(n)); ndn = ceil(n/nac); % # subplots across & down
+      if grf, d = utils.copy(p.doms);  % set up for GRF evaluations in loop...
+        d.clearbases; d.addlayerpot(d.seg, 's');
+        pe = bvp(d); pe.setupbasisdofs; % temporary new problem instance
+      else pe = p; end                  % just use existing problem
+        
+      for i=1:n, j = js(i);      % ---- loop over selected eigenvalues
+        pe.setoverallwavenumber(p.kj(j));                         % get this k
+        if grf, pe.co = p.ndj(:,j); else, pe.co = p.coj(:,j); end % get coeffs
+        [u gx gy di] = pe.gridsolution(o); % either conventional or GRF evalu
+        if ~grf  % rotate phase of u (est at int pt) so that essentially real
+          uint = u(floor(numel(gx)/2),floor(numel(gy)/2)); % HACK guess int pt!
+          u = u * conj(uint/abs(uint));  % unphase u
+        end
+        u = real(u);                     % saves half the memory (real-valued)
+        if wantdata
+          if i==1, uj = nan(size(u,1), size(u,2), n); end % allocate output
+          uj(:,:,i) = u;                                  % copy data to array
+        end
+        tsubplot(ndn, nac, i); imagesc(gx, gy, u, 'alphadata', ~isnan(di));
+        caxis(3.5*[-1 1]/sqrt(p.doms.area)); % rescale values based on area
+        axis equal tight; colormap(jet(256)); axis off;
+        set(gca,'ydir','normal'); hold on; if o.bdry, pr.showbdry; end
+        drawnow;                                          % for fun
+      end                        % ----
+    end
+    
     function weylsmoothcheck(p, o)
       % ...
-    
+      % this will dump kj.^2 as Gaussians into regular E array, compare to Weyl
     end
   end
+  
   % --------------------------------------------------------------------
   methods(Static)    % these don't need EVP obj to exist to call them...
-    [k_weyl] = weylcountcheck(k_lo, k, perim, area, dkfig)   % old weyl routine
+    [k_weyl] = weylcountcheck(k_lo, k, perim, area, dkfig)   % old Weyl routine
   end
 end

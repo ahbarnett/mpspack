@@ -6,7 +6,7 @@
 %          basis set methods. Highly accurate and efficient solutions are
 %          able to be produced with just a few lines of code.
 %
-%          Copyright (C) 2008, 2009, Alex Barnett and Timo Betcke
+%          Copyright (C) 2008 - 2010, Alex Barnett and Timo Betcke
 %
 % To get started, see the tutorial and user manual files doc/tutorial.pdf
 % and doc/manual.pdf
