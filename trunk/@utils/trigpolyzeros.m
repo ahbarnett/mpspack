@@ -11,22 +11,26 @@ function [r derr] = trigpolyzeros(F, opts)
 %
 % r = trigpolyzeros(F, opts) passes in options including the following:
 %   opts.tol: tolerance for how small in abs value must be to count as a zero
-%             (default 1e-8)
+%             (default 1e-8). Note opts.tol>=1 collects the origin, is junky
 %   opts.real: if true, assumes coeffs come from real func, keeps only UHP roots
 %             (default false)
+%   opts.realaxis: if true, assumes zeros on real axis, kills imag part
+%             (default true)
 %
 % [r derr] = trigpolyzeros(...) also returns distances of roots from unit circle
 
-% (C) 2009, Alex Barnett.
+% (C) 2009 - 2011 Alex Barnett.
   if nargin<2, opts = []; end
   if ~isfield(opts, 'tol'), opts.tol = 1e-8; end
   if ~isfield(opts, 'real'), opts.real = 0; end
+  if ~isfield(opts, 'realaxis'), opts.realaxis = 1; end
   F = F(:);                                  % make col vector
   r = roots([F(1)/2; F(end:-1:2); F(1)/2]);  % degree-doubling a la Boyd 2002
   %figure; plot(r, '+'); hold on; plot(exp(1i*(0:.01:2*pi)),'-r'); axis equal
   derr = abs(abs(r)-1);
   % keep only close to unit circle, if real only those in upper half plane...
   ii = find(derr<=opts.tol & (~opts.real | imag(r)>=0));
-  r = angle(r(ii));
+  if opts.realaxis, r = angle(r(ii)); % was only real part of angle
+  else r = log(r(ii))./1i; end   % complex part of angle too!
   derr = derr(ii);
 

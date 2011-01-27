@@ -11,8 +11,9 @@ function [u s v info] = minsingvalvecs(A, opts)
 %    opts.maxits : maximum number of iterations (default 100)
 %    opts.tol : acceptable relative tolerance in singular value (default 1e-14)
 %
-% Uses simplification of: Loef algorithm as outlined in Calderon-Guizar et al,
-% IEEE Power Engineering Review, 19 (9), 55-56 (1999). This involves LU-decomp
+% Uses inverse iteration on A'*A, performed by alternating solves with A and A'.
+% The algorithm (Loef version) is outlined in Calderon-Guizar et al,
+% IEEE Power Engineering Review, 19 (9), 55-56 (1999). It needs one LU-decomp
 % of A which is O(N^3) but overall up to 30 times faster than dense complex svd!
 %
 % Notes/issues:

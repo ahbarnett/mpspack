@@ -18,9 +18,10 @@ function [A Sker] = S(k, s, t, o)
 %  S = S(k, s, [], opts) or S = S(k, s, t, opts) does the above two choices
 %   but with options struct opts including the following:
 %    opts.quad = 'k' (Kapur-Rokhlin), 'm' (Martensen-Kussmaul spectral)
+%               'a' (Alpert local correction)
 %                periodic quadrature rules, used only if s.qtype is 'p';
 %                any other does low-order non-periodic quad using segment's own.
-%    opts.ord = 2,6,10. controls order of Kapur-Rokhlin rule.
+%    opts.ord controls order of Kapur-Rokhlin (2,6,10) or Alpert rule (2,...,16)
 %    opts.Sker = quad-unweighted kernel matrix of fund-sols (prevents
 %                recomputation of r or fundsol values).
 %    opts.rdist = matrix of source-target distances, prevents recalculation.
@@ -32,7 +33,7 @@ function [A Sker] = S(k, s, t, o)
 % [S Sker] = S(...) also returns quad-unweighted kernel values matrix Sker.
 %
 
-% Copyright (C) 2008, 2009, Alex Barnett and Timo Betcke
+% Copyright (C) 2008 - 2011, Alex Barnett and Timo Betcke
 
 if isempty(k) | isnan(k), error('SLP: k must be a number'); return; end
 if nargin<4, o = []; end
@@ -96,6 +97,21 @@ if self % ........... source curve = target curve; can be singular kernel
     A = (circulant(quadr.kress_Rjn(N/2)).*S1 + A*(2*pi/N)) .* ...
         repmat(sp.', [M 1]);
     
+  elseif s.qtype=='p' & o.quad=='a'  % Alpert log-quadrature w/ rolling diag
+    if M~=N, warning('SLP Alpert will fail unless M=N!'); end
+    A = A .* repmat(s.w, [M 1]);  % use seg usual quadr weights away from diag
+    [tex,wex,nskip] = quadr.QuadLogExtraPtNodes(o.ord);
+    if M<=2*nskip, warning('not enough regular nodes for Alpert order!'); end
+    
+    for i=1:M     % loop over rows (targets)
+      
+    %  .... TO FINISH
+      
+      
+     % ii = mod(i+[-nskip+1:nskip-1]-1, M)+1; % wrapped indices near diag
+      %A(i,ii) =  (1i/4)*  ;                    % overwrite them
+    end
+    
   else  % ------ self-interacts, but no special quadr, just use seg's
     % Use the crude approximation of kappa for diag, usual s.w off-diag...
     A = A .* repmat(s.w, [M 1]);  % use segment usual quadrature weights
@@ -135,4 +151,16 @@ else % ............................ distant target curve, so smooth kernel
     end
   end
 end
-    
+
+function f = Lagrange_SLP(t, xneqj, k, s, x) % ---------------------
+% evaluate j-th Lagrange basis density SLP.
+% (Not used by opts.close, rather Alpert).
+% at any list of t (0<=t<=1 along source segment).
+% x = single target location.  Note i/4 factor is absent.
+
+% Lagrange basis (excluding its t-indep denominators)...
+f = prod(repmat(xneqj, [1 numel(t)])-repmat(t(:).',[numel(xneqj) 1]), 1).';
+d = s.Z(t(:))-x; r = abs(d);
+% now mult by SLP func... (including speed func)
+f = f .* abs(s.Zp(t(:))) .* besselh(0,k*r);
+f = reshape(f, size(t));

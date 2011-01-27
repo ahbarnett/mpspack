@@ -30,7 +30,7 @@ function [x derr y u ier] = intervalrootsboyd(f, int, o)
 if nargin<3, o = []; end
 if ~isfield(o, 'Ftol'), o.Ftol = 1e-12; end
 if numel(o.Ftol)~=1, error('opts.Ftol must be a single number!'); end
-o.real = 1;            % for trigpolyzeros, complex zeros but only [0,pi)
+if ~isfield(o, 'real'), o.real = 1; end  % default, for trigpolyzeros, complex zeros but only [0,pi)
 if ~isfield(o, 'Nmax'), o.Nmax = 256; end  % means roots does a 1024-sized eig
 if ~isfield(o, 'disp'), o.disp = 0; end
 a = int(1); b = int(2); rad = (b-a)/2; cen = (b+a)/2;

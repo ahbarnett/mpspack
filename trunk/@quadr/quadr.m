@@ -1,6 +1,6 @@
 % static class of quadrature rules.
 
-% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
+% Copyright (C) 2008 - 2011, Alex Barnett, Timo Betcke
 
 classdef quadr
     methods(Static)
@@ -11,5 +11,13 @@ classdef quadr
         [x,w,cs,ier]=kapurtrap(n,m)
         Rjn = kress_Rjn(n)
         D = perispecdiffrow(N)
+        
+        % the following are Alpert quadrature endpoint correction rules
+        % (from Andras Pataki):  test_Alpert_Pataki.m to test
+        [ExtraNodes, ExtraWeights, NodesToSkip] = QuadLogExtraPtNodes(order)
+        [Ax, Aw] = QuadNodesInterval(a, b, N, h, corra, corrb, order)
+        [Ax, Aw] = QuadNodesIntervalSeq(Apoints, AcorrL, AcorrR, h, order)
+        [ExtraNodes, ExtraWeights, NodesToSkip] = QuadSmoothExtraPtNodes(order)
+        [ExtraNodes, ExtraWeights, NodesToSkip] = QuadSqrtExtraPtNodes(order)
     end
 end
