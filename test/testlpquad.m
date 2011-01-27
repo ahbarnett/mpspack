@@ -85,3 +85,13 @@ if verb>1, print -depsc2 test_lpquad_GRF_helmholtz.eps
 end
 if verb, figure; imagesc(real(S)); colorbar; end
 
+
+
+% ============================== crude test Alpert vs Kress
+N = 50; k=10;
+s = segment.smoothstar(N, 0.3, 3);
+opts.quad = 'k';
+SK = layerpot.S(k, s, [], opts);
+opts.quad = 'a';
+S = layerpot.S(k, s, [], opts);
+norm(S-SK)/norm(S)

@@ -8,7 +8,7 @@
 %   and the only solution method is 
 %   root-search on the Fredholm determinant of Id minus double-layer operator.
 
-% Copyright (C) 2010 Alex Barnett, Timo Betcke
+% Copyright (C) 2010 - 2011, Alex Barnett, Timo Betcke
 
 classdef evp < problem & handle
   properties
@@ -24,7 +24,6 @@ classdef evp < problem & handle
   methods % ----------------------------------------- particular to EVP
     function pr = evp(doms) % .........................constructor
       if nargin==0, return; end    % needs empty constructor
-      if numel(doms)>1, error('only single domain currently supported!'); end
       pr.doms = doms; % Following code duplicates bvp, should be farmed out:
       pr.segs = [];             % now build a list of segments, crude O(N^2)
       for d=doms
@@ -68,16 +67,17 @@ classdef evp < problem & handle
       if ~isfield(o, 'tol'), o.tol = 1e-8; end   % requested tolerance
       if ~isfield(o, 'verb'), o.verb = 1; end; v = o.verb; % default verbosity
       if ~isfield(o, 'modes'), o.modes = 0; end
-      if numel(p.doms)~=1, error('problem must have exactly one domain!'); end
-      d = p.doms;                            % the domain
+      if numel(p.doms)~=1, warning('problem has more than one domain...'); end
+      d = p.doms;                            % the domain(s)
+      d1 = d(1);            % the first domain
       wantmodes = nargout>2 | o.modes;
       klo = kwin(1); khi = kwin(2); p.kwin = kwin;
       p.fillquadwei; M = numel(p.sqrtwei);   % total # boundary pts
-      if v, fprintf('mean M ppw @ khi = %.3g\n', 2*pi*M/khi/d.perim); end
+      if v, fprintf('mean M ppw @ khi = %.3g\n', 2*pi*M/khi/d1.perim); end
       
       if strcmp(meth,'fd') % ............... Fredholm det method
         k = klo; kj = []; ej = []; N = M;  % square system
-        kscale = 70/d.diam;                % est k at which level density ~ 20
+        kscale = 70/d1.diam;             % est k at which level density ~ 20
         io.Ftol = 1e-10; io.tol = o.tol;   % allows leeway in collecting roots
         io.disp = v;                       % opts for interval search
         while k<khi
