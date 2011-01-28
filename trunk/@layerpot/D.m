@@ -36,7 +36,7 @@ function [A Dker_noang cosker] = D(k, s, t, o)
 %    matrix Dker_noang, and matrix of cos angle factors (cosphi or costh)
 %
 
-% Copyright (C) 2008, 2009, Alex Barnett and Timo Betcke
+% Copyright (C) 2008 - 2011, Alex Barnett and Timo Betcke
 
 if isempty(k) | isnan(k), error('DLP: k must be a number'); end
 if nargin<4, o = []; end
@@ -55,9 +55,9 @@ if isfield(o, 'rdist'), r = o.rdist; else
   r = abs(d); end                                    % dist matrix R^{MxN}
 if self, r(diagind(r)) = 999; end % dummy nonzero diag values
 dSLP=0; if isfield(o, 'derivSLP') & o.derivSLP, dSLP=1; end  % flag
-if dSLP                           % dPhi(x,y)/dnx
+if dSLP                           % dPhi(x,y)/dnx, ie D^T adjoint op
   nx = repmat(-t.nx, [1 N]);      % identical cols given by targ normals
-else                              % dPhi(x,y)/dny
+else                              % dPhi(x,y)/dny, ie D op
   nx = repmat(s.nx.', [M 1]);     % identical rows given by src normals
 end
 cosker = real(conj(nx).*d) ./ r;  % dot prod <normal, displacement>
@@ -93,6 +93,11 @@ if self % ........... source curve = target curve; can be singular kernel
           repmat(sp.', [M 1]);
     end
     
+  elseif s.qtype=='p' & o.quad=='a' % ---Alpert log-quadrature w/ rolling diag
+    A = A .* repmat(s.w, [N 1]);  % use seg usual quadr weights away from diag
+    kerfun = @Dkernel; if dSLP, kerfun = @DTkernel; end
+    A = quadr.alpertizeselfmatrix(A, k, s, kerfun, o);  
+  
   else       % ------ self-interacts, but no special quadr, just use seg's
     % Use the crude approximation of kappa for diag, usual s.w off-diag...
     A = A .* repmat(s.w, [M 1]);  % use segment usual quadrature weights
@@ -136,10 +141,20 @@ else % ............................ distant target curve, so smooth kernel
   end
 end
 
+function u = Dkernel(k, sseg, s, tseg, t) % double-layer kernel function k(s,t)
+% includes speed factor due to parametrization. t can be a vector, s cannot.
+% sseg and tseg are the segments of target (s) and source (t) respectively.
+% k is omega the wavenumber. Returned kernel is
+% K(s,t) = (ik/4) |z'(t)| H_1^{(1)}(k.|z(s)-z(t)|). cos(angle(s-t, n_t))
+d = tseg.Z(t(:)) - sseg.Z(s); r = abs(d);
+u = (1i*k/4) * abs(tseg.Zp(t(:))) .* besselh(1,k*r) .* real(conj(-tseg.Zn(t(:))) .* d) ./ r;  % opposite sign for src normals
+u = reshape(u, size(t));
+
 function f = Lagrange_SLP_deriv(t, xneqj, k, s, x, nx) % ---------------------
 % evaluate target-deriv of j-th Lagrange basis density SLP
 % at any list of t (0<=t<=1 along source segment).
-% x, nx = single target location and normal deriv
+% x, nx = single target location and normal deriv.
+% Used by slow adaptive close eval
 
 % Lagrange basis (excluding its t-indep denominators)...
 f = prod(repmat(xneqj, [1 numel(t)])-repmat(t(:).',[numel(xneqj) 1]), 1).';
@@ -153,7 +168,7 @@ f = reshape(f, size(t));
 function f = Lagrange_DLP(t, xneqj, k, s, x) % -------------------------------
 % evaluate value of j-th Lagrange basis density DLP
 % at any list of t (0<=t<=1 along source segment).
-% x = single target location.
+% x = single target location. Used by slow adaptive close eval.
 
 % Lagrange basis (excluding its t-indep denominators)...
 f = prod(repmat(xneqj, [1 numel(t)])-repmat(t(:).',[numel(xneqj) 1]), 1).';

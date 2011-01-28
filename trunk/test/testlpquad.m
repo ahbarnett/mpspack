@@ -1,9 +1,10 @@
 % test Kapur-Rokhlin, Kress, quadrature on single & double layer potentials
-% barnett 2/5/08 adapted to MPSpack 7/31/08
+% barnett 2/5/08 adapted to MPSpack 7/31/08.
+% This is lower-level test routine than testlayerpot
 clear classes
 verb = 0;            % verbosity
 
-% ================== test SLP/DLP vals, and in Laplace case const DLP Greens
+if 0 % =============== test SLP/DLP vals, and in Laplace case const DLP Greens
 k = 0;                      % wavenumber (>=0 for 's' or 'd', =0 for 'c')
 ords = [2 6 10 Inf];         % Kapur orders (Inf gives Kress)
 co = 'bgrk';                 % plot colors
@@ -43,9 +44,9 @@ if test=='c', axis tight; legend(num2cellstr(kron(ords, [1 1])));
   end
 end
 if verb, figure; imagesc(real(D)); colorbar; figure; show_bdry(bd); end
+end
 
-
-% ==================== Test Greens Thm for combined SLP/DLP, k>=0
+if 1 % ==================== Test Greens Thm for combined SLP/DLP, k>=0
 k = 10;                      % wavenumber (may be 0 or >0)
 ords = [2 6 10 Inf];         % Kapur orders (Inf gives Kress)
 co = 'bgrk';
@@ -53,7 +54,7 @@ co = 'bgrk';
 figure;
 for o = 1:numel(ords) % -------------------------- loop over orders
   ord = ords(o)
-  opts.quad = 'k'; opts.ord = ord; if ord==Inf, opts.quad = 'm'; end
+  opts.quad = 'a'; opts.ord = ord; if ord==Inf, opts.quad = 'm'; end
   
   Ns=50:50:450; err = zeros(size(Ns)); tic;
   for i=1:numel(Ns);
@@ -84,14 +85,20 @@ title([sprintf('k=%g inside Greens Rep convergence at orders: ',k) ...
 if verb>1, print -depsc2 test_lpquad_GRF_helmholtz.eps
 end
 if verb, figure; imagesc(real(S)); colorbar; end
+end
 
 
-
-% ============================== crude test Alpert vs Kress
-N = 50; k=10;
+if 0 % ============================== crude test Alpert vs Kress for SLP
+clear all classed; N = 50; k=10;
 s = segment.smoothstar(N, 0.3, 3);
-opts.quad = 'k';
+opts.quad = 'm';  % Kress
 SK = layerpot.S(k, s, [], opts);
-opts.quad = 'a';
+figure; imagesc(real(SK)); colorbar; caxis(1e-1*[-1 1]);
+opts.quad = 'a'; opts.ord = 6;
 S = layerpot.S(k, s, [], opts);
-norm(S-SK)/norm(S)
+figure; imagesc(real(S)); colorbar; caxis(1e-1*[-1 1]); % looks different,
+% but so does Kapur-Rokhlin from Kress!
+sigma = cos(2*pi*(1:N)'/N);
+f = S*sigma; fk = SK*sigma;       % compare their effect on smooth density
+figure; plot((1:N)/N, real([f fk]), '+-');  % good!
+end

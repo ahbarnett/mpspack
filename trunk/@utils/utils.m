@@ -33,6 +33,11 @@ classdef utils
     [x e y u ier] = intervalrootsboyd(f, int, o)
     [r e] = trigpolyzeros(F, opts)
     [u s v info] = minsingvalvecs(A, opts)
+
+    % interpolation...
+    w = baryweights(x)
+    L = baryprojs(x, w, t)
+    u = baryeval(x, w, y, t)
   end
 
 end
