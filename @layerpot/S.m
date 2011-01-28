@@ -97,21 +97,10 @@ if self % ........... source curve = target curve; can be singular kernel
     A = (circulant(quadr.kress_Rjn(N/2)).*S1 + A*(2*pi/N)) .* ...
         repmat(sp.', [M 1]);
     
-  elseif s.qtype=='p' & o.quad=='a'  % Alpert log-quadrature w/ rolling diag
-    if M~=N, warning('SLP Alpert will fail unless M=N!'); end
-    A = A .* repmat(s.w, [M 1]);  % use seg usual quadr weights away from diag
-    [tex,wex,nskip] = quadr.QuadLogExtraPtNodes(o.ord);
-    if M<=2*nskip, warning('not enough regular nodes for Alpert order!'); end
-    
-    for i=1:M     % loop over rows (targets)
-      
-    %  .... TO FINISH
-      
-      
-     % ii = mod(i+[-nskip+1:nskip-1]-1, M)+1; % wrapped indices near diag
-      %A(i,ii) =  (1i/4)*  ;                    % overwrite them
-    end
-    
+  elseif s.qtype=='p' & o.quad=='a' % ---Alpert log-quadrature w/ rolling diag
+    A = A .* repmat(s.w, [N 1]);  % use seg usual quadr weights away from diag
+    A = quadr.alpertizeselfmatrix(A, k, s, @Skernel, o);  
+  
   else  % ------ self-interacts, but no special quadr, just use seg's
     % Use the crude approximation of kappa for diag, usual s.w off-diag...
     A = A .* repmat(s.w, [M 1]);  % use segment usual quadrature weights
@@ -152,15 +141,10 @@ else % ............................ distant target curve, so smooth kernel
   end
 end
 
-function f = Lagrange_SLP(t, xneqj, k, s, x) % ---------------------
-% evaluate j-th Lagrange basis density SLP.
-% (Not used by opts.close, rather Alpert).
-% at any list of t (0<=t<=1 along source segment).
-% x = single target location.  Note i/4 factor is absent.
-
-% Lagrange basis (excluding its t-indep denominators)...
-f = prod(repmat(xneqj, [1 numel(t)])-repmat(t(:).',[numel(xneqj) 1]), 1).';
-d = s.Z(t(:))-x; r = abs(d);
-% now mult by SLP func... (including speed func)
-f = f .* abs(s.Zp(t(:))) .* besselh(0,k*r);
-f = reshape(f, size(t));
+function u = Skernel(k, sseg, s, tseg, t) % single-layer kernel function k(s,t)
+% includes speed factor due to parametrization. t can be a vector, s cannot.
+% sseg and tseg are the segments of target (s) and source (t) respectively.
+% k is omega the wavenumber.
+% returned kernel is K(s,t) = (i/4) |z'(t)| H_0^{(1)}(k.|z(s)-z(t)|)
+u = (1i/4) * abs(tseg.Zp(t(:))) .* besselh(0,k*abs(tseg.Z(t(:))-sseg.Z(s)));
+u = reshape(u, size(t));
