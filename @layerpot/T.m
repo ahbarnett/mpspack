@@ -17,11 +17,12 @@ function [A Sker Dker_noang] = T(k, s, t, o);
 %  T = T(k, s, [], opts) or T = T(k, s, t, opts) does the above two choices
 %   but with options struct opts including the following:
 %    opts.quad = 'k' (Kapur-Rokhlin), 'm' (Maue-Kress spectral* for k>0)
+%                'a' (Alpert)
 %                periodic quadrature rules, used only if s.qtype is 'p';
 %                any other does low-order non-periodic quad using segment's own.
 %      * Note: the k-independent cot (Cauchy pole) is dropped since cancels
 %        (T-T_0) in Rokhlin scheme [Kress 1991 MCM gives needed Wittich quadr].
-%    opts.ord = 2,6,10. controls order of Kapur-Rokhlin rule.
+%    opts.ord = 2,6,10,etc controls order of Kapur-Rokhlin or Alpert rule.
 %    opts.Sker = quad-unweighted kernel matrix of fund-sols (i/4)H_0
 %    opts.Dker_noang = quad-unweighted kernel matrix of fund-sols derivs
 %                      without the cosphi factors (prevents recomputation
@@ -38,7 +39,7 @@ function [A Sker Dker_noang] = T(k, s, t, o);
 %   kernel values matrices Sker, Dker_noang, when k>0 (empty for Laplace)
 %
 
-% Copyright (C) 2008, 2009, Alex Barnett and Timo Betcke
+% Copyright (C) 2008 - 2011, Alex Barnett and Timo Betcke
 
 
 if isempty(k) | isnan(k), error('T: k must be a number'); end
@@ -137,6 +138,12 @@ if self % ........... source curve = target curve; can be singular kernel
       A = A + (repmat(1./sp, [1 M]).*(circulant(quadr.kress_Rjn(N/2)).*S1 + B*(2*pi/N))) * D;
     end
     
+  elseif s.qtype=='p' & o.quad=='a' % ---Alpert log-quadrature w/ rolling diag
+    A = A .* repmat(s.w, [N 1]);  % use seg usual quadr weights away from diag
+    A = quadr.alpertizeselfmatrix(A, k, s, @Tkernel, o);
+    % NOTE: Alpert only applies log-sing correctly, not the hypersingular T,
+    % but if two T's are subtracted, it will work fine for the difference.
+  
   else       % ------ self-interacts, but no special quadr, just use seg's
     % Use the crude approximation of kappa for diag, usual s.w off-diag...
     A = A .* repmat(s.w, [M 1]);  % use segment usual quadrature weights
@@ -170,11 +177,24 @@ else % ............................ distant target curve, so smooth kernel
   end
 end
 
+function u = Tkernel(k, x, nx, y, ny) % deriv of double-layer kernel k(x,y),
+% without speed factor due to parametrization.
+% y, ny are source location and normal vector (as C-#s), x, nx are same for
+% target. All may be lists (or matrices) of same size.
+% k is omega the wavenumber.
+% K(s,t) = yukky stuff.
+d = y - x; r = abs(d);
+csrx = conj(nx).*d;                     % (code taken from above)
+csry = conj(ny).*d;             % cos src normals
+cc = real(csry).*real(csrx) ./ (r.*r);      % cos phi cos th
+cdor = real(csry.*csrx) ./ (r.*r.*r);   % cos(phi-th) / r
+u = (1i*k/4)*besselh(1,k*r) .* (-cdor) + (1i*k*k/4)*cc.*besselh(0,k*r);
+
 function f = Lagrange_DLP_deriv(t, xneqj, k, s, x, nx) % -----------------------
 % evaluate target-normal deriv of j-th Lagrange basis density DLP
 % at any list of t (0<=t<=1 along source segment).
 % x, nx = single target location, normal deriv.
-
+%
 % Lagrange basis (excluding its t-indep denominators)...
 f = prod(repmat(xneqj, [1 numel(t)])-repmat(t(:).',[numel(xneqj) 1]), 1).';
 d = s.Z(t(:))-x; r = abs(d);
@@ -184,5 +204,4 @@ cc = real(csry).*real(csrx) ./ (r.*r);      % cos phi cos th
 cdor = real(csry.*csrx) ./ (r.*r.*r);   % cos(phi-th) / r
 val = (1i*k/4)*besselh(1,k*r) .* (-cdor) + (1i*k*k/4)*cc.*besselh(0,k*r);
 f = reshape(f .* val .* abs(s.Zp(t(:))), size(t));
-
 %fprintf('%.16g\n', t);                 % for diagnostics of quadgk
