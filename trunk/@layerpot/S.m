@@ -31,7 +31,6 @@ function [A Sker] = S(k, s, t, o)
 %    opts.self = self-interaction matrices, only self.S will be used.
 %
 % [S Sker] = S(...) also returns quad-unweighted kernel values matrix Sker.
-%
 
 % Copyright (C) 2008 - 2011, Alex Barnett and Timo Betcke
 
@@ -141,10 +140,10 @@ else % ............................ distant target curve, so smooth kernel
   end
 end
 
-function u = Skernel(k, sseg, s, tseg, t) % single-layer kernel function k(s,t)
-% includes speed factor due to parametrization. t can be a vector, s cannot.
-% sseg and tseg are the segments of target (s) and source (t) respectively.
+function u = Skernel(k, x, nx, y, ny) % single-layer kernel function k(x,y),
+% without speed factor due to parametrization.
+% y, ny are source location and normal vector (as C-#s), x, nx are same for
+% target. All may be lists (or matrices) of same size.
 % k is omega the wavenumber.
-% returned kernel is K(s,t) = (i/4) |z'(t)| H_0^{(1)}(k.|z(s)-z(t)|)
-u = (1i/4) * abs(tseg.Zp(t(:))) .* besselh(0,k*abs(tseg.Z(t(:))-sseg.Z(s)));
-u = reshape(u, size(t));
+% returned kernel is K(x,y) = (i/4) H_0^{(1)}(k.|x-y|)
+u = (1i/4) * besselh(0,k*abs(x-y));

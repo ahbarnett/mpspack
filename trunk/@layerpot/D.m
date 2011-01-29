@@ -18,9 +18,10 @@ function [A Dker_noang cosker] = D(k, s, t, o)
 %  D = D(k, s, [], opts) or D = D(k, s, t, opts) does the above two choices
 %   but with options struct opts including the following:
 %    opts.quad = 'k' (Kapur-Rokhlin), 'm' (Martensen-Kussmaul spectral)
+%                'a' (Alpert)
 %                periodic quadrature rules, used only if s.qtype is 'p';
 %                any other does low-order non-periodic quad using segment's own.
-%    opts.ord = 2,6,10. controls order of Kapur-Rokhlin rule.
+%    opts.ord = 2,6,10,etc controls order of Kapur-Rokhlin or Alpert rule.
 %    opts.Dker_noang = quad-unweighted kernel matrix of fund-sols derivs
 %                      without the cosphi factors (prevents recomputation
 %                      of H1's).
@@ -34,7 +35,6 @@ function [A Dker_noang cosker] = D(k, s, t, o)
 %
 %  [D Dker_noang cosker] = D(...) also returns quad-unweighted kernel values
 %    matrix Dker_noang, and matrix of cos angle factors (cosphi or costh)
-%
 
 % Copyright (C) 2008 - 2011, Alex Barnett and Timo Betcke
 
@@ -141,21 +141,31 @@ else % ............................ distant target curve, so smooth kernel
   end
 end
 
-function u = Dkernel(k, sseg, s, tseg, t) % double-layer kernel function k(s,t)
-% includes speed factor due to parametrization. t can be a vector, s cannot.
-% sseg and tseg are the segments of target (s) and source (t) respectively.
-% k is omega the wavenumber. Returned kernel is
-% K(s,t) = (ik/4) |z'(t)| H_1^{(1)}(k.|z(s)-z(t)|). cos(angle(s-t, n_t))
-d = tseg.Z(t(:)) - sseg.Z(s); r = abs(d);
-u = (1i*k/4) * abs(tseg.Zp(t(:))) .* besselh(1,k*r) .* real(conj(-tseg.Zn(t(:))) .* d) ./ r;  % opposite sign for src normals
-u = reshape(u, size(t));
+function u = Dkernel(k, x, nx, y, ny) % double-layer kernel function k(x,y),
+% without speed factor due to parametrization.
+% y, ny are source location and normal vector (as C-#s), x, nx are same for
+% target. All may be lists (or matrices) of same size.
+% k is omega the wavenumber.
+% K(s,t) = (ik/4) H_1^{(1)}(k.|x-y|). cos(angle(x-y, n_y))
+d = x - y; r = abs(d);
+u = (1i*k/4) * besselh(1,k*r) .* real(conj(ny) .* d) ./ r; % real(..)=dot prod
+
+function u = DTkernel(k, x, nx, y, ny) % deriv of single-layer kernel k(x,y),
+% without speed factor due to parametrization.
+% y, ny are source location and normal vector (as C-#s), x, nx are same for
+% target. All may be lists (or matrices) of same size.
+% k is omega the wavenumber.
+% K(s,t) = (ik/4) H_1^{(1)}(k.|x-y|). cos(angle(x-y, -n_x))
+% Is adjoint of Dkernel
+d = y - x; r = abs(d);
+u = (1i*k/4) * besselh(1,k*r) .* real(conj(nx) .* d) ./ r;
 
 function f = Lagrange_SLP_deriv(t, xneqj, k, s, x, nx) % ---------------------
 % evaluate target-deriv of j-th Lagrange basis density SLP
 % at any list of t (0<=t<=1 along source segment).
 % x, nx = single target location and normal deriv.
+%
 % Used by slow adaptive close eval
-
 % Lagrange basis (excluding its t-indep denominators)...
 f = prod(repmat(xneqj, [1 numel(t)])-repmat(t(:).',[numel(xneqj) 1]), 1).';
 d = s.Z(t(:))-x; r = abs(d);
@@ -169,7 +179,7 @@ function f = Lagrange_DLP(t, xneqj, k, s, x) % -------------------------------
 % evaluate value of j-th Lagrange basis density DLP
 % at any list of t (0<=t<=1 along source segment).
 % x = single target location. Used by slow adaptive close eval.
-
+%
 % Lagrange basis (excluding its t-indep denominators)...
 f = prod(repmat(xneqj, [1 numel(t)])-repmat(t(:).',[numel(xneqj) 1]), 1).';
 d = s.Z(t(:))-x; r = abs(d);
