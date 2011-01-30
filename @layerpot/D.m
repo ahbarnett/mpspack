@@ -96,7 +96,7 @@ if self % ........... source curve = target curve; can be singular kernel
   elseif s.qtype=='p' & o.quad=='a' % ---Alpert log-quadrature w/ rolling diag
     A = A .* repmat(s.w, [N 1]);  % use seg usual quadr weights away from diag
     kerfun = @Dkernel; if dSLP, kerfun = @DTkernel; end
-    A = quadr.alpertizeselfmatrix(A, k, s, kerfun, o);  
+    A = quadr.alpertizeselfmatrix(A, k, s, kerfun, o);  % note no 2pi factors
   
   else       % ------ self-interacts, but no special quadr, just use seg's
     % Use the crude approximation of kappa for diag, usual s.w off-diag...
