@@ -33,9 +33,10 @@ classdef qpstrip < handle & domain
   
   methods
     function st = qpstrip(e, k, o) % ........................... constructor
+      st = st@domain();           % use R^2 domain
+      if nargin==0, return; end               % empty constructor (for copy)
       if nargin<3, o = []; end
       if real(e)<=0, error('lattice vector must have x component > 0!'); end
-      st = st@domain();           % use R^2 domain
       st.perim = Inf; st.exterior = nan;   % since walls infinite extent in y
       st.Lo = -e/2; st.Ro = e/2;
       st.e = e;

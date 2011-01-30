@@ -26,7 +26,7 @@
 %
 % See also: POINTSET, segment/PLOT
 
-% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
+% Copyright (C) 2008 - 2011, Alex Barnett, Timo Betcke
 
 
 classdef segment < handle & pointset
@@ -49,6 +49,7 @@ classdef segment < handle & pointset
         a                      % BC value coeff (1-by-1), or +/- sides (1-by-2)
         b                      % BC n-deriv coeff (1-by-1), or +/- (1-by-2)
         f, g                   % BC data funcs or samples (f=value, g=n-deriv)
+        qpblocha               % if open periodized grating, its Bloch phase
    end
     methods
       function s = segment(M, p, qtype)

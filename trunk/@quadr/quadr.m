@@ -19,6 +19,9 @@ classdef quadr
         [Ax, Aw] = QuadNodesIntervalSeq(Apoints, AcorrL, AcorrR, h, order)
         [ExtraNodes, ExtraWeights, NodesToSkip] = QuadSmoothExtraPtNodes(order)
         [ExtraNodes, ExtraWeights, NodesToSkip] = QuadSqrtExtraPtNodes(order)
-        A = alpertizeselfmatrix(A, k, s, kerfun, opts) 
+        A = alpertizeselfmatrix(A, k, s, kerfun, opts)
+        
+        % roll-off functions
+        f = smoothedstep(t, opts)
     end
 end

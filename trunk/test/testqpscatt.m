@@ -1,7 +1,7 @@
 % testing qpscatt class on various obstacles, Bragg ampls. Barnett 6/1/10
 % Note: adapted from polesftlyp.m code (Dirichlet example)
 
-clear; v = 2;        % verbosity: 0 no pics, 1 final pic, 2 diagnostics
+clear; v = 1;        % verbosity: 0 no pics, 1 final pic, 2 diagnostics
 ob = 't'; d = 1.0;   % type of obstacle: 'd', 't', etc; problem x-periodicity 
 N = 80; s = scale(segment.smoothstar(N, 0.3, 3), 0.35); % .25 closed curve
 om = 10;             % incident wavenumber
@@ -22,8 +22,9 @@ elseif ob=='t', di = domain(s, 1); di.setrefractiveindex(1.5); % transmission
   s.setmatch('diel', 'TM');                      % TM dielectric continuity
   p = qpscatt(de, di, d, o);  % airdoms must only be the single exterior domain
 end
+%de.bas{1}.quad = 'a'; de.bas{2}.quad = 'a'; % tweak the quadrature
 p.setoverallwavenumber(om);
-p.setincidentwave(-pi/5); %-acos(1 - 2*pi/om))-1e-14);%-pi/5;% 'single' Wood's anomaly
+p.setincidentwave(-pi/5);%-acos(1 - 2*pi/om));%-1e-14);%-pi/5;% 'single' Wood's anomaly
 %for i=1:2, p.t.bas{i}.requadrature(o.M, struct('omega',om, 'nearsing', 3)); end  % how to enforce nearsing = 3; used to compare E blocks to std.mat
 if v>1, p.showkyplane; end
 p.fillquadwei;             % this is only for obstacle mismatch (blocks A,B)

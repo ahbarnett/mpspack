@@ -566,6 +566,10 @@ where $\Gamma$ is a segment
 (property {\tt seg}),
 and $\sigma$ and $\tau$ are functions on $\Gamma$ represented by
 their values at the segment's $M$ quadrature points.
+The evaluation of layer potentials on either side of the segment on which
+the densities lie is a subtle issue. For this end we provide
+high-order quadrature schemes of Kapur-Rokhlin \cite{kapur} and Alpert \cite{alpert}, and the spectral
+schemes of Kress \cite{kress91}.
 \ei
 
 Regular and fractional Fourier-Bessels also may be {\em rescaled},
@@ -912,7 +916,8 @@ Alex Barnett and Timo Betcke.
 The computational methods built into the code includes
 work of Barnett--Betcke \cite{mfs,mush,polygonscatt},
 and Barnett--Greengard \cite{qplp,qpsc},
-as well as quadrature schemes of Kress \cite{coltonkress}.
+as well as quadrature schemes of Kress \cite{coltonkress},
+Kapur-Rokhlin \cite{kapur}, and Alpert \cite{alpert}.
 The concept and need for the package came out of our work in eigenvalue
 and scattering problems, using global basis methods.
 In terms of code design, we
@@ -955,6 +960,8 @@ V.~Rokhlin and L.~Greengard.
 by Z.~Gimbutas.
 \item {\tt clencurt.m} and {\tt gauss.m}, quadrature nodes and weights,
 by L.~N.~Trefethen \cite{tref}.
+\item {\tt QuadLogExtraPtNodes.m} for Alpert endpoint correction
+quadrature nodes and weights, by Andras Pataki.
 \item {\tt polypn.c} algorithm to check if a point is in a polygon,
 Copyright (C) 1970-2003, Wm.~Randolph Franklin.
 \item {\tt inpoly.m} algorithm to check if a point is in a polygon,

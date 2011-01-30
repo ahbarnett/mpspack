@@ -58,6 +58,8 @@ classdef qpscatt < scattering & handle
         Mt = 20; safedist = 0.5;          % Mt, safedist could dep on omega?
         yB = min(imag(airdoms.x)) - safedist;
         yT = max(imag(airdoms.x)) + safedist;
+        if isempty(yB) | isempty(yT)
+          error('unable to choose yB and/or a yT segments!'); end
         pr.B = segment(Mt, 1i*yB+[-d/2,d/2], 'p');
         pr.T = segment(Mt, 1i*yT+[d/2,-d/2], 'p');
         pr.T.x = pr.T.x + pr.T.w(1)/2;
@@ -328,6 +330,7 @@ classdef qpscatt < scattering & handle
       angfacs = pr.kpy(i); angfacs = angfacs/angfacs(find(pr.kpn(i)==0));
       [bo to bi ti] = pr.braggampl(i, o);
       j0 = find(pr.kpn(i)==0);          % index within i of incident (0) order
+      if isempty(j0), error('no Bragg orders found in qpscatt object!'); end
       bo(j0) = bo(j0) + pr.ui(1i*imag(pr.B.x(1))); % add inc PW ampl
       ti(j0) = ti(j0) + pr.ui(1i*imag(pr.T.x(1))); % " (irrelevant, ti not used)
       u = to.*conj(to).*angfacs.';
