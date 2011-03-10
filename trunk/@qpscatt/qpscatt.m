@@ -1,26 +1,33 @@
-% QPSCATT - define quasi-periodic (grating) frequency-domain scattering problem
+% QPSCATT - define quasi-periodic obstacle frequency-domain scattering problem
 %
 %  pr = qpscatt(airdoms, doms, d) creates a scattering problem object pr
 %   as with scattering, except a quasi-periodic version with x-periodicity of d.
-%   The solution method will be via FTyLPs, with possibly shifted Sommerfeld
-%   contour and pole correction.
+%   This means a periodic array of one of more isolated obstacles per unit cell
+%   (as opposed to connected or multilayer dielectrics).
 %   airdoms must be only the single exterior domain of the obstacle scattering
 %   problem.
+%   The solution method will be via Fourier layer potentials in the y-direction
+%   (FTyLPs), with possibly shifted Sommerfeld contour and pole correction.
 %
-%   Note: currently only layer-potential bases are allowed in the exterior
-%   domain of the obstacle (adding the evalfty method to other bases would be
-%   needed).
+%   The solution method (and an example code call) is presented in:
+%   A H Barnett and L Greengard, "A new integral representation for
+%     quasi-periodic scattering problems in two dimensions," BIT Numer. Math.
+%     in press (2011).
 %
 %  pr = qpscatt(airdoms, doms, d, opts) sets certain algorithm parameters:
 %    opts.M = # degrees of freedom in each FTyLP
 %    opts.nei = 0,1,2... how many direct sums to include on each side
 %    opts.buf = 0,1,2... how wide the qpstrip domain is including buffer size
 %
+%   Note: currently only layer-potential bases are allowed in the exterior
+%   representation for the obstacle (adding the evalfty method to other basis
+%   types would be needed to fix this).
+%
 % Issues: * Mt and safedist for the B,T segments should be controllable as opts
 %
 % See also PROBLEM, BVP, SCATTERING
 
-% Copyright (C) 2010 Alex Barnett
+% Copyright (C) 2010, Alex Barnett
 
 classdef qpscatt < scattering & handle
   properties
@@ -90,8 +97,9 @@ classdef qpscatt < scattering & handle
     %   existing a, b BC or matching coeffs (which must be set up on entry).
       if nargin==2
         if isempty(pr.k), error('qpscatt problem needs wavenumber set'); end
-        t = mod(t,2*pi);
-        if t<pi, error('upwards incident angle (use downwards)!');end
+        if isreal(t), t = mod(t,2*pi);  % complex angles allowed to do anything
+          if t<pi, error('upwards incident angle (use downwards)!');end
+        end
         setincidentwave@scattering(pr, t); % call superclass method
         om = pr.k; kvec = om*exp(1i*t); pr.a = exp(1i*real(conj(kvec) * pr.d));
         pr.t.setbloch(exp(1i*real(conj(kvec) * pr.t.e))); % set Bloch alpha
@@ -109,6 +117,8 @@ classdef qpscatt < scattering & handle
             shift = max(2*toonear, k2+toonear); pr.ikpfix(2) = 2;
           else, shift = 2*toonear; end
         end
+        %shift = -shift;     % HACK TO SHIFT<0
+        %pr.ikpfix = [];  % EXPT TO KILL THE FIX
         kde = min(abs(shift-abs(pr.kpy)))/sqrt(2); % estimate closest approach
         pr.t.bas = pr.t.bas(1:2); % reset QP FTyLP bases, then add new ones...
         for i=1:2, pr.t.bas{i}.requadrature(pr.t.bas{i}.lp.N, ...
@@ -120,12 +130,12 @@ classdef qpscatt < scattering & handle
         fprintf('# poles fixed = %d, shift = %.3g, est dist = %.3g, dist = %.3g\n', numel(pr.ikpfix), shift, kde, kd)
         if kd<toonear, warning('dist(shifted contour, poles) = %.3g\n', kd);end
         if numel(pr.ikpfix)>0 % add any Wood's anomaly fix bases...
-          pr.t.addepwbasis(1, struct('real',0,'half',0));
-          pr.t.bas{3}.dirs=(pr.kpx(pr.ikpfix(1))+1i*pr.kpy(pr.ikpfix(1)))/om;
+          pr.t.addepwbasis(1, struct('real',0,'half',0)); % ky signs crucial:
+          pr.t.bas{3}.dirs=(pr.kpx(pr.ikpfix(1))+1i*sign(shift)*pr.kpy(pr.ikpfix(1)))/om;
         end
         if numel(pr.ikpfix)>1
           pr.t.addepwbasis(1, struct('real',0,'half',0));
-          pr.t.bas{4}.dirs=(pr.kpx(pr.ikpfix(2))+1i*pr.kpy(pr.ikpfix(2)))/om;
+          pr.t.bas{4}.dirs=(pr.kpx(pr.ikpfix(2))+1i*sign(shift)*pr.kpy(pr.ikpfix(2)))/om;
         end
       end
     end
@@ -141,9 +151,11 @@ classdef qpscatt < scattering & handle
     
     function showbragg(pr)
     % SHOWBRAGG - plot upwards Bragg directions and theta_inc, etc
-      plot([0 cos(pr.incang)],[0 sin(pr.incang)], 'k-', 'linewidth', 3);
-      i = find(imag(pr.kpy)==0);    % indices of propagating Bragg modes
+      if isempty(pr.incang), error('no incident angle set in problem!'); end
+      h = utils.arrow([-cos(pr.incang) 0],[-sin(pr.incang) 0], struct('headalong', 0.7, 'headsize', 0.1), 'k-', 'linewidth', 3);
+      i = find(imag(pr.kpy)==0);    % indices of prop (or Wood) Bragg modes
       o = 0*pr.kpx(i);              % row of zeros for starting points
+      % show them as pink lines in upper half plane...
       hold on; plot([o; pr.kpx(i)/pr.k],[o; pr.kpy(i)/pr.k],'m-','linewidth',3);
     end
     
@@ -197,10 +209,10 @@ classdef qpscatt < scattering & handle
             else sa = s.a(2); sb = s.b(2); end % affects - side only
             for i=1:nb, b = t.bas{i}; ns = t.basnoff(i)+(1:b.Nf);
               [Bb Bbn] = b.eval(s);          % val and nderiv both always need
-              if isa(b, 'ftylayerpot') % explicitly make copies on R
+              if isa(b, 'ftylayerpot') % explicitly make copies on R (old)
                 [Bbt Bbtn] = b.eval(s.translate(-t.e));
                 Bb = Bb + a*Bbt; Bbn = Bbn + a*Bbtn;
-              end
+              end   % note: don't need to explicitly sum over LR for qpftylp!
               % TODO: could speed up by testing for nonzero sa, sb...
               B(ms,ns) = repmat(pr.sqrtwei(ms).', [1 b.Nf]) .* ...
                   [sa * Bb; sb * Bbn];  % stack value then deriv contribs
@@ -249,7 +261,7 @@ classdef qpscatt < scattering & handle
       pr.A = [A B; C Q];       % stack the full E matrix (it's called A)
       
       if ~isempty(pr.ikpfix)   % augment matrix w/ extra rows for Wood's fix ...
-        [RO RI] = pr.fillbraggamplrow(pr.ikpfix);   % get Bragg ampl matrix
+        [RO RI] = pr.fillbraggamplrow(pr.ikpfix,struct('side','B'));   % get Bragg ampl matrix
         RI = RI.*repmat(1./sqrt(sum(RI.^2, 2)), [1 size(RI,2)]); % row-normalize
         pr.A = [pr.A; RI];     % append block row to E
       end  
@@ -269,10 +281,12 @@ classdef qpscatt < scattering & handle
     %
     % Notes: adapted from code polesftylp.m. k-scaling removed, to meas coeffs
       if nargin<3, o = []; end
-      if ~isfield(o, 'side'), o.side = 'B'; end
+      if ~isfield(o, 'side'), o.side = 'B'; end    % default is ampls below
       if o.side=='B', S = pr.B; elseif o.side=='T', S = pr.T;
       else error('invalid opts.side'); end
       [AS ASn] = pr.evalbases(S); % evals all bases (obst + QP) on S pointset
+      %[AS ASn] = pr.evalbases(S, struct('dom', pr.extdom)); % evals all bases (obst + QP) on S pointset
+      
       if isfield(o,'test'), AS = pr.ui(S.x); ASn = pr.uix(S.x).*real(S.nx) + pr.uiy(S.x).*imag(S.nx); end % test w/ inc wave, should give abs(ampl)=1
       % project onto x-Fourier modes (relative to origin)...
       ni = numel(i);
@@ -296,6 +310,8 @@ classdef qpscatt < scattering & handle
     %   present in pr.kpn Bragg order list. They are computed using matrices
     %   evaluated on (asssumed sensible) existing pr.B and pr.T segments.
     %   pr is the qpscatt problem object, which must have coefficients pr.co.
+    %   bo means bottom outgoing, to top outgoing, bi bottom incoming, ti top
+    %   incoming. A typical radiation condition is therefore bi & ti vanish.
     %
     % Note: this is for scattered field not the full field.
     %
@@ -320,19 +336,28 @@ classdef qpscatt < scattering & handle
     %
     %   opts.test: if present, self-test using incident wave; gives u=d=0
     %   opts.table: if present, print a table showing coeffs
+    %   opts.noinc: if true, don't add in u_inc
     %
     % See also: BRAGGAMPL
       if nargin<2, o = []; end
       i = find(imag(pr.kpy)==0);        % indices of propagating orders
+      if isempty(i), warning(' no Bragg orders so no flux.');
+        u = []; d = []; n = []; return; end
       if isfield(o,'test'), i = find(pr.kpn==0); end % fake for single inc wave
+      if ~isfield(o,'noinc'), o.noinc = 0; end
       n = pr.kpn(i)';                   % col vec
-      % flux angle factors propto k_y (rescaled to 1 if same as inc)...
-      angfacs = pr.kpy(i); angfacs = angfacs/angfacs(find(pr.kpn(i)==0));
-      [bo to bi ti] = pr.braggampl(i, o);
       j0 = find(pr.kpn(i)==0);          % index within i of incident (0) order
-      if isempty(j0), error('no Bragg orders found in qpscatt object!'); end
-      bo(j0) = bo(j0) + pr.ui(1i*imag(pr.B.x(1))); % add inc PW ampl
-      ti(j0) = ti(j0) + pr.ui(1i*imag(pr.T.x(1))); % " (irrelevant, ti not used)
+      if isempty(j0), warning('no zeroth Bragg order in qpscatt object.'); end
+      % flux angle factors propto k_y (rescaled to 1 if same as inc)...
+      angfacs = pr.kpy(i); %angfacs = angfacs/angfacs(j0); %  return to this
+      omo = pr.k/pr.doms(1).refr_ind; % get overall problem omega (hack)
+      kpyo = sqrt(omo^2-pr.kpx(find(pr.kpn==0))^2);
+      angfacs = angfacs/kpyo;  % hack for diel (ends on this line)
+      [bo to bi ti] = pr.braggampl(i, o);
+      if ~o.noinc
+        bo(j0) = bo(j0) + pr.ui(1i*imag(pr.B.x(1))); % add inc PW ampl
+        ti(j0) = ti(j0) + pr.ui(1i*imag(pr.T.x(1))); % " (irrelevant, ti unused)
+      end
       u = to.*conj(to).*angfacs.';
       d = bo.*conj(bo).*angfacs.';
       if isfield(o,'table')           % show results table and flux error
@@ -363,7 +388,7 @@ classdef qpscatt < scattering & handle
       
       % make dummy problem with new extdom object (whose d.bas are as before)
       pd = utils.copy(pr); pd.A = []; % (a hack!). leave p.co since need it
-      for i=1:numel(pd.doms), d = pr.doms(i); if d.isair, 
+      for i=1:numel(pd.doms), d = pr.doms(i); if d.isair,
           d = utils.copy(d); pd.doms(i) = d; pd.extdom = d; end, end
       % now add the QP bases onto those in obst exterior domain...
       pd.extdom.bas = {pd.extdom.bas{:} pd.t.bas{:}}; % marry the bases lists
@@ -456,6 +481,7 @@ classdef qpscatt < scattering & handle
       extdomi = find([pr.doms.isair]);          % index of the extdom
       if numel(extdomi)~=1, error('there appears to be >1 exterior domain!');end
       i = pr.domainindices(p)==extdomi;         % logical array, size of p.x
+i = logical(1+0*i);     % force all true (ie to be in extdomi)
       opts.dom = pr.extdom;                     % speeds up prob.evalbases loop
       j = 1:pr.N;                               % obst dof indices
       pc = pointset(p.x(i));                    % only eval images where need!
@@ -481,6 +507,7 @@ classdef qpscatt < scattering & handle
     %   opts.nowrap = true, goes back to default bounding-box (no wrapping).
     %   opts.nx = # gridpoints across one period
     %   opts.ymax = sets y-range to [-ymax ymax]
+    %   opts.noinc = if true, omit incident wave
    
       if nargin<2, o = []; end
       if ~isfield(o, 'imag'), o.imag = 0; end
@@ -488,6 +515,7 @@ classdef qpscatt < scattering & handle
       if ~isfield(o, 'nowrap'), o.nowrap = 0; end
       if ~isfield(o, 'nx'), o.nx = 50; end
       if ~isfield(o, 'ymax'), o.ymax = 0; end
+      if ~isfield(o, 'noinc'), o.noinc = 0; end
 
       if ~o.nowrap                   % bb make one period, then wrap + expand
         if o.ymax==0       % get bb from obstacle geom in default way
@@ -496,7 +524,8 @@ classdef qpscatt < scattering & handle
         o.dx = pr.d/o.nx; o.bb(1) = -pr.d/2+o.dx/2; % overwrite dx and x-range
         tiny = 1e-12; o.bb(2) = pr.d/2-o.dx/2+tiny;
         u = pr.gridsolution(o);                     % eval scatt field (slow)
-        [ui gx gy di] = pr.gridincidentwave(o); u = ui + u; % total field
+        [ui gx gy di] = pr.gridincidentwave(o);
+        if ~o.noinc, u = ui + u; end  % make total field
         u = [pr.a^(-1)*u u pr.a*u];   % three phased copies of total field
         di = [di di di];              % in case needed (isn't as of yet)
         o.bb(1) = o.bb(1) - pr.d; o.bb(2) = o.bb(2) + pr.d; % widen the bb

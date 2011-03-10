@@ -161,7 +161,7 @@ classdef evp < problem & handle
       A = p.fillfredholmop(k);      % (I - 2D) in Dirichlet case
       if o.iter
         [u e v info] = utils.minsingvalvecs(A);  % iterative O(N^3) small const
-        if info.flag, error('info.flag failed from utils.minsingvalvec!'); end
+        if info.flag, error('info.flag failed from utils.minsingvalvec; try setting opts.iter=0 instead!'); end
       else
         [U S V] = svd(A); u = U(:,end); v = V(:,end); e = S(end,end); % slow
       end

@@ -40,7 +40,7 @@ else                                % just one seg, plot it!
   end
     
   if o.arrow
-    t = 0.5 + pm * 0.04 * [-1+1i, 1, -1-1i];     % t values of arrow, with direc
+    t = 0.5 + pm * 0.04 * [-1+1i, 1, -1-1i].';   % t values of arrow, with direc
     h = [h; plot(s.Z(t), '-')];
   end
 end

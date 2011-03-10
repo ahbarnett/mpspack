@@ -9,7 +9,8 @@
 %  
 %  s = SEGMENT(M, {Z, Zp}) creats an analytic curve given by the image of 
 %  the analytic function Z:[0,1]->C. Zp must be the derivative of Z. 
-%  Z and Zp are function handles. 
+%  Z and Zp are function handles, which should be able to handle vector
+%  inputs, ie Z([0 1]) and Z([0;1]) should not fail, and the same for Zp.
 %  
 %  s = SEGMENT(M, {Z, Zp, Zpp}) works as above but also takes the second
 %  derivative Z'' of Z. This is useful for layer potentials.
@@ -19,12 +20,14 @@
 %           't': trapezoid rule (ie, half each endpoint, M+1 pts)
 %           'c': Clenshaw-Curtis (includes endpoints, M+1 pts)
 %           'g': Gauss (takes O(M^3) to compute, M pts)
+%         (Note that corrections to quadrature may be carried out in
+%          layerpot constructors and methods.)
 %
 %  If M is empty, a default value of 20 is used.
 %
 %  s = SEGMENT() creates an empty segment object.
 %
-% See also: POINTSET, segment/PLOT
+% See also: POINTSET, segment/PLOT, LAYERPOT
 
 % Copyright (C) 2008 - 2011, Alex Barnett, Timo Betcke
 

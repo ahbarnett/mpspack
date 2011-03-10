@@ -45,7 +45,7 @@ classdef domain < handle
         bas                       % pointer list to basis set objects (cell arr)
         k                         % wavevector for domain: controls all bases
         refr_ind                  % refractive index of domain (default = 1)
-        isair                     % 1 if gets an inc wave, 0 if not (scattering)
+        isair                     % 1 if gets inc wave; 0,2,3.. if not (scatt)
     end
     methods % ---------------------------------------------------------------
 
@@ -118,7 +118,8 @@ classdef domain < handle
         for piece=1:max(d.spiece)         % kill pts from each interior piece
           js = find(d.spiece==piece);
           v = domain.approxpolygon(d.seg(js), d.pm(js));
-          if isnan(d.cloc), v = [d.seg(js).eloc(2)-10i; v; d.seg(js).eloc(1); d.seg(js).eloc(1)-10i]; end % HACK which extends an excluded strip downwards! 
+          % HACK which extends an excluded strip down/upwards:  
+          if isnan(d.cloc), e=(d.pm(js)+3)/2; v = [d.seg(js).eloc(3-e)+d.pm(js)*10i; v; d.seg(js).eloc(e); d.seg(js).eloc(e)+d.pm(js)*10i]; end
           i = i & ~utils.inpolywrapper(p(:), v);
         end
         i = reshape(i, size(p));

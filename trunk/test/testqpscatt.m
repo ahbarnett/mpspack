@@ -38,7 +38,8 @@ tic; p.co = p.linsolve; toc;    % least-squares soln
 z = pointset(0.2+0.5i);
 tic; p.pointsolution(z), toc % ob='d': 0.090658571729 -0.014578950028i
 %A = p.evalbases(z); A*p.co % test if agrees with pointsolution
-%[bo to bi ti] = p.braggampl(find(imag(p.kpy)==0));
+[bo to bi ti] = p.braggampl();
+fprintf('worst rad cond mode error = %g\n',max(abs([bi;ti])))
 %profile clear; profile on;
 [u d n] = p.braggpowerfracs(struct('table',1)); %profile off; profile viewer
 

@@ -8,6 +8,8 @@
 %
 % See also BVP, PROBLEM
 
+% Copyright (C) 2009 - 2011  Alex Barnett, Timo Betcke
+
 classdef scattering < bvp & handle
   properties
     incang                             % incident angle
@@ -45,6 +47,8 @@ classdef scattering < bvp & handle
     %  Careful: calling this routine overwrites all inhomogeneity functions or
     %   data f, g stored on any of the problem's segments. However it preserves
     %   existing a, b BC or matching coeffs (which must be set up on entry).
+    %
+    %  Issues: * changed so incident wave only given to isair=1 domains.
       if nargin==2
         if isempty(pr.k), error('please set wavenumber before choosing incident plane wave angle!'); end
         kvec = pr.k*exp(1i*t);                % set up a plane-wave field
@@ -56,11 +60,11 @@ classdef scattering < bvp & handle
       % now set up inhomogeneities in BCs, incident air field & no other field..
       for s=pr.segs
         if s.bcside==0                       % matching, may be dielectric
-        if s.dom{1}.isair==s.dom{2}.isair    % either both incident or both zero
+        if (s.dom{1}.isair==1)==(s.dom{2}.isair==1)% either both inc or both not
           s.f = @(t) zeros(size(s.t)); s.g = s.f;    % homogeneous matching
         else
           % extract the relevant coeffs for whichever side have inc field on it:
-          if s.dom{1}.isair       % + side has inc, - side has zero field
+          if s.dom{1}.isair==1    % + side has inc, - side has zero field
             a = s.a(1); b = s.b(1);
           else                    % - side has inc, + side has zero field
             a = s.a(2); b = s.b(2);
@@ -72,7 +76,7 @@ classdef scattering < bvp & handle
         elseif s.bcside==1 | s.bcside==-1    % BC
           ind = (1-s.bcside)/2+1; % index 1 or 2 for which side the BC on
           d = s.dom{ind};         % handle of domain on the revelant side
-          if d.isair              % air-to-metallic boundary
+          if d.isair==1           % air-to-metallic boundary
             if s.b==0             % Dirichlet only. Minus sign: u_s cancels u_i
               s.f = @(t) -s.a * ui(s.Z(t));  % NB keeping f a func not an array
             else                  % Robin, Neumann
@@ -104,7 +108,7 @@ classdef scattering < bvp & handle
         d = pr.doms(n);
         ii = d.inside(p.x);
         di(ii) = n;
-        if d.isair | o.all                          % here there's u_i wave
+        if d.isair==1 | o.all                          % here there's u_i wave
           u(ii) = pr.ui(p.x(ii));
         end
       end

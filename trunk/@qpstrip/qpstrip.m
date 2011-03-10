@@ -13,12 +13,11 @@
 %
 %
 % ISSUES:
-%  * Will they exclude interior regions? Or allow upper/lower segment bdry?
-%  * make better strip plot, etc
+%  * Will they exclude interior regions? Can they be bounded by 2 segments?
 %
-% See also DOMAIN, QPSCATT
+% See also DOMAIN, QPSCATT, BOUNDEDQPSTRIP
 
-% (C) 2010 Alex Barnett
+% (C) 2010 - 2011, Alex Barnett
 classdef qpstrip < handle & domain
   properties
     a                             % alpha QP phase factor for strip (neq pr.a?)
@@ -43,6 +42,7 @@ classdef qpstrip < handle & domain
       st.a = 1;  % default (don't need st.setbloch method)
       st.k = k;
       st.r = 2*pi/st.e;  % works for real e at least
+      st.up = 0;         % if no segment, default is doubly-infinite domain.
       if isfield(o,'seg'), st.seg = o.seg; st.pm = o.pm;
         tiny = 1e-14;        % semi-infinite in y extent...
         s1 = st.seg.eloc((o.pm+3)/2); s2 = st.seg.eloc(3-(o.pm+3)/2); % sta,end
@@ -119,9 +119,17 @@ classdef qpstrip < handle & domain
     end
     
     function h = plot(s, varargin) % .................... plot it
-    % PLOT - plot geometry of a qpstrip domain
+    % PLOT - plot geometry of one (and not more than one) qpstrip domain
       h = [plot@domain(s, varargin{:}); ...
-           vline(s.Lo, 'k-', 'L'); vline(s.Ro, 'k-', 'R')]; %do as domain
+           vline(s.Lo, 'k--', 'L'); vline(s.Ro, 'k--', 'R') ]; %do as domain
+      hold on; a = axis;
+      if s.up~=0, seg = s.seg(1); end
+      yhei = 10;  % height hack for plotting purposes only: show if up or down
+      if s.up==0, h = [h; plot(s.Lo*[1 1], yhei*[-1 1], '-');  plot(s.Ro*[1 1], yhei*[-1 1], '-')];
+      elseif s.up==1,  h = [h; plot(s.Lo*[1 1], [imag(seg.Z(1)) yhei], '-');plot(s.Ro*[1 1], [imag(seg.Z(0)) yhei], '-')];
+      else h = [h; plot(s.Lo*[1 1], [-yhei imag(seg.Z(0))], '-');plot(s.Ro*[1 1], [-yhei imag(seg.Z(1))], '-')];
+      end
+      axis(a);  % restore axes so not all of yhei height shown
     end
     
     function Q = evalbasesdiscrep(st, opts) % .................... Q
@@ -134,9 +142,9 @@ classdef qpstrip < handle & domain
     %
     % Based on: qpunitcell.evalbasesdiscrep
       if nargin<2, opts = []; end
-      N = st.N; noff = st.basnoff;     % # basis dofs
-      M = 2*st.bas{1}.Nf;              % # discrep dofs
-      Q = zeros(M,N);                          % preallocate
+      N = st.N; noff = st.basnoff;    % # basis dofs
+      M = 2*st.bas{1}.Nf;             % # discrep dofs
+      Q = zeros(M,N);                 % preallocate
       for i=1:numel(st.bas)           % loop over basis set objects in unit cell
         b = st.bas{i}; ns = noff(i)+(1:b.Nf);
         if ~isa(b,'rpwbasis') && ~isa(b,'epwbasis') % exclude plane wave bases

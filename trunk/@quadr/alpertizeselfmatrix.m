@@ -1,8 +1,8 @@
 function A = alpertizeselfmatrix(A, k, s, kerfun, o) 
 % A = alpertizeselfmatrix(A, k, s, kerfun, opts) returns Alpert quadrature rule
-%  matrix corrected along a band around the diagonal, given the matrix A of
+%  matrix corrected along a band around the diagonal, given the matrix A of all
 %  source-to-target kernel values (including speed function and uniform
-%  quadrature weights 2pi/N). k is omega the wavenumber, kerfun is a
+%  quadrature weights 2pi/N), with diag(A)=0. k is omega wavenumber, kerfun is a
 %  kernel function of the form val = kerfun(k, x, nx, y, ny)
 %  returning k(s,t) without the speed |z'(t)| factor.
 %  s is the segment whose self-interaction is needed.

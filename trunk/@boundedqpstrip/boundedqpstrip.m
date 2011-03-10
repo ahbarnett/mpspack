@@ -11,9 +11,10 @@
 %    opts.buf = buffer width of strip (0 gives usual, 1 gives 3xwidth, etc)
 %
 % ISSUES:
+%  * changed so B seg can be reversed, and the creator will deal with it.
 %
 % See also DOMAIN, QPSTRIP
-%
+
 % (C) 2010 Alex Barnett
 classdef boundedqpstrip < handle & domain
   properties
@@ -35,15 +36,20 @@ classdef boundedqpstrip < handle & domain
       if ~isfield(o, 'buf'), o.buf = 0; end
       if ~isa(s, 'segment')
         error('1st argument must be array of segment objects!'); end
-      B = s(1); T = s(2); Lo = real(B.eloc(1)); Ro = real(B.eloc(2));
-      e = Ro-Lo; if e<=0, warning('B seg should increase in x!');end
-      L = segment(o.M, [B.eloc(1) T.eloc(2)], o.quad);
+      B = s(1); T = s(2);
+      Lo = real(B.eloc(1)); Ro = real(B.eloc(2)); pmB = 1; % default pm for B
+      if Lo>Ro, temp = Ro; Ro = Lo; Lo = temp; pmB = -1;
+        warning('swapped sense of B seg...');
+      end
+      e = Ro-Lo;
+      L = segment(o.M, [B.eloc(1+(1-pmB)/2) T.eloc(2)], o.quad);
       R = translate(L, e);
-      st = st@domain([L B R T], [-1 1 1 1]);     % use bounded domain (as uc)
-      st.L = L; st.R = R; st.e = e; st.B = B; st.L = L; st.Lo = Lo; st.Ro = Ro;
       tiny = 1e-14;
       if abs(real(T.eloc(1))-Ro)+abs(real(T.eloc(2))-Lo)>tiny
-        warning('segments do not appear to match in x-limits!'); end
+        warning('segments do not appear to match in x-limits!');
+      end
+      st = st@domain([L B R T], [-1 pmB 1 1]);     % use bounded domain (as uc)
+      st.L = L; st.R = R; st.e = e; st.B = B; st.T = T; st.Lo = Lo; st.Ro = Ro;
       st.setbloch;
       st.k = k;
       st.r = 2*pi/st.e;
@@ -86,10 +92,13 @@ classdef boundedqpstrip < handle & domain
     
     function addqpbstlayerpots(t, o) % ..................................
     % ADDQPBSTLAYERPOTS - add left-right QP scheme LPs to bounded strip domain
+    %
+    % Note: order was swapped to DLP then SLP, to keep diagonal in right place
+    % Barnett 2/15/11
       if nargin<2, o = []; end
       clist = [-t.buf, 1+t.buf]; % copylist for source segments
-      t.bas{1} = qpbstlayerpot(t, t.L, clist, 's', o); t.bas{1}.doms = t;
-      t.bas{2} = qpbstlayerpot(t, t.L, clist, 'd', o); t.bas{2}.doms = t;
+      t.bas{1} = qpbstlayerpot(t, t.L, clist, 'd', o); t.bas{1}.doms = t;
+      t.bas{2} = qpbstlayerpot(t, t.L, clist, 's', o); t.bas{2}.doms = t;
       t.setupbasisdofs;
     end
     
