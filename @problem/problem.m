@@ -75,7 +75,7 @@ classdef problem < handle
     %    problem or domain object basobj (which must have setupbasisdofs method)
     %    Note that in order to affect the problem segments they must be listed
     %    in some problem domain.
-    %    (The above three are needed by blochmodeproblem)
+    %    (The above three are needed by blochmodeproblem and qpscatt)
     %
     %  Issues/Notes:
     %  * is now faster version, based on basis dofs rather than domain dofs
@@ -178,6 +178,8 @@ classdef problem < handle
     %
     % See also: DOMAIN.EVALBASES, POINTSOLUTION, DOMAININDICES
       if nargin<3, opts = []; end
+      if isempty(p.x), warning('evalbases on empty pointset!');
+        A = []; Ax = []; Ay = []; return; end
       if nargout>1 && isempty(p.nx), error('pointset needs normals!'); end
       A = zeros(numel(p.x), pr.N);           % allocate
       if nargin>1, Ax = A; end; if nargin>2, Ay = A; end % only allocate if need
@@ -222,7 +224,7 @@ classdef problem < handle
     %
     % See also GRIDSOLUTION.
       if isempty(pr.co), error('coefficient vector is empty!'); end
-      nmax=1e5;          % since nmax=100 had big 20% speed hit
+      nmax=1e4;          % since nmax=100 had big 20% speed hit
       if length(p.x)>nmax,
           Np=length(p.x);
           itcount=floor(Np/nmax);

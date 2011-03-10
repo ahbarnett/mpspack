@@ -91,6 +91,7 @@ classdef qpbstlayerpot < handle & basis
         Q = [b.a(2)*eye(N); -b.a(1)*eye(N)] + [a*Ql-Q/a; a*Qnl-Qn/a];
         
       elseif s.buf==1 & numel(b.clist)==2 & b.clist==[-1 2] & b.lp.seg==s.L
+        fprintf('qpbstlayerpot.evalboundedstripdiscrep: using 3-box scheme\n');
         N = numel(s.L.x);  % hack L&R QP 3-box scheme, expl jump term...
         pr = pointset(s.L.x + 3*b.st.e, s.L.nx); % R pts
         pll = pointset(s.L.x - 3*b.st.e, s.L.nx); % copy of pts one left of L

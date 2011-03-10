@@ -15,7 +15,7 @@ function h = plot(d, o)
 % Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
 
 if nargin<2, o = []; end
-if numel(d)>1, domain.showdomains(d, o); return; end
+if numel(d)>1, h = domain.showdomains(d, o); return; end
 % the rest of code handles a single domain object...
 
 if ~isfield(o, 'gridinside'), o.gridinside=0; end  % default no grid

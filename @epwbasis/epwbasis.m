@@ -74,7 +74,7 @@ classdef epwbasis < handle & basis
       kx = 0*b.dirs; ky = kx;
       for i=1:numel(b.dirs), d = abs(b.dirs(i));
         if abs(abs(d-1))>1e-15, %fprintf('evan: d-1=%g\n',d-1)
-          ky(i) = 1i*w*(1-d^2)/2/d; kx(i) = sqrt(w^2-ky(i)^2);
+          ky(i) = 1i*w*(1-d^2)/2/d; kx(i) = sqrt(w^2-ky(i)^2); % choose updown
           th = angle(b.dirs(i));
           K = [cos(th) -sin(th); sin(th) cos(th)] * [kx; ky];
           kx = K(1,:); ky = K(2,:);

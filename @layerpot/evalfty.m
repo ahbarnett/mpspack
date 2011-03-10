@@ -8,6 +8,11 @@ function [A Ax] = evalfty(b, f, o) % ...........for 1.5D scatt, qpstrip
 % [A Ax] = EVALFTY(b, f) also returns x-derivatives (normal derivs on
 %   the y-slice).
 %
+% [A Ax] = EVALFTY(b, f, opts) allows certain options, such as:
+%   opts.reflect = 'd' or 'i' adds in effect of an image reflected through y=h
+%   opts.reflecth = h value to reflect about (required if opts.reflect used).
+%   opts.reflecteta = eta in u_n+i.eta.u=0, for opts.reflect='i' (default om).
+%
 % Notes: 
 % 1) b is only used to extract k_y and origin information, not to
 %    evaluate as a basis set.
@@ -18,9 +23,12 @@ function [A Ax] = evalfty(b, f, o) % ...........for 1.5D scatt, qpstrip
 %
 % See also: TESTLAYERPOTEVALFTY
 
-% (C) Alex Barnett 2010
+% (C) Alex Barnett 2010 - 2011
 if nargin<3, o = []; end
-om = b.k;                                      % wavenumber (from layerpot)
+if ~isfield(o,'reflect'), o.reflect = ''; end % default no reflection (false)
+if o.reflect, if ~isfield(o,'reflecth'), error('needs opts.reflecth!'); else
+  h = o.reflecth; end, end
+om = b.k(o);                                   % wavenumber (from layerpot)
 d = b.seg.x - f.orig;                          % displacements from slice origin
 x = real(d); y = imag(d);                      % Cartesian displ, col vecs
 nx = real(b.seg.nx); ny = imag(b.seg.nx);      % x,y cpts of source normal
@@ -42,4 +50,21 @@ if nargout>1
              (b.a(2)*1i*som.')*nx.' - ...              % DLP x-deriv, outer prod
              (b.a(2)*1i*k.')*(ny.*sign(x)).');         % y-deriv via outer prod
 end
-
+if o.reflect                           % Half-space reflection cases:
+  pha = exp(-1i*k.'*(2*h-y.'));        % (reflect off y=h, same above or below)
+  if isfield(o,'reflecteta'), eta = o.reflecteta; else eta = om; end % pick eta
+  if o.reflect=='d'                 % add in for Dirichlet half-plane Green's
+    B = -pha .* exf .* repmat(b.seg.w/4/pi, [M 1]);  % note overall minus for d
+  elseif o.reflect=='i'                % add in impedance half-plane Green's
+    B = pha .* exf .* repmat(b.seg.w/4/pi, [M 1]) ...
+        .* repmat(((k-eta)./(k+eta)).', [1 N]);   % the impedance case
+  end
+  A = A + B .* (repmat(b.a(1)*1i./som.', [1 N]) + ...        % SLP
+              repmat(-b.a(2)*nx.'.*sign(x).', [M 1]) - ...   % DLP x-deriv part
+              (b.a(2)*k./som).'*ny.');                       % y-deriv
+  if nargout>1
+    Ax = Ax + B .* (repmat(b.a(1)*sign(x).', [M 1]) + ...     % SLP
+             (b.a(2)*1i*som.')*nx.' + ...              % DLP x-deriv, outer prod
+             (b.a(2)*1i*k.')*(ny.*sign(x)).');         % y-deriv via outer prod
+  end
+end

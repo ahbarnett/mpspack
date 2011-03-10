@@ -119,6 +119,7 @@ classdef layerpot < handle & basis
         if ~isempty(b.self), o.self = b.self; end    % pass in self-int mats
       end
       k = b.k(o);               % method gets k from affected domain (o.dom)
+      %fprintf('o.self=%d, k=%g, type [%g %g]\n',self,k,b.a(1),b.a(2))
       
       % opts takes precedence, but otherwise use Jfilter in basis properties:
       if ~isempty(b.Jfilter) & ~isfield(o, 'Jfilter'), o.Jfilter=b.Jfilter; end

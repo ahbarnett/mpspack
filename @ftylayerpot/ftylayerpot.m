@@ -89,9 +89,8 @@ classdef ftylayerpot < handle & basis
           Ns = [100, 3*max(ba.om,3)*ba.maxy, 16*b*asinh(L/g/b)];
           N = ceil(max(Ns)); end
         h = b*asinh(L/g/b) / (N/2-1);  % stopping at beta s.t. alpha stops at L
-        be = (-N/2:(N+1)/2)*h;         % beta values (periodic trap rule)
-        be = be(1:N);                  % clip to be exactly N
-        wj = [1/2 ones(1,numel(be)-2) 1/2]*h; % weights
+        be = (-N+1:2:N-1)*h/2;         % beta values (N-pt periodic trap rule)
+        wj = [1/2 ones(1,numel(be)-2) 1/2]*h; % weights (don't really need 1/2)
         a = g*b*sinh(be/b); wj = wj.*g.*cosh(be/b);  % transform be->a
         % change variable from real axis to contour shape (w/ imag part)...
         ba.kj = a - 1i*d*tanh(a/de); ba.wj = wj.*(1-1i*d/de*sech(a/de).^2);
