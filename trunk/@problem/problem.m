@@ -206,7 +206,7 @@ classdef problem < handle
       end
     end
     
-    function [u di] = pointsolution(pr, p) % ......eval soln on pointset
+    function [u di] = pointsolution(pr, p, o) % ......eval soln on pointset
     % POINTSOLUTION - evaluate solution to a problem on a pointset, given coeffs
     %
     %  [u di] = pointsolution(pr, pts) returns array of values u, and
@@ -214,27 +214,36 @@ classdef problem < handle
     %   Decisions about which domain a gridpoint is in are done using
     %   domain.inside, which may be approximate.
     %
+    %  [u di] = pointsolution(pr, pts, opts) controls certain options, such as:
+    %   opts.fmm = 1 uses Greengard-Gimbutas Helmholtz 2D FMM (wavenumber k>0),
+    %                (certain bases only: mfsbasis, layerpots). DUMMY FOR NOW.
+    %              0 uses direct filling of a dense matrix, hitting coeff vector
+    %                (blocked according to opts.nmax, see Note 3, default 1e4)
+    %
     %   Notes: 1) changed to reference dofs via bases rather than domains.
     %   2) A separate routine should be written for evaluation of u, u_n on
     %   boundary.
-    %   3) splits up the computation if list of points is longer than nmax.
+    %   3) splits up the computation if list of points is longer than o.nmax.
     %   Ensures that not too much memory is eaten up by the computation.
     %   (Timo Betcke)
-    %   4) For some bases, could insert FMM or other fast eval methods here.
     %
     % See also GRIDSOLUTION.
+      if nargin<3, o = []; end
+      if ~isfield(o, 'nmax'), o.nmax = 1e4; end    % default blocking size
+      % (since nmax=100 had big 20% speed hit due to oo-matlab overhead).
+      if ~isfield(o, 'fmm'), o.fmm = 0; end        % default evaluation method
+      
       if isempty(pr.co), error('coefficient vector is empty!'); end
-      nmax=1e4;          % since nmax=100 had big 20% speed hit
-      if length(p.x)>nmax,
+      if length(p.x)>o.nmax,
           Np=length(p.x);
-          itcount=floor(Np/nmax);
-          r=mod(Np,nmax);
+          itcount=floor(Np/o.nmax);
+          r=mod(Np, o.nmax);
           u=zeros(Np,1); di=zeros(Np,1);
           for j=1:itcount+1,
               if j<=itcount,
-                  indrange=(j-1)*nmax+1:j*nmax;
+                  indrange=(j-1)*o.nmax+1:j*o.nmax;
               elseif r>0,
-                  indrange=(j-1)*nmax:Np;
+                  indrange=(j-1)*o.nmax:Np;
               else break
               end
               if ~isempty(p.nx),             
@@ -242,7 +251,7 @@ classdef problem < handle
               else
                   ptemp=pointset(p.x(indrange));
               end
-              [ut,dit]=pr.pointsolution(ptemp);
+              [ut,dit]=pr.pointsolution@problem(ptemp, o); % recursive!(depth 1)
               u(indrange)=ut; di(indrange)=dit;
           end
           return
@@ -289,6 +298,8 @@ classdef problem < handle
     %   (integer array of same shape as u). Decisions about which domain a
     %   gridpoint is in are done using domain.inside, which may be approximate.
     %
+    %  Other options in opts are passed to pointsolution; see its doc page.
+    %
     % To do: * keep evalbases matrices Ad for later use, multiple RHS's etc.
     % * what if evalbases matrices too big to store, sum basis vals by hand?
     %
@@ -296,7 +307,7 @@ classdef problem < handle
       o = pr.gridboundingbox(o);
       gx = o.bb(1):o.dx:o.bb(2); gy = o.bb(3):o.dx:o.bb(4);  % plotting region
       [xx yy] = meshgrid(gx, gy); zz = xx + 1i*yy;  % keep zz rect array
-      [u di] = pr.pointsolution(pointset(zz(:))); % make zz a col vec
+      [u di] = pr.pointsolution(pointset(zz(:)), o); % make zz a col vec
       u = reshape(u, size(xx));
       di = reshape(di, size(xx));
     end % func
