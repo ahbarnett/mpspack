@@ -366,7 +366,7 @@ classdef qpscatt < scattering & handle
       end
     end
     
-    function [u di] = pointsolution(pr, p) % ............... overloads @problem
+    function [u di] = pointsolution(pr, p, o) % ............. overloads @problem
     % POINTSOLUTION - evaluate soln to periodic problem a pointset, given coeffs
     %
     % Overloads problem.pointsolution, but creating dummy problem and dummy
@@ -377,7 +377,7 @@ classdef qpscatt < scattering & handle
     %  labeled {-1,0,1}.
     %
     % See also PROBLEM.POINTSOLUTION, QPSCATT
- 
+      if nargin<3, o = []; end          % default empty options
       % wrap the points which fall into copies of non-air domains (obstacle)
       extdomi = find([pr.doms.isair]);           % index of the extdom
       dil = pr.domainindices(pointset(p.x + pr.d)); % li=true if in copy -1
@@ -395,10 +395,10 @@ classdef qpscatt < scattering & handle
       pd.bas = {pr.bas{:} pd.t.bas{:}}; % append problem bases ...IN ORDER!
       pd.basnoff = [pr.basnoff pr.N+pr.t.basnoff]; % effective setupbasisdofs
       pd.N = pr.N + pr.t.N;            % finish up appending to pd basis setup
-      [u di] = pointsolution@problem(pd, p);     % pass to usual evaluator
+      [u di] = pd.pointsolution@problem(p, o);     % pass to usual evaluator
       if numel(extdomi)~=1, error('there appears to be >1 exterior domain!');end
       for n=[-pr.nei:-1 1:pr.nei]                % direct sum nei contribs
-        uc = pointsolution@problem(pr, pointset(p.x-pr.d*n, p.nx));
+        uc = pr.pointsolution@problem(pointset(p.x-pr.d*n, p.nx), o);
         u = u + pr.a^n * uc .* (di==extdomi);    % only affects obst exterior
       end
       % correct for displacement using Bloch phase, assuming quasi-periodic!
