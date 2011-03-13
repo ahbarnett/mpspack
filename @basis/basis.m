@@ -4,7 +4,7 @@ classdef basis < handle
   % common for all basis objects. Also defines quasi-periodizing (qpunitcell)
   % basis and discrepancy evaluation methods that apply to generic bases.
 
-  % Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
+  % Copyright (C) 2008 - 2011, Alex Barnett, Timo Betcke
 
   
   properties
@@ -13,6 +13,7 @@ classdef basis < handle
     N                       % Degree of basis set: interpretation depends on
                             %     type of basis (see basis.Nf method)
     nmultiplier             % can be used by problem class to choose N degree
+    HFMMable = 0;           % k>0, whether can eval FMM @ targets? (default 0)
   end
   
   methods (Abstract)
@@ -50,7 +51,7 @@ classdef basis < handle
     end
 
     
-% ========= Below are methods needed only for quasi-periodic features =====
+% ======= Below are methods needed only for quasi-periodic (QPLP) features =====
     
     function d = copiesdata(b, p, transl, nargs, opts) %.......eval copies data
     % COPIESDATA - data struct of basis func evals on many copies of pointset

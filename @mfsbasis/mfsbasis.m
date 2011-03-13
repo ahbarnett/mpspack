@@ -20,12 +20,12 @@ classdef mfsbasis < handle & basis
 %  In each of the above, opts is an optional structure with optional fields:
 %  opts.eta   - (inf) If eta=inf use single layer potential MFS basis. For
 %               eta neq inf use linear combination of double and single layer
-%               potential MFS basis
+%               potential MFS basis: double + i.eta.single.
 %  opts.fast  - (0) Hankel evaluation method (0=matlab; 1,2=faster)
 %  opts.real  - (false) If true, use real part of Hankel functions only
 %  opts.tau   - (0) Creates charge curve Z(t+i.tau) rather than Z(t)
 
-% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
+% Copyright (C) 2008 - 2011, Alex Barnett, Timo Betcke
 
 properties
     Z                     % function handle for charge curve
@@ -34,7 +34,7 @@ properties
     y                     % row vec of charge points (note not col vec)
     ny                    % row vec of normal directions at charge points
     realflag              % if true, use real part only, ie Y_0
-    fast                  % Hankel evaluation method (0=matlab; 1=faster)
+    fast                  % Hankel evaluation method (0=matlab; 1=Rokhlin, etc)
     eta                   % If eta=inf (default) use single layer potential 
                           % MFS basis. For eta\neq inf
                           % use linear combination of double and single
@@ -64,6 +64,7 @@ properties
           b.realflag=opts.real;
           b.eta=opts.eta;
           b.nmultiplier=opts.nmultiplier;
+          b.HFMMable = (exist('hfmm2d')==3);  % is Helmholtz FMM MEX available?
 
           % Evaluate the input arguments
           if isa(varargin{1},'segment')      % must come before pointset since
@@ -110,20 +111,22 @@ properties
       function [A B C] = eval(b, pts, opts)
         % EVAL - evaluate fundamental solutions (MFS) basis at set of points
         %
-        % A = EVAL(p) where p is a pointset object containing M points, returns
+        % A = EVAL(b, p) where b is an mfsbasis basis set object, and
+        %   p is a pointset object containing M points, returns
         %   a M-by-Nf matrix whose ij'th entry is Phi_j(z_i), where Phi_j is
         %   the jth basis function, and z_i the ith point. Nf is the number
         %   of degrees of freedom in the basis set object.
         %        
-        % [A An] = EVAL(p) also returns matrix An whose ij'th entry is
+        % [A An] = EVAL(b, p) also returns matrix An whose ij'th entry is
         %   d/dn_i Phi_j(z_i), the derivative in the ith normal direction in
         %   the pointset. Note that normals are automatically normalized.
         %
-        % [A Ax Ay] = EVAL(p) returns A as above, and matrices of basis function
-        %    derivatives in the x- and y-directions. That is, Ax has ij'th
-        %    entry d/dx Phi_j(z_i) while Ay has ij'th entry d/dy Phi_j(z_i)
+        % [A Ax Ay] = EVAL(b, p) returns A as above, and matrices of basis
+        %    function derivatives in the x- and y-directions. That is, Ax has
+        %    ij'th entry d/dx Phi_j(z_i) while Ay has ij'th entry
+        %    d/dy Phi_j(z_i)
         %
-        % Also see: POINTSET, MFSBASIS      
+        % Also see: POINTSET, MFSBASIS, MFSBASIS.EVALFMM      
       o=struct('fast',b.fast);
      
       if nargin==3,                   % this slows down the eval each time ?
@@ -191,6 +194,56 @@ properties
       end
       end
       
+    function [u u1 u2] = evalFMM(b, co, p, opts)
+      % EVALFMM - FMM evaluate fund. solns (MFS) basis at set of points
+      %
+      % u = evalFMM(b, p, c) where b is a mfsbasis object, p is a pointset
+      %  object containing M points, and c is a coefficient vector, returns
+      %  u, the potential sum_{n=1}^N c_n Phi_n(y_m) for m=1...M as a column
+      %  vector. (Note p may also be a column vector of points in the C plane.)
+      %  The Helmholtz fast multipole method of Gimbutas-Greengard is called.
+      %
+      % [u un] = evalFMM(b, p, c) also returns gradient of potential in the
+      %  normal directions contained in the pointset p.nx.
+      %
+      % [u ux uy] = evalFMM(b, p, c) also returns gradient of potential in the
+      %  x and y directions, ie its partials. (pointset normals not used).
+      %
+      % Has no self-evaluation capability (not designed for integral equation)
+      %
+      % See also: EVAL
+      if isnumeric(p), x = p; else x = p.x; end 
+      k = b.k; eta = b.eta; N = b.N; M = numel(x);
+      if k>0 && ~b.HFMMable, error('not able to use Helmholtz FMM!'); end
+      if k==0, error('Laplace FMM not implemented!'); end
+      if isreal(co), co = complex(co); end % for MEX input compatibility
+      ifcharge = (eta~=0);
+      ifdipole = (eta~=Inf);
+      if eta==Inf, charge = co.'; else, charge = 1i*eta*co.'; end
+      % NB b.y and b.ny are row vecs (unlike for a segment!):
+      source = [real(b.y); imag(b.y)]; dipvec = [real(b.ny); imag(b.ny)];
+      target = [real(x) imag(x)].';    % since x is col vecs, but want 2-by-N
+      iffldtarg = (nargout>1);
+      iprec=4;                    % digits precision - should be an opts
+      sc = -1;                    % factor to convert to my i.H_0/4 scaling.
+      if ~b.realflag || isreal(co)  % usual complex fundamental solutions
+        U = utils.hfmm2dparttarg(iprec,k,N,source,ifcharge,charge,ifdipole,...
+                                 -co.',dipvec,0,0,0,M,target,1,iffldtarg,0);
+        % note the dipole strengths vector has sign change!
+        u = sc * U.pottarg.';
+        if nargout==2          % field is supposedly -grad(potential) ...sign?
+          u1 = sc*(real(p.nx).'.*U.fldtarg(1,:) + ...
+                    imag(p.nx).'.*U.fldtarg(2,:)).';
+        elseif nargout==3
+          u1 = sc*U.fldtarg(1,:).'; u2 = sc*U.fldtarg(2,:).';
+        end
+        if b.realflag, u=real(u); u1=real(u1); u2 = real(u2); end;
+      else                        % real part of (monopole + i.eta.dipole)
+        error('real=1 not implemented!');
+        % ... do 2 FMMs on the real and imag parts of coefficents, lame
+      end
+    end
+       
     function Nf = Nf(b)
       Nf = b.N;
     end

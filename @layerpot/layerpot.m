@@ -17,7 +17,7 @@ classdef layerpot < handle & basis
 %
 % See also: DOMAIN/ADDLAYERPOT
 
-% Copyright (C) 2008-2010, Alex Barnett and Timo Betcke
+% Copyright (C) 2008-2011, Alex Barnett and Timo Betcke
   properties
     real                            % true if fund sol is Y_0, false for H_0^1
     seg                             % handle of segment on which density sits
@@ -41,6 +41,7 @@ classdef layerpot < handle & basis
         opts.fast = 0;               % downgrade the speed if 103 not available
       end
       b.fast = opts.fast;
+      b.HFMMable = (exist('hfmm2d')==3);  % is Helmholtz FMM MEX available?
       if ~isfield(opts, 'real'), opts.real = 0; end
       b.real = opts.real;
       if isfield(opts, 'quad'), b.quad = opts.quad; end  % quad=[] is default
@@ -93,7 +94,7 @@ classdef layerpot < handle & basis
 %    opts.dom: domain in which evaluation is performed. In the case of
 %     p being the segment on which the LP density sits, opts.dom must be
 %     defined, since it resolves which sign the jump relation has.
-%    opts.fast: if 0 use matlab Hankel, 1 use fast fortran Hankel, 2 even faster
+%    opts.fast: if 0 use matlab Hankel, 1,2 use Rokhlin's fortran Hankels.
 %    opts.Jfilter: (advanced feature) evaluate via J-expansion instead.
 %     Expects structure with:
 %                  Jfilter.M = max order of local expansion
@@ -102,7 +103,9 @@ classdef layerpot < handle & basis
 %
 %  To do: make it handle a segment list, with correct accounting of self-eval.
 %
-% (c) Alex Barnett 2008-2010
+% See also: LAYERPOT.FMMEVAL
+%
+% (c) Alex Barnett 2008-2011
       if nargin<3, o = []; end
       if ~isfield(o, 'fast'), o.fast = b.fast; end    % default given in b obj
       if ~isempty(b.quad), o.quad = b.quad; end % pass quadr type to S,D,T eval
@@ -192,8 +195,8 @@ classdef layerpot < handle & basis
           A = b.a(1) * layerpot.S(k, b.seg, p, o) + ...
               b.a(2) * layerpot.D(k, b.seg, p, o);
         end
-        if self & b.a(2)~=0   % NOTE should speed up by writing diag vals only:
-          A = A + approachside * b.a(2) * eye(size(A)) / 2;  % DLP val jump
+        if self & b.a(2)~=0   % Jump Relation
+          A(diagind(A)) = A(diagind(A)) + approachside*b.a(2)/2; % DLP val jump
         end
         
       elseif nargout==2 %------------------------------- values + normal derivs
@@ -216,11 +219,11 @@ classdef layerpot < handle & basis
           Dn = layerpot.T(b.k, b.seg, p, o);
           Ax = b.a(1) * Ax + b.a(2) * Dn;
         end
-        if self & b.a(2)~=0
-          A = A + approachside * b.a(2) * eye(size(A)) / 2;   % DLP val jump
+        if self & b.a(2)~=0    % Jump Relations: DLP value jump
+          A(diagind(A)) = A(diagind(A)) + approachside*b.a(2)/2;
         end
-        if self & b.a(1)~=0
-          Ax = Ax - approachside * b.a(1) * eye(size(A)) / 2; % SLP deriv jump
+        if self & b.a(1)~=0    % SLP normal-derivative jump
+          Ax(diagind(Ax)) = Ax(diagind(Ax)) - approachside*b.a(1)/2;
         end
         
       else % ------------------------------------- values, x- and y-derivs
@@ -262,7 +265,100 @@ classdef layerpot < handle & basis
       end % ------ end nargout switch
       end % ================= end Jfilter switch
     end % func
-    
+
+    function [u u1 u2] = evalFMM(b, co, p, o)
+      % EVALFMM - FMM evaluate layer potential (SLP+DLP) basis at set of points
+      %
+      % u = evalFMM(b, p, c) where b is a layerpot object, p is a pointset
+      %  object containing M points, and c is a coefficient vector, returns
+      %  u, the layer potential values at each target point m=1...M as a column
+      %  vector. (Note p may also be a column vector of points in the C plane.)
+      %  The Helmholtz fast multipole method of Gimbutas-Greengard is called.
+      %
+      % [u un] = evalFMM(b, p, c) also returns gradient of potential in the
+      %  normal directions contained in the pointset p.nx.
+      %
+      % [u ux uy] = evalFMM(b, p, c) also returns gradient of potential in the
+      %  x and y directions, ie its partials. (pointset normals not used).
+      %
+      % [u ...] = evalFMM(b, p, c, opts) controls options.
+      %   The optional argument opts may contain the following fields:
+      %    opts.dom: domain in which evaluation is performed. In the case of
+      %     p being the segment on which the LP density sits, opts.dom must be
+      %     defined, since it resolves which sign the jump relation has.
+      %
+      %  To do: make it handle a segment list target, with correct
+      %         accounting of self-eval. Pass all non-self targs in a single
+      %         FMM pass so can handle large numbers of segments efficiently
+      %
+      % See also: EVAL
+      if nargin<4, o = []; end
+      if isnumeric(p), x = p; else x = p.x; end    % allow point list target
+      self = (p==b.seg); % if true, local eval on segment which carries density
+      if self
+        if isempty(o) | ~isfield(o, 'dom') | (o.dom~=p.dom{1} & o.dom~=p.dom{2})
+          error('opts.dom must be a domain connected to segment p, since self eval with jump relation!');
+        end
+        % tell the jump relation from which side we're taking the limit...
+        approachside = -1;           % - sign since normals point away from dom
+        if o.dom==p.dom{1}, approachside = +1; end  % instead dom on + normal
+      end
+      k = b.k(o);               % method gets k from affected domain (o.dom)
+      ifcharge = (b.a(1)~=0); ifdipole = (b.a(2)~=0);
+      s = b.seg; N = numel(s.x); M = numel(x);  % NB s.x & s.nx are col vecs:
+      source = [real(s.x) imag(s.x)].'; dipvec = [real(s.nx) imag(s.nx)].';
+      target = [real(x) imag(x)].';    % since x is col vecs, but want 2-by-N
+      iffldtarg = (nargout>1);
+      iprec=4;                    % 12 digit precision - should be an opts
+      sc = -1;                    % factor to convert to my i.H_0/4 scaling.
+      charge = s.w .* co.';       % charge strengths = quadr weights * density
+
+      if ~self                % non-self target (use segment's own quadrature)
+        U = utils.hfmm2dparttarg(iprec,k,N,source,ifcharge,b.a(1)*charge,...
+                  ifdipole,-b.a(2)*charge,dipvec,0,0,0,M,target,1,iffldtarg,0);
+              % note the dipole strengths vector above has sign change!
+        u = sc * U.pottarg.';  % as for mfsbasis, scale & convert to column vec
+        if nargout==2          % field is supposedly -grad(potential) ...sign?
+          u1 = sc * (real(p.nx).'.*U.fldtarg(1,:) + ...
+                   imag(p.nx).'.*U.fldtarg(2,:)).';
+        elseif nargout==3
+          u1 = sc * U.fldtarg(1,:).'; u2 = sc * U.fldtarg(2,:).';
+        end
+      
+      else                    % self-interaction
+        if nargout==1
+          u = utils.hfmm2dpart(iprec,k,N,source,ifcharge,b.a(1)*charge,...
+                               ifdipole,-b.a(2)*charge,dipvec);
+          u = sc * u.';   % scale & convert to col vec
+          if self && b.a(2)~=0   % Jump Relation
+            u = u + approachside*b.a(2)/2; % DLP val jump
+          end
+       % add in effect of quadratures...
+       
+       
+       
+       elseif nargout==2
+          [u fld] = utils.hfmm2dpart(iprec,k,N,source,ifcharge,b.a(1)*charge,...
+                                     ifdipole,-b.a(2)*charge,dipvec);
+          u = sc * u.';   % scale & convert to col vec
+          u1 = sc * (real(p.nx).'.*fld(1,:) + imag(p.nx).'.*fld(2,:)).';
+          if self && b.a(2)~=0   % Jump Relations
+            u = u + approachside*b.a(2)/2; % DLP val jump
+          end
+          if self && b.a(1)~=0
+            u1 = u1 - approachside*b.a(1)/2; % SLP deriv jump
+          end
+        % add in effect of quadratures...
+        
+        
+        
+      else
+          error('self interaction not implemented for returning [u ux uy]!');
+        end
+      end
+    end
+      
+      
     function showgeom(b, opts) % .................. crude show discr pts of seg
       b.seg.plot;
     end
