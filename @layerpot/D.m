@@ -95,7 +95,7 @@ if self % ........... source curve = target curve; can be singular kernel
     
   elseif s.qtype=='p' & o.quad=='a' % ---Alpert log-quadrature w/ rolling diag
     A = A .* repmat(s.w, [N 1]);  % use seg usual quadr weights away from diag
-    kerfun = @Dkernel; if dSLP, kerfun = @DTkernel; end
+    kerfun = @layerpot.Dkernel; if dSLP, kerfun = @layerpot.DTkernel; end
     A = quadr.alpertizeselfmatrix(A, k, s, kerfun, o);  % note no 2pi factors
   
   else       % ------ self-interacts, but no special quadr, just use seg's
@@ -140,25 +140,6 @@ else % ............................ distant target curve, so smooth kernel
     end
   end
 end
-
-function u = Dkernel(k, x, nx, y, ny) % double-layer kernel function k(x,y),
-% without speed factor due to parametrization.
-% y, ny are source location and normal vector (as C-#s), x, nx are same for
-% target. All may be lists (or matrices) of same size.
-% k is omega the wavenumber.
-% K(s,t) = (ik/4) H_1^{(1)}(k.|x-y|). cos(angle(x-y, n_y))
-d = x - y; r = abs(d);
-u = (1i*k/4) * besselh(1,k*r) .* real(conj(ny) .* d) ./ r; % real(..)=dot prod
-
-function u = DTkernel(k, x, nx, y, ny) % deriv of single-layer kernel k(x,y),
-% without speed factor due to parametrization.
-% y, ny are source location and normal vector (as C-#s), x, nx are same for
-% target. All may be lists (or matrices) of same size.
-% k is omega the wavenumber.
-% K(s,t) = (ik/4) H_1^{(1)}(k.|x-y|). cos(angle(x-y, -n_x))
-% Is adjoint of Dkernel
-d = y - x; r = abs(d);
-u = (1i*k/4) * besselh(1,k*r) .* real(conj(nx) .* d) ./ r;
 
 function f = Lagrange_SLP_deriv(t, xneqj, k, s, x, nx) % ---------------------
 % evaluate target-deriv of j-th Lagrange basis density SLP

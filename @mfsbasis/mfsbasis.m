@@ -225,21 +225,20 @@ properties
       target = [real(x) imag(x)].';    % since x is col vecs, but want 2-by-N
       iffldtarg = (nargout>1);
       iprec=4;                    % digits precision - should be an opts
-      sc = -1;                    % factor to convert to my i.H_0/4 scaling.
       if ~b.realflag || isreal(co)  % usual complex fundamental solutions
         U = utils.hfmm2dparttarg(iprec,k,N,source,ifcharge,charge,ifdipole,...
-                                 -co.',dipvec,0,0,0,M,target,1,iffldtarg,0);
+                                 co.',dipvec,0,0,0,M,target,1,iffldtarg,0);
         % note the dipole strengths vector has sign change!
-        u = sc * U.pottarg.';
-        if nargout==2          % field is supposedly -grad(potential) ...sign?
-          u1 = sc*(real(p.nx).'.*U.fldtarg(1,:) + ...
-                    imag(p.nx).'.*U.fldtarg(2,:)).';
+        u = U.pottarg.';
+        if nargout==2
+          u1 = (real(p.nx).'.*U.gradtarg(1,:) + ...
+                    imag(p.nx).'.*U.gradtarg(2,:)).';
         elseif nargout==3
-          u1 = sc*U.fldtarg(1,:).'; u2 = sc*U.fldtarg(2,:).';
+          u1 = U.gradtarg(1,:).'; u2 = U.gradtarg(2,:).';
         end
-        if b.realflag, u=real(u); u1=real(u1); u2 = real(u2); end;
+        if b.realflag, u=real(u); u1=real(u1); u2=real(u2); end;
       else                        % real part of (monopole + i.eta.dipole)
-        error('real=1 not implemented!');
+        error('real=1 not implemented for complex coeff vector!');
         % ... do 2 FMMs on the real and imag parts of coefficents, lame
       end
     end

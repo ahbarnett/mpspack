@@ -62,7 +62,7 @@ x = repmat(s.x, [1 Na]); nx = repmat(s.nx, [1 Na]); % target locations & normals
 t = repmat(s.t, [1 Na]) + repmat(tex.'/N, [N 1]); % src curve params
 if ~qp, t = mod(t,1); end                         % wrap into [0,1]
 % Get all curve info from segment at once = fast! (s.Z calls are 600 us, crazy)
-y = s.Z(t); ny = s.Zn(t); sp = abs(s.Zp(t));  % speed funcs at src pts
+y = s.Z(t); yp = s.Zp(t); sp = abs(yp); ny = yp./sp; % speed funcs at src pts
 K = sp .* kerfun(k, x, nx, y, ny); % get all kernel evals at once = fast
 
 for l=1:numel(tex)  % loop over Alpert's nonregular quadr pts

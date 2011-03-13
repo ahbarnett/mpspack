@@ -195,7 +195,7 @@ classdef layerpot < handle & basis
           A = b.a(1) * layerpot.S(k, b.seg, p, o) + ...
               b.a(2) * layerpot.D(k, b.seg, p, o);
         end
-        if self & b.a(2)~=0   % Jump Relation
+        if self && b.a(2)~=0   % Jump Relation
           A(diagind(A)) = A(diagind(A)) + approachside*b.a(2)/2; % DLP val jump
         end
         
@@ -219,10 +219,10 @@ classdef layerpot < handle & basis
           Dn = layerpot.T(b.k, b.seg, p, o);
           Ax = b.a(1) * Ax + b.a(2) * Dn;
         end
-        if self & b.a(2)~=0    % Jump Relations: DLP value jump
+        if self && b.a(2)~=0    % Jump Relations: DLP value jump
           A(diagind(A)) = A(diagind(A)) + approachside*b.a(2)/2;
         end
-        if self & b.a(1)~=0    % SLP normal-derivative jump
+        if self && b.a(1)~=0    % SLP normal-derivative jump
           Ax(diagind(Ax)) = Ax(diagind(Ax)) - approachside*b.a(1)/2;
         end
         
@@ -310,52 +310,61 @@ classdef layerpot < handle & basis
       target = [real(x) imag(x)].';    % since x is col vecs, but want 2-by-N
       iffldtarg = (nargout>1);
       iprec=4;                    % 12 digit precision - should be an opts
-      sc = -1;                    % factor to convert to my i.H_0/4 scaling.
       charge = s.w .* co.';       % charge strengths = quadr weights * density
 
       if ~self                % non-self target (use segment's own quadrature)
         U = utils.hfmm2dparttarg(iprec,k,N,source,ifcharge,b.a(1)*charge,...
-                  ifdipole,-b.a(2)*charge,dipvec,0,0,0,M,target,1,iffldtarg,0);
-              % note the dipole strengths vector above has sign change!
-        u = sc * U.pottarg.';  % as for mfsbasis, scale & convert to column vec
-        if nargout==2          % field is supposedly -grad(potential) ...sign?
-          u1 = sc * (real(p.nx).'.*U.fldtarg(1,:) + ...
-                   imag(p.nx).'.*U.fldtarg(2,:)).';
+                  ifdipole,b.a(2)*charge,dipvec,0,0,0,M,target,1,iffldtarg,0);
+        % note the dipole strengths vector above has sign change!
+        u = U.pottarg.';  % as for mfsbasis, convert to column vec
+        if nargout==2
+          u1 = (real(p.nx).'.*U.gradtarg(1,:) + ...
+                     imag(p.nx).'.*U.gradtarg(2,:)).';
         elseif nargout==3
-          u1 = sc * U.fldtarg(1,:).'; u2 = sc * U.fldtarg(2,:).';
+          u1 = U.gradtarg(1,:).'; u2 = U.gradtarg(2,:).';
         end
-      
-      else                    % self-interaction
+        
+      else                    % -------------- self-interaction
         if nargout==1
           u = utils.hfmm2dpart(iprec,k,N,source,ifcharge,b.a(1)*charge,...
-                               ifdipole,-b.a(2)*charge,dipvec);
-          u = sc * u.';   % scale & convert to col vec
-          if self && b.a(2)~=0   % Jump Relation
+                               ifdipole,b.a(2)*charge,dipvec);
+          u = u.';   % scale & convert to col vec
+          if b.a(2)~=0    % Jump Relation
             u = u + approachside*b.a(2)/2; % DLP val jump
           end
-       % add in effect of quadratures...
-       
-       
-       
-       elseif nargout==2
-          [u fld] = utils.hfmm2dpart(iprec,k,N,source,ifcharge,b.a(1)*charge,...
-                                     ifdipole,-b.a(2)*charge,dipvec);
-          u = sc * u.';   % scale & convert to col vec
-          u1 = sc * (real(p.nx).'.*fld(1,:) + imag(p.nx).'.*fld(2,:)).';
-          if self && b.a(2)~=0   % Jump Relations
+        elseif nargout==2
+          [u grad] =utils.hfmm2dpart(iprec,k,N,source,ifcharge,b.a(1)*charge,...
+                                     ifdipole,b.a(2)*charge,dipvec);
+          u = u.';   % convert to col vec
+          u1 = (real(p.nx).'.*grad(1,:) + imag(p.nx).'.*grad(2,:)).';
+          if b.a(2)~=0             % Jump Relations
             u = u + approachside*b.a(2)/2; % DLP val jump
           end
-          if self && b.a(1)~=0
+          if b.a(1)~=0
             u1 = u1 - approachside*b.a(1)/2; % SLP deriv jump
           end
-        % add in effect of quadratures...
-        
-        
-        
-      else
+        else      % nargout=3
           error('self interaction not implemented for returning [u ux uy]!');
         end
-      end
+        % now add in local effect of quadrature corrections...
+        if isempty(b.quad), warning('self but no quadr correction, crude!'); end
+        if b.quad=='a'   % apply Alpert corrs to coeff vec (opts passed in)
+          if b.a(1)~=0
+            u = u + b.a(1)*quadr.applyalpertcorr(co, k, s, @layerpot.Skernel, o);
+          end
+          if b.a(2)~=0
+            u = u + b.a(2)*quadr.applyalpertcorr(co, k, s, @layerpot.Dkernel, o);
+          end
+          if nargout>1
+            if b.a(1)~=0
+              u1 = u1 + b.a(1)*quadr.applyalpertcorr(co, k, s, @layerpot.DTkernel, o);
+            end
+            if b.a(2)~=0
+              u1 = u1 + b.a(2)*quadr.applyalpertcorr(co, k, s, @layerpot.Tkernel, o);
+            end
+          end
+        end
+      end                    % ------------ end of self-interaction
     end
       
       
@@ -376,5 +385,9 @@ classdef layerpot < handle & basis
     A = localfromDLP(k, s, M, o)                  % Jfilter: S2L for DLP
     A = fundsol(r, k)                             % to replace w/ utils.fundsol
     [B radderivs] = fundsol_deriv(r, cosphi, k, radderivs)
+    u = Skernel(k, x, nx, y, ny)                  % plain kernel functions...
+    u = Dkernel(k, x, nx, y, ny)
+    u = DTkernel(k, x, nx, y, ny)
+    u = Tkernel(k, x, nx, y, ny)
   end % methods
 end
