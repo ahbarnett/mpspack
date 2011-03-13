@@ -215,23 +215,25 @@ classdef problem < handle
     %   domain.inside, which may be approximate.
     %
     %  [u di] = pointsolution(pr, pts, opts) controls certain options, such as:
-    %   opts.fmm = 1 uses Greengard-Gimbutas Helmholtz 2D FMM (wavenumber k>0),
+    %   opts.FMM = 1 uses Greengard-Gimbutas Helmholtz 2D FMM (wavenumber k>0),
     %                (certain bases only: mfsbasis, layerpots). DUMMY FOR NOW.
     %              0 uses direct filling of a dense matrix, hitting coeff vector
     %                (blocked according to opts.nmax, see Note 3, default 1e4)
     %
     %   Notes: 1) changed to reference dofs via bases rather than domains.
     %   2) A separate routine should be written for evaluation of u, u_n on
-    %   boundary.
-    %   3) splits up the computation if list of points is longer than o.nmax.
+    %   boundary. For that matter, u_x and u_y should be accessible anytime too.
+    %   3) splits up the computation if list of points is longer than opts.nmax.
     %   Ensures that not too much memory is eaten up by the computation.
     %   (Timo Betcke)
     %
     % See also GRIDSOLUTION.
       if nargin<3, o = []; end
-      if ~isfield(o, 'nmax'), o.nmax = 1e4; end    % default blocking size
+      if ~isfield(o, 'nmax'), o.nmax = 3e3; end    % default blocking size
       % (since nmax=100 had big 20% speed hit due to oo-matlab overhead).
-      if ~isfield(o, 'fmm'), o.fmm = 0; end        % default evaluation method
+      if isfield(o, 'fmm'), o.FMM = o.fmm; end     % make case-insensitive
+      if ~isfield(o, 'FMM'), o.FMM = 0; end        % default evaluation method
+      if o.FMM, o.nmax = Inf; end                  % don't block the FMM!
       
       if isempty(pr.co), error('coefficient vector is empty!'); end
       if length(p.x)>o.nmax,
@@ -270,9 +272,13 @@ classdef problem < handle
         for i=1:numel(pr.bas)                % loop over all bases...
           b = pr.bas{i};
           if utils.isin(b, d.bas)            % this bas talks to current dom?
-            Ad = b.eval(pointset(p.x(ii)), opts);
-            co = pr.co(pr.basnoff(i)+(1:b.Nf)); % extract coeff vector for basis
-            u(ii) = u(ii) + Ad * co;           % add contrib from this basis obj
+            co = pr.co(pr.basnoff(i)+(1:b.Nf)); % extract coeff vec for basis
+            if o.FMM & b.HFMMable & b.k>0       % Helmholtz only, not k=0!
+              u(ii) = u(ii) + b.evalFMM(co, p.x(ii));
+            else
+              Ad = b.eval(pointset(p.x(ii)), opts); % fill dense matrix
+              u(ii) = u(ii) + Ad * co;           % add effect of this basis obj
+            end
           end
         end
       end

@@ -1,6 +1,6 @@
-% SHOWFIELDS - show 2D gridded data as Re and Im images
+% SHOWFIELD - show 2D gridded data as Re and Im images
 %
-%  SHOWFIELDS(g, h, u, c, name) plots figure with
+%  SHOWFIELD(g, h, u, c, name) plots figure with
 %   2D grid data u(:,:) with x-grid g and y-grid h. name gives the figure
 %   title name, and c the size of the symmetric caxis scale. If u is complex,
 %   shows Re and Im part as separate figures. If c = [], sensibel colorscales

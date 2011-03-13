@@ -1,7 +1,7 @@
 classdef utils
 % UTILS - class of utility routines for mpspack.
 
-% Copyright (C) 2008 - 2010, Timo Betcke, Alex Barnett
+% Copyright (C) 2008 - 2011, Timo Betcke, Alex Barnett
 
   methods(Static)
     
@@ -14,6 +14,13 @@ classdef utils
     [H0 H1] = greengardrokhlinhank103(z);
     [H0 H1] = greengardrokhlinhank106(z);
     
+    % Greengard-Gimbutas HFMM2D library...
+    [U]=hfmm2dparttarg(iprec,zk,nsource,source,ifcharge,charge,ifdipole,...
+                       dipstr,dipvec,ifpot,iffld,ifhess,ntarget,target,...
+                       ifpottarg,iffldtarg,ifhesstarg);
+    [pot,fld,hess,ier]=hfmm2dpart(iprec,zk,nsource,source,ifcharge,charge,...
+                                  ifdipole,dipstr,dipvec);
+
     % inpolygon replacements...
     [cn,on] = inpoly(p,node,edge,TOL)
     i = inpolyc(p,v)

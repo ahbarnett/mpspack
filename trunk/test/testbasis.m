@@ -2,7 +2,7 @@
 % barnett 7/10/08, MFS added 7/20/08, fast hankel and bessel 9/5/08
 % adapted from ~/bdry/inclus/test_evalbasis.m
 % Now creates a `whole plane' domain for each basis to affect.
-% nufbbasis added barnett 7/17/09
+% nufbbasis added barnett 7/17/09.
 %
 % To Do:
 % * make the below test eval nargout=2 and =3. (switch by hand line 55)
@@ -62,9 +62,8 @@ for type = 4:5              % select the cases you want to test here
   end
   
   tic; [A Ax Ay] = b.eval(p, o); t=toc;                 % test nargout=3 case
- %tic; p.nx = ones(size(xx(:))); [A Ax] = b.eval(p, o); % or test nargout=2
- %   p.nx = 1i*p.nx; [A Ay] = b.eval(p, o); t=toc;      % (also for nargout=2)
-  
+  %tic; p.nx = ones(size(xx(:))); [A Ax] = b.eval(p, o); % or test nargout=2
+  %p.nx = 1i*p.nx; [A Ay] = b.eval(p, o); t=toc;      % (also for nargout=2)
   fprintf('\t%d evals (w/ x,y derivs) in %.2g secs = %.2g us per eval\n',...
           numel(A), t, 1e6*t/numel(A))
   n = numel(js);
