@@ -140,7 +140,7 @@ if self % ........... source curve = target curve; can be singular kernel
     
   elseif s.qtype=='p' & o.quad=='a' % ---Alpert log-quadrature w/ rolling diag
     A = A .* repmat(s.w, [N 1]);  % use seg usual quadr weights away from diag
-    A = quadr.alpertizeselfmatrix(A, k, s, @Tkernel, o); % note no 2pi factors
+    A = quadr.alpertizeselfmatrix(A, k, s, @layerpot.Tkernel, o); % note no 2pi factors
     % NOTE: Alpert only applies log-sing correctly, not the hypersingular T,
     % but if two T's are subtracted, it will work fine for the difference.
   
@@ -176,19 +176,6 @@ else % ............................ distant target curve, so smooth kernel
     end
   end
 end
-
-function u = Tkernel(k, x, nx, y, ny) % deriv of double-layer kernel k(x,y),
-% without speed factor due to parametrization.
-% y, ny are source location and normal vector (as C-#s), x, nx are same for
-% target. All may be lists (or matrices) of same size.
-% k is omega the wavenumber.
-% K(s,t) = yukky stuff.
-d = y - x; r = abs(d);
-csrx = conj(nx).*d;                     % (code taken from above)
-csry = conj(ny).*d;             % cos src normals
-cc = real(csry).*real(csrx) ./ (r.*r);      % cos phi cos th
-cdor = real(csry.*csrx) ./ (r.*r.*r);   % cos(phi-th) / r
-u = (1i*k/4)*besselh(1,k*r) .* (-cdor) + (1i*k*k/4)*cc.*besselh(0,k*r);
 
 function f = Lagrange_DLP_deriv(t, xneqj, k, s, x, nx) % -----------------------
 % evaluate target-normal deriv of j-th Lagrange basis density DLP

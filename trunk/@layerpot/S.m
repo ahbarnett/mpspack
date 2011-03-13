@@ -98,7 +98,7 @@ if self % ........... source curve = target curve; can be singular kernel
     
   elseif s.qtype=='p' & o.quad=='a' % ---Alpert log-quadrature w/ rolling diag
     A = A .* repmat(s.w, [N 1]);  % use seg usual quadr weights away from diag
-    A = quadr.alpertizeselfmatrix(A, k, s, @Skernel, o); % note no 2pi factors
+    A = quadr.alpertizeselfmatrix(A, k, s, @layerpot.Skernel, o); % note no 2pi factors
   
   else  % ------ self-interacts, but no special quadr, just use seg's
     % Use the crude approximation of kappa for diag, usual s.w off-diag...
@@ -139,11 +139,3 @@ else % ............................ distant target curve, so smooth kernel
     end
   end
 end
-
-function u = Skernel(k, x, nx, y, ny) % single-layer kernel function k(x,y),
-% without speed factor due to parametrization.
-% y, ny are source location and normal vector (as C-#s), x, nx are same for
-% target. All may be lists (or matrices) of same size.
-% k is omega the wavenumber.
-% returned kernel is K(x,y) = (i/4) H_0^{(1)}(k.|x-y|)
-u = (1i/4) * besselh(0,k*abs(x-y));

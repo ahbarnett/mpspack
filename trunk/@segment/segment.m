@@ -375,6 +375,7 @@ classdef segment < handle & pointset
     function d = dist(s, t)  % ........... crude O(N^2) est of dist(s,t) 
     % DISTANCE - crude estimate min distance from segment to segment/domain
     %
+    % This is O(NM) where N is number of segment points and M # target points!
     % To do: make work on segment or domain array
         if isa(t,'domain')  % recursively call dist on each segment in domain
           d = Inf;
