@@ -1,12 +1,13 @@
 function u = Tkernel(k, x, nx, y, ny)
 % TKERNEL - Kernel function for the T (double-layer potential n-deriv) operator
 %
+% u = Tkernel(k, x, nx, y, ny)
 % deriv of double-layer kernel k(x,y),
 % without speed factor due to parametrization.
 % y, ny are source location and normal vector (as C-#s), x, nx are same for
 % target. All may be lists (or matrices) of same size.
 % k is omega the wavenumber.
-% K(s,t) = yukky stuff.
+% K(s,t) = yukky stuff, see the code.
 d = y - x; r = abs(d);
 csrx = conj(nx).*d;                     % (code taken from above)
 csry = conj(ny).*d;             % cos src normals

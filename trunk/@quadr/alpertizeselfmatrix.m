@@ -14,7 +14,7 @@ function A = alpertizeselfmatrix(A, k, s, kerfun, o)
 %   correctly into t<0 and t>1. Fixes are done appropriate for nei>0 QP scheme.
 %
 % Issues:
-%  1) Matlab makes local copy of whole of A, which is memory-movement bad!
+%  1) Matlab makes local copy of whole of A, which is memory-movement bad, slow!
 %  2) segment.Z, Zp, etc eval calls at general t are slow (600us), so code does
 %     such requests in bulk (vectorized amortizes object-oriented overhead).
 %
@@ -24,6 +24,8 @@ function A = alpertizeselfmatrix(A, k, s, kerfun, o)
 M = size(A,1); N = size(A,2);
 if M~=N, warning('Alpert quadr will fail unless matrix square!'); end
 qp = ~isempty(s.qpblocha); if qp, a = s.qpblocha; end  % handle grating segs
+if o.ord==0, A(diagind(A)) = 0;  % make sure diagonal is zero not NaN etc.
+  return, end     % 0th order does nothing to the offdiag matrix A (as Mike)
 
 [tex,wex,nskip] = quadr.QuadLogExtraPtNodes(o.ord); % get log nodes, wei
 tex = [-tex(end:-1:1); tex]; wex = [wex(end:-1:1); wex]; % make symmetric
@@ -56,13 +58,15 @@ else  % s closed: kill wrapped band diagonal (ie including SW and NE corners)...
   for i=1:N, A(i, mod(i+[-nskip+1:nskip-1]-1, N)+1) = 0; end
 end
 
+%return   % for debug!
+
 % Do set-up for Alpert quadrature extra nodes and weights...
 % These arrays are N-by-Na... note that t params can spill over from [0,1]
 x = repmat(s.x, [1 Na]); nx = repmat(s.nx, [1 Na]); % target locations & normals
 t = repmat(s.t, [1 Na]) + repmat(tex.'/N, [N 1]); % src curve params
 if ~qp, t = mod(t,1); end                         % wrap into [0,1]
 % Get all curve info from segment at once = fast! (s.Z calls are 600 us, crazy)
-y = s.Z(t); yp = s.Zp(t); sp = abs(yp); ny = yp./sp; % speed funcs at src pts
+y = s.Z(t); yp = s.Zp(t); sp = abs(yp); ny = -1i*yp./sp; % speeds at src pts
 K = sp .* kerfun(k, x, nx, y, ny); % get all kernel evals at once = fast
 
 for l=1:numel(tex)  % loop over Alpert's nonregular quadr pts
@@ -70,15 +74,15 @@ for l=1:numel(tex)  % loop over Alpert's nonregular quadr pts
   joffs = floor(tex(l)-ninterp/2+1) + (0:ninterp-1); % nearest interp pts
   % interpolation pts and L = row vec of Lagrange basis funcs eval at dt:
   x = joffs/N; w = utils.baryweights(x); L = utils.baryprojs(x, w, dt);
-  ii = kron(ones(1,ninterp), 1:N);   % i-indices of A to write over
+  ii = repmat(1:N, [1 ninterp]);  % i-indices of A to write over
   jj = ii + kron(joffs, ones(1,N));  % j-indices not yet wrapped into [1,N]
   if qp, wrapphase = a.^-floor((jj-1)/N); end % bloch phase factors of indices
   jj = mod(jj-1, N) + 1;             % j-indices of A to write over
   iii = sub2ind(size(A), ii,jj);     % 1d array indices ditto
   if qp
-    A(iii) = A(iii) + wex(l) * wrapphase .* kron(ones(1,ninterp), K(:,l).') .* kron(L, ones(1,N));
+    A(iii) = A(iii) + wex(l) * wrapphase .* repmat(K(:,l).', [1 ninterp]) .* kron(L, ones(1,N));
   else
-    A(iii) = A(iii) + wex(l) * kron(ones(1,ninterp), K(:,l).') .* kron(L, ones(1,N));
+    A(iii) = A(iii) + wex(l) * repmat(K(:,l).', [1 ninterp]) .* kron(L,ones(1,N));  % This is probably slow because accesses a lot of A's memory for each l!
   end
 end
 % Note the affected elements spill out to dist nskip-1+iord/2 from diag!

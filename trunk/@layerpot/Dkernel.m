@@ -1,6 +1,7 @@
 function u = Dkernel(k, x, nx, y, ny)
 % DKERNEL - Kernel function for the D (double-layer potential value) operator
 %
+% u = Dkernel(k, x, nx, y, ny)
 % double-layer kernel function k(x,y),
 % without speed factor due to parametrization.
 % y, ny are source location and normal vector (as C-#s), x, nx are same for

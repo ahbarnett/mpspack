@@ -330,7 +330,7 @@ classdef layerpot < handle & basis
                                ifdipole,b.a(2)*charge,dipvec);
           u = u.';   % scale & convert to col vec
           if b.a(2)~=0    % Jump Relation
-            u = u + approachside*b.a(2)/2; % DLP val jump
+            u = u + co*(approachside*b.a(2)/2); % DLP val jump
           end
         elseif nargout==2
           [u grad] =utils.hfmm2dpart(iprec,k,N,source,ifcharge,b.a(1)*charge,...
@@ -338,10 +338,10 @@ classdef layerpot < handle & basis
           u = u.';   % convert to col vec
           u1 = (real(p.nx).'.*grad(1,:) + imag(p.nx).'.*grad(2,:)).';
           if b.a(2)~=0             % Jump Relations
-            u = u + approachside*b.a(2)/2; % DLP val jump
+            u = u + co*(approachside*b.a(2)/2); % DLP val jump
           end
           if b.a(1)~=0
-            u1 = u1 - approachside*b.a(1)/2; % SLP deriv jump
+            u1 = u1 - co*(approachside*b.a(1)/2); % SLP deriv jump
           end
         else      % nargout=3
           error('self interaction not implemented for returning [u ux uy]!');

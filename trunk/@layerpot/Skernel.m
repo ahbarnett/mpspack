@@ -1,6 +1,7 @@
 function u = Skernel(k, x, nx, y, ny)
 % SKERNEL - Kernel function for the S (single-layer potential value) operator
 %
+% u = Skernel(k, x, nx, y, ny)
 % single-layer kernel function k(x,y),
 % without speed factor due to parametrization.
 % y, ny are source location and normal vector (as C-#s), x, nx are same for

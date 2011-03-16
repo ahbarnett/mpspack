@@ -274,7 +274,8 @@ classdef problem < handle
           if utils.isin(b, d.bas)            % this bas talks to current dom?
             co = pr.co(pr.basnoff(i)+(1:b.Nf)); % extract coeff vec for basis
             if o.FMM & b.HFMMable & b.k>0       % Helmholtz only, not k=0!
-              u(ii) = u(ii) + b.evalFMM(co, p.x(ii));
+              %b.k(opts)  % check seeing correct wavenumbers
+              u(ii) = u(ii) + b.evalFMM(co, p.x(ii), opts); % opts needed, dom!
             else
               Ad = b.eval(pointset(p.x(ii)), opts); % fill dense matrix
               u(ii) = u(ii) + Ad * co;           % add effect of this basis obj

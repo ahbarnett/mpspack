@@ -1,6 +1,7 @@
 function u = DTkernel(k, x, nx, y, ny)
 % DTKERNEL - Kernel function for the D^T (single-layer potential n-deriv) op
 %
+% u = DTkernel(k, x, nx, y, ny)
 % deriv of single-layer kernel k(x,y),
 % without speed factor due to parametrization.
 % y, ny are source location and normal vector (as C-#s), x, nx are same for

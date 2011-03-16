@@ -1,7 +1,7 @@
 % test Helmholtz-FMM'able basis set evaluations: MFS, layerpot. Barnett 3/11/11
 clear; verb = 0;
 dx = 0.01; g = -1:dx:1; d = domain(); d.k = 10;   % display grid, wavenumber
-basis = 'm';               % which basis type to test: m, s, or d
+basis = 's';               % which basis type to test: m, s, or d
 N = 100; co = randn(N,1);  % basis size and coefficients
 if basis=='m'  % MFS basis
   type = 3; etas = [inf, 0, -d.k]; opts.eta = etas(type); opts.real = 0;
@@ -49,7 +49,7 @@ if verb, figure; subplot(2,3,1); w=real(reshape(u,size(xx)));
   figure; semilogy(abs(v(:)-u(:))); title('errors at gridpoints')
 end
   
-if basis~='m'  % LP so test self-interaction...
+if basis~='m'  % LP, so test self-interaction...
   N = 2e3; s.requadrature(N); co = randn(N,1);  % make more beefy test
   b.quad = 'a'; b.ord = 16;       % quadrature scheme for layerpot
   d = domain(s, 1); b.doms = d; d.bas{1} = b; % choose interior domain (for JRs)
@@ -59,7 +59,7 @@ if basis~='m'  % LP so test self-interaction...
   fprintf('\t%.3g direct evals (& n-derivs) in %.3g secs = %.3g evals/sec\n',...
           numel(A), t, numel(A)/t)
   u = A*co; un = An*co;
-b.quad=[];
+b.quad=[]; % hack for testing, remove!
   tic; [v vn] = b.evalFMM(co, s, o); t=toc;     % do FMM
   fprintf('\tHelmholtz FMM done %.3g secs = %.3g pts (src) per sec\n',...
           t, N/t);
