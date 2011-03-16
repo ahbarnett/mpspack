@@ -43,7 +43,7 @@ fprintf('worst rad cond mode error = %g\n',max(abs([bi;ti])))
 %profile clear; profile on;
 [u d n] = p.braggpowerfracs(struct('table',1)); %profile off; profile viewer
 
-if v, tic; p.showfullfield(struct('ymax', 1)); toc
+if v, tic; p.showfullfield(struct('ymax', 1, 'FMM', 0)); toc % too small for FMM
   title(sprintf('qpsc, obst=%s',ob));
   p.showbdry(struct('arrow',0,'normals',0,'label',0,'blobs',0)); end
 if v>1, figure; p.showthreefields; h = findall(gcf,'Type', 'axes');

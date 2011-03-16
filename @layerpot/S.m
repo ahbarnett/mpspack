@@ -108,7 +108,7 @@ if self % ........... source curve = target curve; can be singular kernel
       % ...
       A(diagind(A)) = 0;
     else
-      eulergamma = -psi(1);
+      eulergamma = -psi(1);  % put the below in for crude diag correction:
       A(diagind(A)) = s.w.*(1i/4-(eulergamma-1+log(k*s.w/4))/2/pi);
     end
   end
