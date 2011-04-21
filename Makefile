@@ -5,11 +5,11 @@
 # Barnett 9/5/08, updated creation of archive & getrevisionnumber 1/21/09
 # simplified 8/5/09
 
-# (C) 2008 - 2010 Alex Barnett and Timo Betcke
+# (C) 2008 - 2011 Alex Barnett and Timo Betcke
 
 #rev := $(shell ./getrevisionnumber)
 #pkg := mpspack-r$(rev)
-pkg := mpspack-1.1beta
+pkg := mpspack-1.1beta-evp
 
 default: all
 

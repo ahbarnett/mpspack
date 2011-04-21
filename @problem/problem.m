@@ -151,6 +151,54 @@ classdef problem < handle
       end % ================ loop over segs
       if nargout==0, pr.A = A; end     % this only stores internally if no outp
     end % func
+
+    
+    function y = applybcmatrixFMM(pr, co, o) % use FMM (if poss) to apply A
+    % APPLYBCMATRIXFMM - use FMM (if poss) to apply system matrix to coeff vec
+    %
+    %  y = applybcmatrixFMM(pr, co) applies the full system matrix A to 
+    %   to the column vector co, outputting the result rhs=A.co.
+    %
+    %  y = applybcmatrixFMM(pr, co, opts) controls certain options:
+    %
+    % ...   in progress ...
+    %
+    % To do: figure out how to group multi segs and bases together into a single
+    % FMM call: for each domain, gather all FMM-able bases segment nodes into
+    % a big vector,
+    % with index pointers saying how long each segment is, and pass to a
+    % fortran code lpevalselfmanycc , to be written...
+    %
+      if nargin<3, o = []; end
+      N = pr.N;
+
+      if 1  % HACK FOR 1 SEGMENT
+      % 1-seg, 1-basis case hack...
+      b = pr.bas{1};
+      s = pr.segs(1);
+% interior:
+%      o.dom = s.dom{2};   % hack for now!
+%      d = s.dom{2};
+
+% exterior:
+      o.dom = s.dom{1};   % hack for now!
+      d = s.dom{1};
+      end
+      
+      if b.HFMMable && d.k>0
+        % check if s.a~=0, etc...  take from fillbcmatrix
+        [u] = b.evalFMM(co, s, o);
+        y = u;  % & need to include s.a factors
+      end
+      
+      % loop over segs, or bases? Bases seems natural since each is FMMable/not
+  %    for i=1:numel(pr.bas), b=pr.bas{i};
+   %     if 
+        
+  %    end
+      y = y .* pr.sqrtwei.';
+    end
+
     
     function [A Ax Ay] = evalbases(pr, p, opts) % .......... eval problem bases
     % EVALBASES - evaluate all basis sets in a domain object, on a pointset
@@ -401,6 +449,7 @@ classdef problem < handle
     % showsolution(pr, opts) also passes in an option structure containing
     %   optional fields:
     %      opts.imag = true, plots imag instead of real part
+    %      opts.logabs = true, plots log of abs value instead of real part
     %      opts.bdry = true, shows boundary too (default)
     %      opts.comparefunc = handle to function to subtract pointwise
     %                         (this function must cope with vector inputs)
@@ -418,25 +467,30 @@ classdef problem < handle
     % Also see: GRIDSOLUTION, SCATTERING.SHOWTHREEFIELDS
       if nargin<2, o = []; end
       if ~isfield(o, 'imag'), o.imag = 0; end
+      if ~isfield(o, 'logabs'), o.logabs = 0; end
       if ~isfield(o, 'bdry'), o.bdry = 0; end
       
       [u gx gy di] = pr.gridsolution(o);   % expensive: do basis evaluations
+      name = 'u';
       
       if isfield(o, 'comparefunc')
         if isa(o.comparefunc, 'function_handle')
           [xx yy] = meshgrid(gx, gy); zz = xx + 1i*yy;
           u = u - o.comparefunc(zz);       % eval comparison func over grid
-        else
-          error('opts.comparefunc must be a function_handle!');
+          name = 'u - f';
+        elseif ~isempty(o.comparefunc)
+          error('opts.comparefunc must be a function_handle, or empty!');
         end
       end
       % note use of transparency outside all domains...
       if o.imag, h = imagesc(gx, gy, imag(u), 'alphadata', ~isnan(di));
-        %title('Im[u]');
+        title(sprintf('Im[%s]', name)); utils.goodcaxis(u); 
+      elseif o.logabs, h = imagesc(gx,gy,log10(abs(u)),'alphadata',~isnan(di));
+        title(sprintf('log_{10} |%s|', name)); caxis([-16 0]);
       else, h = imagesc(gx, gy, real(u), 'alphadata', ~isnan(di));
-        %title('Re[u]');
+        title(sprintf('Re[%s]', name)); utils.goodcaxis(u); 
       end
-      utils.goodcaxis(u); axis equal tight; colorbar; colormap(jet(256));
+      axis equal tight; colorbar; colormap(jet(256));
       set(gca,'ydir','normal'); hold on;
       if o.bdry, pr.showbdry; end
     end % func

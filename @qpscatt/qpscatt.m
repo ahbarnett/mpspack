@@ -23,11 +23,11 @@
 %   representation for the obstacle (adding the evalfty method to other basis
 %   types would be needed to fix this).
 %
-% Issues: * Mt and safedist for the B,T segments should be controllable as opts
+% Issues: * Mt and safedist for the Bseg, Tseg should be controllable as opts
 %
 % See also PROBLEM, BVP, SCATTERING
 
-% Copyright (C) 2010, Alex Barnett
+% Copyright (C) 2010 - 2011, Alex Barnett
 
 classdef qpscatt < scattering & handle
   properties
@@ -41,7 +41,12 @@ classdef qpscatt < scattering & handle
     kpx, kpy                                % k-plane poles (k_x,k_y) (QP waves)
     kpn                                     % Bragg orders of these poles
     ikpfix                                  % indices of k_y for poles to cross
-    B, T                                    % segments T,B for Bragg ampl fix
+    Bseg, Tseg                              % segments T,B for Bragg ampl fix
+    B                                       % B dense matrix block
+    C                                       % C dense matrix block
+    Q                                       % Q block-diagonal matrix block
+    braggrows                               % 0,1 or 2 final Wood's rows of E
+    E                                       % full E system matrix / applier
   end
   
   methods % -------------------------------- methods particular to qpscatt
@@ -62,15 +67,15 @@ classdef qpscatt < scattering & handle
         % choose a periodizing basis for the qpstrip...
         pr.t.addqpftylayerpots(struct('M',pr.M,'nearsing',5)); % NB default!
         % create sensible B, T segments...
-        Mt = 20; safedist = 0.5;          % Mt, safedist could dep on omega?
+        Mt = 30; safedist = 0.5;          % Mt, safedist could dep on omega?
         yB = min(imag(airdoms.x)) - safedist;
         yT = max(imag(airdoms.x)) + safedist;
         if isempty(yB) | isempty(yT)
           error('unable to choose yB and/or a yT segments!'); end
-        pr.B = segment(Mt, 1i*yB+[-d/2,d/2], 'p');
-        pr.T = segment(Mt, 1i*yT+[d/2,-d/2], 'p');
-        pr.T.x = pr.T.x + pr.T.w(1)/2;
-        pr.B.x = pr.B.x - pr.B.w(1)/2; % safely away from walls 1/2 a gridpoint
+        pr.Bseg = segment(Mt, 1i*yB+[-d/2,d/2], 'p');
+        pr.Tseg = segment(Mt, 1i*yT+[d/2,-d/2], 'p');
+        pr.Tseg.x = pr.Tseg.x + pr.Tseg.w(1)/2;
+        pr.Bseg.x = pr.Bseg.x - pr.Bseg.w(1)/2; % safely away from walls 1/2 a gridpoint
       end
     end
 
@@ -159,7 +164,6 @@ classdef qpscatt < scattering & handle
       hold on; plot([o; pr.kpx(i)/pr.k],[o; pr.kpy(i)/pr.k],'m-','linewidth',3);
     end
     
-   
     function rhs = fillrighthandside(pr)
     % FILLRIGHTHANDSIDE - overloads BVP routine, setting mismatch and discrep
     %
@@ -171,35 +175,18 @@ classdef qpscatt < scattering & handle
       if nargout==0, pr.rhs = rhs; end     % this only stores pr.rhs if no outp
     end
 
-    function A = fillbcmatrix(pr, opts)
-    % FILLBCMATRIX - fills [A B;C Q] for QP scatt prob: dofs->mismatch/discrep
-    %
-    % Issues/Notes:
-    %  * obst bases affecting extdom (airdoms) can only be LPs (since need to
-    %    use evalfty). Would need evalfty methods for other exterior basis sets.
-    %  * everything dense. Need replace Q by diagonal multiplication
-    %    method, and make A a method not a matrix for FMM case.
-    %    Better, make A a struct with mult method, B, C, and diag(Q) in it.
-      bob = pr;                        % following fillbcmatrix@problem
-      N = bob.setupbasisdofs;          % sets up obst dofs in pr
+    function B = fillBmatrix(pr)
+    % FILLBMATRIX - fill B matrix property in a qpscatt problem
+      N = pr.setupbasisdofs;          % sets up obst dofs in pr
       M = numel(pr.sqrtwei);
       t = pr.t;                        % the qpstrip domain
       Nq = pr.t.setupbasisdofs;        % qpstrip domain's QP bases
       Mq = pr.t.bas{1}.Nf;             % # FTyLP quadr pts, 1/2 the discrep dofs
       nb = numel(pr.t.bas);            % how many QP bases in t
       nei = pr.nei; buf = pr.buf; d = pr.d; a = pr.a; % get Bloch alpha
-      
-      % fill Q...
-      Q = t.evalbasesdiscrep();        % is block-diag - need not really fill!
-      
-      % fill A: self, then directly sum neighbor images contribs...
-      A = fillbcmatrix@problem(pr);    % obstdofs->mismatch block
-      for n=[-nei:-1 1:nei]
-        Ac = fillbcmatrix@problem(pr, struct('trans',-d*n, 'doms',pr.extdom));
-        A = A + a^n * Ac;
-      end
+
       % fill B: effect of FTyLPs on the airdom-touching segs in pr...
-      B = zeros(M, Nq); m = 0;                                  % B row counter
+      B = zeros(M, Nq); m = 0;                             % B row counter
       for s=pr.segs           % loop over segs -------------------
         if s.bcside==0                       % matching, may be dielectric
           if s.dom{1}.isair~=s.dom{2}.isair    % air-nonair (ext-nonext) junct
@@ -242,7 +229,20 @@ classdef qpscatt < scattering & handle
         end
         m = ms(end);                    % update counter in either case
       end % ------------------ segs loop
-      
+      if nargout==0, pr.B = B; end   % store in problem
+    end
+
+    function C = fillCmatrix(pr)
+    % FILLCMATRIX - fill C matrix property in a qpscatt problem
+      bob = pr;                        % following fillbcmatrix@problem
+      N = bob.setupbasisdofs;          % sets up obst dofs in pr
+      M = numel(pr.sqrtwei);
+      t = pr.t;                        % the qpstrip domain
+      Nq = pr.t.setupbasisdofs;        % qpstrip domain's QP bases
+      Mq = pr.t.bas{1}.Nf;             % # FTyLP quadr pts, 1/2 the discrep dofs
+      nb = numel(pr.t.bas);            % how many QP bases in t
+      nei = pr.nei; buf = pr.buf; d = pr.d; a = pr.a; % get Bloch alpha
+
       % fill C: discrep of airdoms-affecting obst bases (must be LPs!) in pr...
       C = zeros(2*Mq, N); f = utils.copy(t.bas{1}.lp); % dummy bas, transl evals
       o = []; o.dom = pr.extdom; % must be a single exterior domain
@@ -257,13 +257,43 @@ classdef qpscatt < scattering & handle
           end  % careful, since L's phase = 1 always
         end
       end  % bob basis loop
+      if nargout==0, pr.C = C; end   % store in problem
+    end
+    
+    function fillbcmatrix(pr, opts)     % ........ overloads @problem
+    % FILLBCMATRIX - dense E=[A B;C Q] for QP scatt prob: dofs->mismatch/discrep
+    %
+    % Issues/Notes:
+    %  * obst bases affecting extdom (airdoms) can only be LPs (since need to
+    %    use evalfty). Would need evalfty methods for other exterior basis sets.
+    %  * everything dense. Need replace Q by diagonal multiplication
+    %    method, and make A a method not a matrix for FMM case.
+      bob = pr;                        % following fillbcmatrix@problem
+      N = bob.setupbasisdofs;          % sets up obst dofs in pr
+      M = numel(pr.sqrtwei);
+      t = pr.t;                        % the qpstrip domain
+      Nq = pr.t.setupbasisdofs;        % qpstrip domain's QP bases
+      Mq = pr.t.bas{1}.Nf;             % # FTyLP quadr pts, 1/2 the discrep dofs
+      nb = numel(pr.t.bas);            % how many QP bases in t
+      nei = pr.nei; buf = pr.buf; d = pr.d; a = pr.a; % get Bloch alpha
       
-      pr.A = [A B; C Q];       % stack the full E matrix (it's called A)
+      % fill Q...
+      Q = t.evalbasesdiscrep();        % is block-diag - need not really fill!
+      
+      % fill A: self, then directly sum neighbor images contribs...
+      A = fillbcmatrix@problem(pr);    % obstdofs->mismatch block
+      for n=[-nei:-1 1:nei]
+        Ac = fillbcmatrix@problem(pr, struct('trans',-d*n, 'doms',pr.extdom));
+        A = A + a^n * Ac;
+      end
+      B = pr.fillBmatrix;
+      C = pr.fillCmatrix;
+      pr.E = [A B; C Q];       % stack the full E matrix (but discard blocks)
       
       if ~isempty(pr.ikpfix)   % augment matrix w/ extra rows for Wood's fix ...
         [RO RI] = pr.fillbraggamplrow(pr.ikpfix,struct('side','B'));   % get Bragg ampl matrix
         RI = RI.*repmat(1./sqrt(sum(RI.^2, 2)), [1 size(RI,2)]); % row-normalize
-        pr.A = [pr.A; RI];     % append block row to E
+        pr.E = [pr.E; RI];     % append block row to E
       end  
     end % fillbcmatrix
     
@@ -282,7 +312,7 @@ classdef qpscatt < scattering & handle
     % Notes: adapted from code polesftylp.m. k-scaling removed, to meas coeffs
       if nargin<3, o = []; end
       if ~isfield(o, 'side'), o.side = 'B'; end    % default is ampls below
-      if o.side=='B', S = pr.B; elseif o.side=='T', S = pr.T;
+      if o.side=='B', S = pr.Bseg; elseif o.side=='T', S = pr.Tseg;
       else error('invalid opts.side'); end
       [AS ASn] = pr.evalbases(S); % evals all bases (obst + QP) on S pointset
       %[AS ASn] = pr.evalbases(S, struct('dom', pr.extdom)); % evals all bases (obst + QP) on S pointset
@@ -308,7 +338,7 @@ classdef qpscatt < scattering & handle
     %
     % [bo to bi ti] = BRAGGAMPL(pr) returns Bragg amplitudes for all orders
     %   present in pr.kpn Bragg order list. They are computed using matrices
-    %   evaluated on (asssumed sensible) existing pr.B and pr.T segments.
+    %   evaluated on (asssumed sensible) existing pr.Bseg & pr.Tseg segments.
     %   pr is the qpscatt problem object, which must have coefficients pr.co.
     %   bo means bottom outgoing, to top outgoing, bi bottom incoming, ti top
     %   incoming. A typical radiation condition is therefore bi & ti vanish.
@@ -355,8 +385,8 @@ classdef qpscatt < scattering & handle
       angfacs = angfacs/kpyo;  % hack for diel (ends on this line)
       [bo to bi ti] = pr.braggampl(i, o);
       if ~o.noinc
-        bo(j0) = bo(j0) + pr.ui(1i*imag(pr.B.x(1))); % add inc PW ampl
-        ti(j0) = ti(j0) + pr.ui(1i*imag(pr.T.x(1))); % " (irrelevant, ti unused)
+        bo(j0) = bo(j0) + pr.ui(1i*imag(pr.Bseg.x(1))); % add inc PW ampl
+        ti(j0) = ti(j0) + pr.ui(1i*imag(pr.Tseg.x(1))); % " (irrelevant, ti unused)
       end
       u = to.*conj(to).*angfacs.';
       d = bo.*conj(bo).*angfacs.';
@@ -364,6 +394,50 @@ classdef qpscatt < scattering & handle
         fprintf('\t\tBragg order\tflux fracs: up\t\t\tdown\n')
         disp([n u d]); fprintf('Bragg tot flux err = %.3g\n',sum([u;d])-1)
       end
+    end
+    
+    function y = applybcmatrixFMM(pr, co, o) % use FMM (if poss) to apply E
+    % APPLYBCMATRIXFMM - use FMM (if poss) to apply sys matrix E to coeff vec
+      N = pr.N;
+      Nw = numel(pr.ikpfix);        % # wood's rows in E
+      eta = co(1:N); xi = co(N+1:end-Nw); xiw = co(end-Nw+1:end); % split co
+      mism = pr.applybcmatrixFMM@problem(eta,o) + pr.B*[xi;xiw];
+      ftydiscrep = pr.C*eta + pr.Q*[xi;xiw];
+      if Nw==0
+        y = [mism; ftydiscrep];
+      else
+        radcond = pr.braggrows * co;
+        y = [mism; ftydiscrep; radcond];
+      end
+    end
+
+    function co = solvecoeffs(pr, o) % ................. overloads @bvp
+    % SOLVECOEFFS - solve a QPSCATT for basis coefficients (poss. after filling)
+    %
+    %  co = solvecoeffs(pr) where pr is a QPSCATT object, sets up RHS and the
+    %   system matrix, then does a dense linear solve (which is the default).
+    %
+    %  co = solvecoeffs(pr, opts) lets the user control the solution options:
+    %    opts.FMM = 0 or 1 controls if a dense matrix or FMM is used
+    %                 to apply the operator
+    %    opts.meth = 'factor' or 'iter' controls solution method, dense
+    %                factorization, or GMRES iterations.
+    %
+    %  See also: FILLBCMATRIX, APPLYBCMATRIX, LINSOLVE
+    
+      if nargin<2, o = []; end      
+      if ~isfield(o, 'FMM'), o.FMM = 0; end             % default applier
+      o.matname = 'E';               % tell linsolve to act on pr.E not pr.A
+      if o.FMM==1
+        pr.fillBmatrix;
+        pr.fillCmatrix;   
+        pr.Q = sparse(pr.t.evalbasesdiscrep());         % hack to make sparse!
+     %   pr.Q = pr.t.evalbasesdiscrep();
+        %...
+        pr.E = @(co) pr.applybcmatrixFMM(co, o);   % E applier function
+      end
+      co = solvecoeffs@bvp(pr,o);      % pass to usual solver
+      if nargout==0, pr.co = co; end   % only store internally if no output
     end
     
     function [u di] = pointsolution(pr, p, o) % ............. overloads @problem
@@ -434,11 +508,6 @@ classdef qpscatt < scattering & handle
         end
       end
     end % func
-    
-    %function [u gx gy di] = gridincidentwave(pr, o) % ...overloads @scattering
-    %  if nargin<2, o = []; end
-    %  [u gx gy di] = gridincidentwave
-    
 
     function [A Ax Ay] = evalbases(pr, p, opts) % ........ eval obst + QP bases
     % EVALBASES - evaluate all basis sets in a domain object, on a pointset
