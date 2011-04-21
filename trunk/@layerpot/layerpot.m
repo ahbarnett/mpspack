@@ -27,6 +27,7 @@ classdef layerpot < handle & basis
     fast                            % Hankel function evaluation method (0,1,2)
     Jfilter                         % (optional) Jfilter structure
     self                            % self-int matrix struct, w/ S, D, DT, T
+    qp                              % quasi-periodic neighbor copies info
   end
 
   methods
@@ -273,13 +274,20 @@ classdef layerpot < handle & basis
       %  object containing M points, and c is a coefficient vector, returns
       %  u, the layer potential values at each target point m=1...M as a column
       %  vector. (Note p may also be a column vector of points in the C plane.)
-      %  The Helmholtz fast multipole method of Gimbutas-Greengard is called.
+      %  The Helmholtz fast multipole method of Gimbutas-Greengard is called,
+      %  and the LP2D tools. These must be present. If p is a segment object,
+      %  its quadrature nodes and normal vectors will be used as targets. If
+      %  this segment is the same one as in the layerpot basis, self-evaluation
+      %  is required, which uses a quadrature scheme for the singular integral
+      %  operators, and the jump relations are applied based on which side of
+      %  the segment is implied by opts.dom (see below).
       %
       % [u un] = evalFMM(b, p, c) also returns gradient of potential in the
       %  normal directions contained in the pointset p.nx.
       %
       % [u ux uy] = evalFMM(b, p, c) also returns gradient of potential in the
       %  x and y directions, ie its partials. (pointset normals not used).
+      %  Not implemented (or meaningful) for self-evaluation!
       %
       % [u ...] = evalFMM(b, p, c, opts) controls options.
       %   The optional argument opts may contain the following fields:
@@ -287,11 +295,12 @@ classdef layerpot < handle & basis
       %     p being the segment on which the LP density sits, opts.dom must be
       %     defined, since it resolves which sign the jump relation has.
       %
-      %  To do: make it handle a segment list target, with correct
+      %  To do: make it (of lpselfevalcc) handle a segment list target, correct
       %         accounting of self-eval. Pass all non-self targs in a single
-      %         FMM pass so can handle large numbers of segments efficiently
+      %         FMM pass so can handle large numbers of segments efficiently.
+      %         Similarly could handle a list of bases. Pass all to lpevalselfcc
       %
-      % See also: EVAL
+      % See also: EVAL, LP2D/LPEVALSELFCC
       if nargin<4, o = []; end
       if isnumeric(p), x = p; else x = p.x; end    % allow point list target
       self = (p==b.seg); % if true, local eval on segment which carries density
@@ -304,17 +313,17 @@ classdef layerpot < handle & basis
         if o.dom==p.dom{1}, approachside = +1; end  % instead dom on + normal
       end
       k = b.k(o);               % method gets k from affected domain (o.dom)
-      ifcharge = (b.a(1)~=0); ifdipole = (b.a(2)~=0);
+      ifslp = (b.a(1)~=0); ifdlp = (b.a(2)~=0);
       s = b.seg; N = numel(s.x); M = numel(x);  % NB s.x & s.nx are col vecs:
-      source = [real(s.x) imag(s.x)].'; dipvec = [real(s.nx) imag(s.nx)].';
+      node = [real(s.x) imag(s.x)].'; nvec = [real(s.nx) imag(s.nx)].';
       target = [real(x) imag(x)].';    % since x is col vecs, but want 2-by-N
       iffldtarg = (nargout>1);
       iprec=4;                    % 12 digit precision - should be an opts
-      charge = s.w .* co.';       % charge strengths = quadr weights * density
 
       if ~self                % non-self target (use segment's own quadrature)
-        U = utils.hfmm2dparttarg(iprec,k,N,source,ifcharge,b.a(1)*charge,...
-                  ifdipole,b.a(2)*charge,dipvec,0,0,0,M,target,1,iffldtarg,0);
+        charge = s.w .* co.';       % charge strengths = quadr weights * density
+        U = utils.hfmm2dparttarg(iprec,k,N,node,ifslp,b.a(1)*charge,...
+                  ifdlp,b.a(2)*charge,nvec,0,0,0,M,target,1,iffldtarg,0);
         % note the dipole strengths vector above has sign change!
         u = U.pottarg.';  % as for mfsbasis, convert to column vec
         if nargout==2
@@ -324,45 +333,23 @@ classdef layerpot < handle & basis
           u1 = U.gradtarg(1,:).'; u2 = U.gradtarg(2,:).';
         end
         
-      else                    % -------------- self-interaction
-        if nargout==1
-          u = utils.hfmm2dpart(iprec,k,N,source,ifcharge,b.a(1)*charge,...
-                               ifdipole,b.a(2)*charge,dipvec);
-          u = u.';   % scale & convert to col vec
-          if b.a(2)~=0    % Jump Relation
-            u = u + co*(approachside*b.a(2)/2); % DLP val jump
-          end
-        elseif nargout==2
-          [u grad] =utils.hfmm2dpart(iprec,k,N,source,ifcharge,b.a(1)*charge,...
-                                     ifdipole,b.a(2)*charge,dipvec);
-          u = u.';   % convert to col vec
-          u1 = (real(p.nx).'.*grad(1,:) + imag(p.nx).'.*grad(2,:)).';
-          if b.a(2)~=0             % Jump Relations
-            u = u + co*(approachside*b.a(2)/2); % DLP val jump
-          end
+      else                    % -------------- self-interaction, via LP2D
+        if b.quad~='a', error('only know how to apply Alpert quad!'); end
+        if numel(find(b.ord==[0 4 8 16]))~=1, error('unknown Alpert order');end
+        
+        U = lpevalselfcc(node,nvec,s.speed'/(2*pi), ifslp,b.a(1)*co.', ifdlp,...
+                   b.a(2)*co.', k, b.qp, b.ord, iprec, [], 1, iffldtarg);
+        u = U.pot;   % convert to col vec
+        if b.a(2)~=0    % Jump Relation
+          u = u + co*(approachside*b.a(2)/2); % DLP val jump
+        end
+        if nargout==2
+          u1 = U.nd;  % col vec
           if b.a(1)~=0
             u1 = u1 - co*(approachside*b.a(1)/2); % SLP deriv jump
           end
-        else      % nargout=3
+        elseif nargout==3
           error('self interaction not implemented for returning [u ux uy]!');
-        end
-        % now add in local effect of quadrature corrections...
-        if isempty(b.quad), warning('self but no quadr correction, crude!'); end
-        if b.quad=='a'   % apply Alpert corrs to coeff vec (opts passed in)
-          if b.a(1)~=0
-            u = u + b.a(1)*quadr.applyalpertcorr(co, k, s, @layerpot.Skernel, o);
-          end
-          if b.a(2)~=0
-            u = u + b.a(2)*quadr.applyalpertcorr(co, k, s, @layerpot.Dkernel, o);
-          end
-          if nargout>1
-            if b.a(1)~=0
-              u1 = u1 + b.a(1)*quadr.applyalpertcorr(co, k, s, @layerpot.DTkernel, o);
-            end
-            if b.a(2)~=0
-              u1 = u1 + b.a(2)*quadr.applyalpertcorr(co, k, s, @layerpot.Tkernel, o);
-            end
-          end
         end
       end                    % ------------ end of self-interaction
     end

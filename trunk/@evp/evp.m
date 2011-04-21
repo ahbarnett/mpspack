@@ -4,9 +4,9 @@
 %   domain along with its segments the boundary conditions they carry, and
 %   the basis sets associated with the domain.
 %
-%   Preliminary version: only one domain is supported, with Dirichlet BCs,
-%   and the only solution method is 
-%   root-search on the Fredholm determinant of Id minus double-layer operator.
+%   Preliminary version: only one domain is supported, with Dirichlet or
+%   Neumann [unfinished] BCs, and the only solution method is 
+%   root-search on the Fredholm determinant of Id/2 -+ (double-layer operator).
 
 % Copyright (C) 2010 - 2011, Alex Barnett, Timo Betcke
 
@@ -19,6 +19,7 @@ classdef evp < problem & handle
                               %   err.minsigj - min op sing vals (col vec)
     ndj                       % normal derivatives (cols of array) of modes
     kwin                      % wavenumber window in which kj were requested
+    intpts                    % interior pointset
   end
 
   methods % ----------------------------------------- particular to EVP
@@ -56,8 +57,8 @@ classdef evp < problem & handle
     %     opts.modes = 0,1 : if true, compute modes (storing in p)
     %
     % Currently the only solution method is root-search on the Fredholm
-    %  determinant of Id minus double-layer operator, for a single domain, with
-    %  Dirichlet BCs everywhere on the boundary.
+    %  determinant of Id +- 2(double-layer operator), for a single domain, with
+    %  Dirichlet or Neumann BCs everywhere on the boundary.
     %
     % Notes / issues:
     % * Still very alpha code!
@@ -107,8 +108,79 @@ classdef evp < problem & handle
       if nargout>3, ndj = p.ndj; end
     end
     
+    function [t co] = tension(p, k, o) % crude, one method for now
+      if nargin<3, o = []; end
+      if ~isfield(o, 'eps'), o.eps = 1e-14; end
+      wantvec = nargout>1;
+      p.setoverallwavenumber(k);
+      A = p.fillbcmatrix;
+      B = p.evalbases(p.intpts);
+      if 0 %    unregularized GSVD
+        if wantvec
+          [UU VV X C S] = gsvd(A,B,0);  % co gives eigvecs as rows
+          co = X;
+          t = sqrt(diag(C'*C)./diag(S'*S));
+        else, t = gsvd(A,B); end
+      else
+      % reg GSVD. Timo's code from hassell/bnds/tensionsq.m :
+      [Q,R]=qr([A;B],0); [U,S,V]=svd(R); S=diag(S);
+      ii = abs(S)>o.eps*max(abs(S));   % note I scaled it to max(sig val)
+      %numel(ii) % rank
+      Q=Q*U(:,ii);  % cols of Q now onb for Col[A;B] at numerical rank.
+      if wantvec
+        [UU VV X C S] = gsvd(Q(1:size(A,1),:),Q(size(A,1)+1:end,:));
+        co = R*(V(:,ii) * X);   % rotate eigvecs back: coeffs wrong ???
+        t = sqrt(diag(C'*C)./diag(S'*S));
+      else
+        t = gsvd(Q(1:size(A,1),:),Q(size(A,1)+1:end,:));
+      end
+      end
+    end
+    
+    function [kj err coj sweep] = crudempssolvespectrum(p, kwin) % for Nilima
+      dk = (kwin(2)-kwin(1))/100;
+      ks = kwin(1):dk:kwin(2); ts = nan(p.N, numel(ks));   % tension sweep
+      disp('sweeping...')
+      for i=1:numel(ks), k=ks(i);
+        t = p.tension(k); ts(1:numel(t),i) = t;
+      end
+      sweep.ts = ts; sweep.ks = ks;
+               figure; plot(ks, ts, '-+'); axis([kwin(1) kwin(2) 0 1]); drawnow; kj =0; err=0; coj = 0; return;
+      mt = min(ts, [], 1);
+      kinit = ks(find(mt<0.01));  % initial guesses
+      op = optimset('tolX',1e-12,'display', 'iter');
+      disp('optimizing...')
+      for j=1:numel(kinit), kinit(j)
+        [kj(j) tj(j) flag(j) outp(j)] = fminbnd(@(k) min(p.tension(k))^2, ...
+                                                kinit(j)-dk,kinit(j)+dk,op);
+      end
+      [kj,I] = sort(kj,'ascend');
+      newj = [1 1+find(abs(diff(kj))>1e-7)]; % remove duplicates: need max k err
+      kj = kj(newj);
+      coj = nan(p.N, numel(kj));  % now get coeffs... (I don't believe these)
+      disp('getting coeffs...')
+      for j=1:numel(kj)
+        [t co] = p.tension(kj(j)); coj(:,j) = co(:,1); err.tj(j) = t(1);
+      end
+    end
+    
+    
+    function setupintpts(p, I) % crappy slow for now. 3/24/11
+      intpts = zeros(I,1);
+      go = p.gridboundingbox; bb = go.bb; clear go
+      i = 1;
+      while i<I
+        intpts(i) = bb(1)+rand(1)*(bb(2)-bb(1)) + ...
+            1i*(bb(3)+rand(1)*(bb(4)-bb(3)));
+        if ~isnan(p.domainindices(pointset(intpts(i)))), i=i+1; end
+      end
+      p.intpts = pointset(intpts);
+    end
+    
     function A = fillfredholmop(p, k) % .... helper for solvespectrum meth='fd'
     % FILLFREDHOLMOP - fill l^2 normed (sqrtwei) layer-potential matrix at k
+    %
+    % This works for Dirichlet (bc='D', lp='d') or Neumann (bc='N', lp='s')
       p.setoverallwavenumber(k);
       A = p.fillbcmatrix;   % fill matrix mapping density values to field values
       N = size(A,1); if size(A,2)~=N, error('A must be square!'); end
@@ -158,13 +230,16 @@ classdef evp < problem & handle
       if nargin<4, o = []; end
       if ~isfield(o, 'iter'), o.iter = 1; end   % default iterative
       
-      A = p.fillfredholmop(k);      % (I - 2D) in Dirichlet case
+      A = p.fillfredholmop(k);      % (I - 2D) in Dirichlet, (I + 2D^T) Neu
       if o.iter
         [u e v info] = utils.minsingvalvecs(A);  % iterative O(N^3) small const
         if info.flag, error('info.flag failed from utils.minsingvalvec; try setting opts.iter=0 instead!'); end
       else
         [U S V] = svd(A); u = U(:,end); v = V(:,end); e = S(end,end); % slow
       end
+      if p.segs(1).a==0, z = u; u = v; v = z; end % for Neu case, swap u,v HACK
+      % need to correctly normalize Neu case now... (specrowdiff needed)
+      % ...
       co = v ./ p.sqrtwei.';        % density, convert from l^2 to value vector
       % L sv's are R sv's w/ D^*, so u gives boundary function...
       s = p.segs;                   % assume only a single segment!
