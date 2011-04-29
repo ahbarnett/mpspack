@@ -12,11 +12,11 @@ function [Ax, Aw] = QuadNodesInterval(a, b, N, h, corra, corrb, order)
     if (corra == 0)
 	NodesToSkipL = 0;
     elseif (corra == 1)
-	[ExtraNodesL, ExtraWeightsL, NodesToSkipL] = QuadSmoothExtraPtNodes(order);
+	[ExtraNodesL, ExtraWeightsL, NodesToSkipL] = quadr.QuadSmoothExtraPtNodes(order);
     elseif (corra == 2)
-	[ExtraNodesL, ExtraWeightsL, NodesToSkipL] = QuadSqrtExtraPtNodes(order);
+	[ExtraNodesL, ExtraWeightsL, NodesToSkipL] = quadr.QuadSqrtExtraPtNodes(order);
     elseif (corra == 3)
-	[ExtraNodesL, ExtraWeightsL, NodesToSkipL] = QuadLogExtraPtNodes(order);
+	[ExtraNodesL, ExtraWeightsL, NodesToSkipL] = quadr.QuadLogExtraPtNodes(order);
     else
 	error(sprintf('Unknown endpoint corretion method corra=%d', corra));
     end
@@ -24,11 +24,11 @@ function [Ax, Aw] = QuadNodesInterval(a, b, N, h, corra, corrb, order)
     if (corrb == 0)
 	NodesToSkipR = 0;
     elseif (corrb == 1)
-	[ExtraNodesR, ExtraWeightsR, NodesToSkipR] = QuadSmoothExtraPtNodes(order);
+	[ExtraNodesR, ExtraWeightsR, NodesToSkipR] = quadr.QuadSmoothExtraPtNodes(order);
     elseif (corrb == 2)
-	[ExtraNodesR, ExtraWeightsR, NodesToSkipR] = QuadSqrtExtraPtNodes(order);
+	[ExtraNodesR, ExtraWeightsR, NodesToSkipR] = quadr.QuadSqrtExtraPtNodes(order);
     elseif (corrb == 3)
-	[ExtraNodesR, ExtraWeightsR, NodesToSkipR] = QuadLogExtraPtNodes(order);
+	[ExtraNodesR, ExtraWeightsR, NodesToSkipR] = quadr.QuadLogExtraPtNodes(order);
     else
 	error(sprintf('Unknown endpoint corretion method corrb=%d', corrb));
     end
