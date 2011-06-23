@@ -5,8 +5,12 @@
 %   the basis sets associated with the domain.
 %
 %   Preliminary version: only one domain is supported, with Dirichlet or
-%   Neumann [unfinished] BCs, and the only solution method is 
-%   root-search on the Fredholm determinant of Id/2 -+ (double-layer operator).
+%   Neumann BCs.
+%
+%   Solution methods available are:
+%    * root-search on the Fredholm determinant of Id -+ 2D (double-layer op).
+%    * crude version of MPS on a single domain with multiple segments.
+%    * weighted-NtD scaling method with various prediction orders
 
 % Copyright (C) 2010 - 2011, Alex Barnett, Timo Betcke
 
@@ -19,7 +23,7 @@ classdef evp < problem & handle
                               %   err.minsigj - min op sing vals (col vec)
     ndj                       % normal derivatives (cols of array) of modes
     kwin                      % wavenumber window in which kj were requested
-    intpts                    % interior pointset
+    intpts                    % interior pointset (used only for MPS)
   end
 
   methods % ----------------------------------------- particular to EVP
@@ -46,15 +50,28 @@ classdef evp < problem & handle
     %   The problem also stores the kj list as p.kj
     %
     % [kj err coj ndj] = ... also returns basis coeffcients, normal derivatives,
-    %   and error estimates struct, if possible.
+    %   and error estimates struct, if possible. Certain methods may return
+    %   empty arrays for some of these.
+    %
+    % SOLVESPECTRUM(p, [klo khi]) with no output argument stores kj and err
+    %   (and if opts.modes=1, also ndj) as property fields in the object p.
     %
     % [...] = SOLVESPECTRUM(p, [klo khi], meth, opts) allows one to choose the
     %   method,
     %     meth = 'fd' : Fredholm det (layer-potential bases only)
     %                   Error estimates are dist to real axis of Boyd roots
-    %   and choose options,
+    %     meth = 'ntd' : weighted-Neumann-to-Dirichlet scaling method
+    %                   (star-shaped domains with single segment only)
+    %                   coj is returned empty since all bdry data is in ndj.
+    %
+    %   and/or choose options,
     %     opts.verb = 0,1,... : verbosity (0=silent, 1=diagnostic text, ...)
     %     opts.modes = 0,1 : if true, compute modes (storing in p)
+    %                  (note, for ntd khat='o', requesting modes not extra work)
+    %     opts.eps : size of k-window over which meth='ntd' extrapolates
+    %                (default is 0.2/(max radius of domain))
+    %     opts.khat = ntd k_hat predict method: 'l' linear, 'o' frozen-f ODE.
+    %     opts.fhat = ntd f_hat predict method: 'f' use f*, 'l' lin, 's' 2nd-o
     %
     % Currently the only solution method is root-search on the Fredholm
     %  determinant of Id +- 2(double-layer operator), for a single domain, with
@@ -65,18 +82,19 @@ classdef evp < problem & handle
     % * keep more data of all the det evals, pass out?
       if nargin<3 | isempty(meth), meth='fd'; end   % default method
       if nargin<4, o = []; end
-      if ~isfield(o, 'tol'), o.tol = 1e-8; end   % requested tolerance
+      if ~isfield(o, 'tol'), o.tol = 1e-8; end   % tolerance for Boyd rootfind
       if ~isfield(o, 'verb'), o.verb = 1; end; v = o.verb; % default verbosity
       if ~isfield(o, 'modes'), o.modes = 0; end
       if numel(p.doms)~=1, warning('problem has more than one domain...'); end
       d = p.doms;                            % the domain(s)
       d1 = d(1);            % the first domain
       wantmodes = nargout>2 | o.modes;
+      if v, fprintf('solvespectrum: wantmodes = %d\n', wantmodes); end
       klo = kwin(1); khi = kwin(2); p.kwin = kwin;
       p.fillquadwei; M = numel(p.sqrtwei);   % total # boundary pts
       if v, fprintf('mean M ppw @ khi = %.3g\n', 2*pi*M/khi/d1.perim); end
       
-      if strcmp(meth,'fd') % ............... Fredholm det method
+      if strcmp(meth,'fd') % ............... Fredholm det method..............
         k = klo; kj = []; ej = []; N = M;  % square system
         kscale = 70/d1.diam;             % est k at which level density ~ 20
         io.Ftol = 1e-10; io.tol = o.tol;   % allows leeway in collecting roots
@@ -100,6 +118,68 @@ classdef evp < problem & handle
         if wantmodes
           if v, disp('computing eigenmodes at each eigenwavenumber...'); end
           p.solvemodescoeffs(meth, o); end  % compute all eigenfuncs
+        
+      elseif strcmp(meth,'ntd') % ............... NtD scaling method...........
+        if ~isfield(o, 'eps'), o.eps = 0.2/d1.diam; end % defaults
+        if ~isfield(o, 'khat'), o.khat = 'o'; end         % (most acc)
+        if ~isfield(o, 'fhat'), o.fhat = 's'; end         % (")
+        sx = d1.x; snx = d1.nx; sp = d1.speed; % quad info for the one domain
+        xn = real(conj(sx).*snx); ww = p.sqrtwei.'.^2./xn; % x.n bdry func
+        ixnip = @(f,g) sum(ww.*conj(f).*g);    % 1/(x.n)-weighted inner prod
+        ixnrm = @(g) sqrt(real(ixnip(g,g)));   % 1/(x.n)-weighted bdry norm
+        xt = real(conj(sx).*1i.*snx);
+        if wantmodes | ~strcmp(o.khat,'l')
+          D = 2*pi*repmat(1./sp,[1 M]) .* circulant(quadr.perispecdiffrow(M));
+          xnt = D*xn; xtt = D*xt; m = (xn.*xtt-xt.*xnt)./xn;  % Andrew's m func
+        end  % note avoided storing and computing V matrix
+        k = klo; kj = []; err.imbej = []; err.koj = []; p.ndj = []; % prealloc?
+        while k<khi      % ==== loop over windows
+          ktop = min(k + o.eps, khi); % top of current k window
+          if v, fprintf('NtD k* = %.14f ...\t', k); end
+          if ~wantmodes & strcmp(o.khat,'l') % eigenvectors not needed
+            d = p.NtDspectrum(k, o);
+          else, [d U] = p.NtDspectrum(k, o); end
+          betamin = -1.1*o.eps/k;  % little penalty for excess factor here
+          % loop over all negative eigvals and keep those khats in window...
+          rd = real(d)'; % note rd is row vec for for-loop find work
+          kl = []; imbel = []; ndl = []; kol = [];
+          for i=find(rd>betamin & rd<0), be = rd(i);
+            if exist('U','var'), f = U(:,i); end  % NtD eigenfunc at kstar
+            khat = k/(1+be);  % basic eigenfreq approximation
+            if strcmp(o.khat, 'o')
+              Df = D*f; mf = m.*f; % compute ODE constants...
+              A = ixnrm(xn.*Df)^2; B = real(ixnip(f,mf)); C = ixnrm(xn.*f)^2;
+              khat = evp.solvebetaode(k, be, A, B, C); % frozen A,B,C
+            end
+            if wantmodes                     % recon boundary efunc...
+              if strcmp(o.fhat, 'f'), fhat = f;
+              else         % use 1st or 2nd deriv of f
+                if ~exist('Df','var'), Df = D*f; mf = m.*f; end 
+                Vf = xt.*Df; Vff = ixnip(f,Vf); dfdk = (Vf + mf + Vff*f)/k;
+                fhat = f + (khat-k)*dfdk; % 1st, uses best avail khat. Normed
+                if strcmp(o.fhat, 's')       % use 2nd-deriv of f:
+                % Alex formula, leading order bits only, no c parallel cmpt...
+                  ddfdkk = xn.*xn.*f + (xt.*(D*(Vf+mf)) + m.*(Vf+mf) + ...
+                                        xn.*(D*(xn.*(Df))))/k^2;
+                  fhat = fhat + (khat-k)^2*ddfdkk/2;
+                end
+              end
+              fhat = fhat / ixnrm(fhat);   % normalize (avoids needing c)
+              nd = sqrt(2) * khat * fhat ./ xn; % normal-deriv function 
+            else nd = []; end
+            if khat>=k & khat<ktop   % if in window, keep it
+              kl = [kl; khat]; imbel = [imbel; imag(d(i))]; % keep Im(beta)
+              ndl = [ndl nd]; kol = [kol; k];
+            end
+          end
+          if v, fprintf('found %d eigvals in [%g,%g]\n', numel(kl),k,ktop); end
+          [dummy i] = sort(kl); % reorder all the l-arrays when append to lists
+          kj = [kj; kl(i)]; err.imbej = [err.imbej; imbel(i)];
+          err.koj = [err.koj; kol(i)];
+          if wantmodes, p.ndj = [p.ndj ndl(:,i)]; end
+          k = ktop;                        % increment k and repeat
+        end            % ==== end window loop
+        p.kj = kj; p.err = err; p.coj = [];
         
       else, error(fprintf('unknown method %s', meth));
       end
@@ -206,8 +286,8 @@ classdef evp < problem & handle
     %   opts.verb = 0,1,... : verbosity (0=silent, 1=diagnostic text, ...)
     %
     % See also: EVP.SOLVESPECTRUM
-      if nargin<3 | isempty(meth), meth='fd'; end   % default method
-      if nargin<4, o = []; end
+      if nargin<2 | isempty(meth), meth='fd'; end   % default method
+      if nargin<3, o = []; end
       if ~isfield(o, 'verb'), o.verb = 1; end; v = o.verb;  % default verbosity
       if numel(p.kj)<1, warning('no eigenwavenumbers kj in evp object!'); end
       p.coj = []; p.ndj = []; p.err.minsigj = [];  % erase any existing data
@@ -287,15 +367,21 @@ classdef evp < problem & handle
       wantdata = nargout>0;
       inlist = 0*p.kj; inlist(o.inds) = 1;         % true if in index list
       js = find(p.kj>o.kwin(1) & p.kj<o.kwin(2) & inlist); % indices to plot
-      if isempty(js), warning('no modes found in evp, or list or window!'); end
+      if isempty(js)
+        warning('no eigenvalues found in evp, or list or window!'); end      
       
-      n = numel(js);
-      figure; nac = ceil(sqrt(n)); ndn = ceil(n/nac); % # subplots across & down
-      if grf, d = utils.copy(p.doms);  % set up for GRF evaluations in loop...
+      if grf
+        if isempty(p.ndj), error('GRF method: no ndj bdry func info found!');end
+        d = utils.copy(p.doms);  % set up for GRF evaluations in loop...
         d.clearbases; d.addlayerpot(d.seg, 's');
         pe = bvp(d); pe.setupbasisdofs; % temporary new problem instance
-      else pe = p; end                  % just use existing problem
-        
+      else
+        if isempty(p.coj), error('basis method: no coj coeffs info found!');end
+        pe = p;                  % just use existing problem
+      end
+      n = numel(js);
+      figure; nac = ceil(sqrt(n)); ndn = ceil(n/nac); % # subplots across & down
+
       for i=1:n, j = js(i);      % ---- loop over selected eigenvalues
         pe.setoverallwavenumber(p.kj(j));                         % get this k
         if grf, pe.co = p.ndj(:,j); else, pe.co = p.coj(:,j); end % get coeffs
@@ -320,11 +406,15 @@ classdef evp < problem & handle
     function weylsmoothcheck(p, o)
       % ...
       % this will dump kj.^2 as Gaussians into regular E array, compare to Weyl
-    end
-  end
+    end  
+    
+    % methods needing an EVP object, but defined by separate files...
+    [d V] = NtDspectrum(p, kstar, opts)
+   end % methods
   
   % --------------------------------------------------------------------
   methods(Static)    % these don't need EVP obj to exist to call them...
     [k_weyl] = weylcountcheck(k_lo, k, perim, area, dkfig)   % old Weyl routine
+    kh = solvebetaode(kstar, beo, A, B, C, Ap, Bp, Cp)  % NtD scaling helper
   end
 end
