@@ -294,7 +294,7 @@ classdef qpscatt < scattering & handle
         [RO RI] = pr.fillbraggamplrow(pr.ikpfix,struct('side','B'));   % get Bragg ampl matrix
         RI = RI.*repmat(1./sqrt(sum(RI.^2, 2)), [1 size(RI,2)]); % row-normalize
         pr.E = [pr.E; RI];     % append block row to E
-      end  
+      end
     end % fillbcmatrix
     
     function [RO RI] = fillbraggamplrow(pr, i, o)
@@ -399,6 +399,7 @@ classdef qpscatt < scattering & handle
     function y = applybcmatrixFMM(pr, co, o) % use FMM (if poss) to apply E
     % APPLYBCMATRIXFMM - use FMM (if poss) to apply sys matrix E to coeff vec
       N = pr.N;
+      fprintf('co norm = %g\n',norm(co))
       Nw = numel(pr.ikpfix);        % # wood's rows in E
       eta = co(1:N); xi = co(N+1:end-Nw); xiw = co(end-Nw+1:end); % split co
       mism = pr.applybcmatrixFMM@problem(eta,o) + pr.B*[xi;xiw];
@@ -406,6 +407,7 @@ classdef qpscatt < scattering & handle
       if Nw==0
         y = [mism; ftydiscrep];
       else
+        if isempty(pr.braggrows), error('Wood case by pr.braggrows empty!');end
         radcond = pr.braggrows * co;
         y = [mism; ftydiscrep; radcond];
       end
@@ -432,9 +434,16 @@ classdef qpscatt < scattering & handle
         pr.fillBmatrix;
         pr.fillCmatrix;   
         pr.Q = sparse(pr.t.evalbasesdiscrep());         % hack to make sparse!
-     %   pr.Q = pr.t.evalbasesdiscrep();
-        %...
+        %   pr.Q = pr.t.evalbasesdiscrep(); % dense Q version
         pr.E = @(co) pr.applybcmatrixFMM(co, o);   % E applier function
+        if ~isempty(pr.ikpfix)   % augment matrix w/ extra rows for Wood's fix
+          [RO RI] = pr.fillbraggamplrow(pr.ikpfix,struct('side','B'));   % get Bragg ampl matrix
+          pr.braggrows = RI.*repmat(1./sqrt(sum(RI.^2, 2)), [1 size(RI,2)]); % row-normalize
+        end
+        % write qp properties into all problem bases...
+        qp = []; qp.nei = pr.nei; qp.winding = 0; % hack for now, inclusions
+        qp.dvec = [real(pr.d) imag(pr.d)]; qp.alpha = pr.a;
+        for i=1:numel(pr.bas), pr.bas{i}.qp = qp; end
       end
       co = solvecoeffs@bvp(pr,o);      % pass to usual solver
       if nargout==0, pr.co = co; end   % only store internally if no output

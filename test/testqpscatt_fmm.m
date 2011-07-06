@@ -3,10 +3,10 @@
 
 clear; v = 1;        % verbosity: 0 no pics, 1 final pic, 2 diagnostics
 ob = 'd'; d = 1.0;   % type of obstacle: 'd', 't', etc; problem x-periodicity 
-N = 80; s = scale(segment.smoothstar(N, 0.3, 3), 0.35); % .25 closed curve
+N = 1e5; s = scale(segment.smoothstar(N, 0.3, 30), 0.35); % .25 closed curve
 o.quad='a'; o.ord=8; % LP quadrature
-om = 10;             % incident wavenumber
-o.nei = 1; o.buf = 0; o.M = 90;                 % M = # nodes per FTy LPs
+om = 20;             % incident wavenumber
+o.nei = 1; o.buf = 0; o.M = 120;                 % M = # nodes per FTy LPs
 if ob=='d', de = domain([], [], s, -1);          % Dirichlet obstacle
   de.addlayerpot(s, [-1i*om 1], o);              % adds CFIE to segment
   s.setbc(1, 'D', []);                           % homog Dirichlet BCs
@@ -25,15 +25,15 @@ elseif ob=='t', di = domain(s, 1); di.setrefractiveindex(1.5); % transmission
 end
 %de.bas{1}.quad = 'a'; de.bas{2}.quad = 'a'; % tweak the quadrature
 p.setoverallwavenumber(om);
-p.setincidentwave(-pi/5);%-acos(1 - 2*pi/om));%-1e-14);%-pi/5;% 'single' Wood's anomaly
+p.setincidentwave(-acos(1 - 2*pi/om));%-1e-14);%-pi/5;% 'single' Wood's anomaly
 %for i=1:2, p.t.bas{i}.requadrature(o.M, struct('omega',om, 'nearsing', 3)); end  % how to enforce nearsing = 3; used to compare E blocks to std.mat
 if v>1, p.showkyplane; end
 p.fillquadwei;             % this is only for obstacle mismatch (blocks A,B)
 p.sqrtwei = 1+0*p.sqrtwei; % row scaling: make vectors are plain values on bdry
-o.FMM = 0; o.meth = 'iter';
+o.FMM = 1; o.meth = 'iter';
 tic; p.solvecoeffs(o); toc,      % (fill and) least-squares soln
 
-if isnumeric(p.E), fprintf('cond(E) = %.3g\n', cond(p.E))
+if ~o.FMM && N<1e3, fprintf('cond(E) = %.3g\n', cond(p.E))
   if v>1, figure; imagesc(real(p.E)); set(gcf, 'name', 'testqpscatt: E matrix');
     colorbar; colormap(jet(256)); caxis(.01*[-1 1]);end
 end
