@@ -154,7 +154,7 @@ classdef layerpot < handle & basis
         end
 
         %max(abs(S2L(:)))
-        %figure; imagesc(abs(S2L)); colorbar
+        %Jexp, figure; imagesc(abs(S2L)); colorbar
         
         if nargout==1  % evaluate the local J-expansion, with correct # out args
           AJ = Jexp.eval(p);
@@ -336,9 +336,8 @@ classdef layerpot < handle & basis
       else                    % -------------- self-interaction, via LP2D
         if b.quad~='a', error('only know how to apply Alpert quad!'); end
         if numel(find(b.ord==[0 4 8 16]))~=1, error('unknown Alpert order');end
-        
         U = lpevalselfcc(node,nvec,s.speed'/(2*pi), ifslp,b.a(1)*co.', ifdlp,...
-                   b.a(2)*co.', k, b.qp, b.ord, iprec, [], 1, iffldtarg);
+                   b.a(2)*co.', k, [], b.ord, iprec, b.qp, 1, iffldtarg);
         u = U.pot;   % convert to col vec
         if b.a(2)~=0    % Jump Relation
           u = u + co*(approachside*b.a(2)/2); % DLP val jump

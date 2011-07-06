@@ -181,9 +181,10 @@ classdef problem < handle
 %      d = s.dom{2};
 
 % exterior:
-      o.dom = s.dom{1};   % hack for now!
-      d = s.dom{1};
+      d = s.dom{1};    % exterior case hack
+      if isempty(d), d = s.dom{2}; end % interior case hack
       end
+      o.dom = d;   % hack for now!
       
       if b.HFMMable && d.k>0
         % check if s.a~=0, etc...  take from fillbcmatrix
