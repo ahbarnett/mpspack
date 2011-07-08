@@ -398,6 +398,7 @@ classdef segment < handle & pointset
       s = polyseglist(M, p, qtype)
       s = radialfunc(M, fs)
       s = smoothstar(M, a, w)
+      s = smoothfourier(M, aj, bj)
       s = smoothnonsym(M, a, b, w)
       [a b] = dielectriccoeffs(pol, np, nm)
     end % methods

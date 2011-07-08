@@ -85,8 +85,8 @@ classdef qpstrip < handle & domain
       if ~isfield(o,'nearsing')
         o.nearsing=min(abs(sqrt(st.k^2-(log(st.a)/1i+(-100:100)*2*pi/st.e).^2))); end
       % append the two types of layerpot to existing bases...
-      st.bas = {st.bas{:}, qpftylayerpot(st, 'd', o), ...
-                qpftylayerpot(st, 's', o)};
+      st.bas = {st.bas{:}, qpftylayerpot(st, [0 1], o), ...
+                qpftylayerpot(st, [-1 0], o)};  % D & -S (sign makes Q=I+...)
       for i=0:1, st.bas{end-i}.doms = st; end  % make strip the affected domain
       st.setupbasisdofs;
     end
