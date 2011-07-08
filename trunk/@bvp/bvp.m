@@ -62,15 +62,20 @@ classdef bvp < problem & handle
     %    opts.meth = 'direct' or 'iter' controls solution method: dense
     %                factorization, or GMRES iterations.
     %    opts.eps (default 1e-12) controls desired residual error in GMRES
+    %    opts.restart (default []) controls restart parameter (& RAM usage!)
     %    opts.matname (default 'A') is text string giving the name of the
     %                system matrix (a problem property).
     %
     % Notes:
     % 1) move this up to @problem ?
+    % 2) would be good to include left-pre-conditioning as commented out,
+    %    but need to pass in a scale vector since can't extract diag(A) for A an
+    %    mat-vec applier func as in FMM...
       if nargin<2, o = []; end
       if ~isfield(o, 'meth'), o.meth = 'direct'; end    % default method
       if ~isfield(o, 'eps'), o.eps = 1e-12; end         % desired residual
       if ~isfield(o, 'matname'), o.matname = 'A'; end   % point to pr.A
+      if ~isfield(o, 'restart'), o.restart = []; end   % GMRES iters restart
       A = eval(['pr.' o.matname]);                      % system matrix/applier
       
       if isempty(A), error('system matrix is empty!'); end
@@ -83,8 +88,11 @@ classdef bvp < problem & handle
         co = A \ pr.rhs;
       elseif strcmp(o.meth, 'iter') % NB here o.mat can be matrix or func...
         maxit = min(1e3, numel(pr.rhs));
+        %rowsc = max(diag(A), 1e-3);  % row-scaling to improve solve (col vec)
+        %precondfunc = @(co) co./rowsc; % see GMRES help. Only if A is numeric!
         disp('GMRES solve...')
-        [co] = gmres(A, pr.rhs, [], o.eps, maxit);
+        [co] = gmres(A, pr.rhs, o.restart, o.eps, maxit);
+ %       [co] = gmres(A, pr.rhs, o.restart, o.eps, maxit, precondfunc); % L-pre?
         %[co flag relres iter] = gmres(pr.A,pr.rhs,[],o.eps,maxit); % no verb
         %fprintf('iteration numbers: %d (inner %d)\n', iter(1), iter(2))
         % do some error handling!
