@@ -8,8 +8,8 @@
       x=xstore; w=wstore;
       return
   end
-  if N>100
-    fprintf('warning: finding >100 gauss quadr pts slow O(M^3)!\n');
+  if N>300
+    fprintf('warning: finding >300 gauss quadr pts slow O(M^3)!\n');
   end
   beta = .5./sqrt(1-(2*(1:N-1)).^(-2));
   T = diag(beta,1) + diag(beta,-1);

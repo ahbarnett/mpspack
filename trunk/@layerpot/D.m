@@ -35,6 +35,8 @@ function [A Dker_noang cosker] = D(k, s, t, o)
 %
 %  [D Dker_noang cosker] = D(...) also returns quad-unweighted kernel values
 %    matrix Dker_noang, and matrix of cos angle factors (cosphi or costh)
+%
+% Issues: need to remove the diag=999 hack (affects slow matlab eval only)!
 
 % Copyright (C) 2008 - 2011, Alex Barnett and Timo Betcke
 
@@ -53,7 +55,7 @@ if isfield(o, 'displ'), d = o.displ; else
   d = repmat(t.x, [1 N]) - repmat(s.x.', [M 1]); end % C-# displacements mat
 if isfield(o, 'rdist'), r = o.rdist; else
   r = abs(d); end                                    % dist matrix R^{MxN}
-if self, r(diagind(r)) = 999; end % dummy nonzero diag values
+if self, r(diagind(r)) = 999; end % dummy nonzero diag values triggers self
 dSLP=0; if isfield(o, 'derivSLP') & o.derivSLP, dSLP=1; end  % flag
 if dSLP                           % dPhi(x,y)/dnx, ie D^T adjoint op
   nx = repmat(-t.nx, [1 N]);      % identical cols given by targ normals
@@ -100,14 +102,15 @@ if self % ........... source curve = target curve; can be singular kernel
   
   else       % ------ self-interacts, but no special quadr, just use seg's
     % Use the crude approximation of kappa for diag, usual s.w off-diag...
-    A = A .* repmat(s.w, [M 1]);  % use segment usual quadrature weights
     if isempty(s.kappa)
       fprintf('warning: DLP crude self-quadr has no s.kappa so will be awful!\n')
       A(diagind(A)) = 0;
     else
-      fprintf('warning: DLP crude self-quadr, using s.kappa for diag\n')
-      A(diagind(A)) = -s.kappa/(4*pi);       % diag vals propto curvature
+      if k~=0, fprintf('warning: DLP crude self-quadr, using s.kappa for diag, only good for k=0\n'); end
+      A(diagind(A)) = -s.kappa/(4*pi);  % diag vals propto curvature
+      % (correct for k=0 Laplace only)
     end
+    A = A .* repmat(s.w, [M 1]);  % use segment usual quadrature weights
   end
   
 else % ............................ distant target curve, so smooth kernel

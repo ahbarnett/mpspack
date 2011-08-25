@@ -437,6 +437,7 @@ classdef problem < handle
             end
         end
         pr.setupbasisdofs;       % refreshes pr.N and pr.basnoff
+        pr.sqrtwei = [];        % assumes that these should be recalculated
     end
     
     

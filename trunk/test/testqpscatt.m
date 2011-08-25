@@ -2,7 +2,7 @@
 % Note: adapted from polesftlyp.m code (Dirichlet example)
 
 clear; v = 1;        % verbosity: 0 no pics, 1 final pic, 2 diagnostics
-ob = 'd'; d = 1.0;   % type of obstacle: 'd', 't', etc; problem x-periodicity 
+ob = 't'; d = 1.0;   % type of obstacle: 'd', 't', etc; problem x-periodicity 
 N = 80; s = scale(segment.smoothstar(N, 0.3, 3), 0.35); % .25 closed curve
 o.quad='a'; o.ord=8; % LP quadrature
 om = 10;             % incident wavenumber

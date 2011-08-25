@@ -5,10 +5,12 @@
 %   the basis sets associated with the domain.
 %
 %   Preliminary version: only one domain is supported, with Dirichlet or
-%   Neumann BCs.
+%   Neumann BCs. However, multiple segments and multiply-connected seem to
+%   work ok.
 %
 %   Solution methods available are:
 %    * root-search on the Fredholm determinant of Id -+ 2D (double-layer op).
+%    * min-singular-value root search on (Id -+ 2D).
 %    * crude version of MPS on a single domain with multiple segments.
 %    * weighted-NtD scaling method with various prediction orders
 
@@ -43,7 +45,7 @@ classdef evp < problem & handle
     function [kj err coj ndj] = solvespectrum(p, kwin, meth, o)
     % SOLVESPECTRUM - compute spectrum, and possibly modes, in wavenumber window
     %
-    % [kj] = SOLVESPECTRUM(p, [klo khi]) uses a default method to find all
+    % [kj] = SOLVESPECTRUM(p, [klo khi]) uses default 'fd' method to find all
     %   eigenwavenumbers kj lying in the wavenumber interval [klo, khi], for the
     %   eigenvalue problem object p.
     %   Laplacian eigenvalues are simply the squares of the kj.
@@ -58,11 +60,15 @@ classdef evp < problem & handle
     %
     % [...] = SOLVESPECTRUM(p, [klo khi], meth, opts) allows one to choose the
     %   method,
-    %     meth = 'fd' : Fredholm det (layer-potential bases only)
-    %                   Error estimates are dist to real axis of Boyd roots
+    %     meth = 'fd' : Fredholm det root search (layer-potential bases only)
+    %                   Error estimates are dist to real axis of Boyd roots.
+    %                   Id +- 2(double-layer operator), for a single domain, w/
+    %                   Dirichlet or Neumann BCs everywhere on the boundary.
     %     meth = 'ntd' : weighted-Neumann-to-Dirichlet scaling method
     %                   (star-shaped domains with single segment only)
     %                   coj is returned empty since all bdry data is in ndj.
+    %     meth = 'ms' : iterative search for minimum singular value of Id+-2D.
+    %                   (considered state-of-art in literature).
     %
     %   and/or choose options,
     %     opts.verb = 0,1,... : verbosity (0=silent, 1=diagnostic text, ...)
@@ -70,24 +76,22 @@ classdef evp < problem & handle
     %                  (note, for ntd khat='o', requesting modes not extra work)
     %     opts.eps : size of k-window over which meth='ntd' extrapolates
     %                (default is 0.2/(max radius of domain))
-    %     opts.khat = ntd k_hat predict method: 'l' linear, 'o' frozen-f ODE.
-    %     opts.fhat = ntd f_hat predict method: 'f' use f*, 'l' lin, 's' 2nd-o
-    %
-    % Currently the only solution method is root-search on the Fredholm
-    %  determinant of Id +- 2(double-layer operator), for a single domain, with
-    %  Dirichlet or Neumann BCs everywhere on the boundary.
+    %     opts.khat = 'ntd' k_hat predict method: 'l' linear, 'o' frozen-f ODE.
+    %     opts.fhat = 'ntd' f_hat predict method: 'f' use f*, 'l' lin, 's' 2nd-o
     %
     % Notes / issues:
-    % * Still very alpha code!
+    % * 'fd' and 'ms' require p to have appropriate layerpot basis on domain
+    %   ('ntd' doesn't need this)
+    % * Still very alpha code! Single domain, but can have multiple segs.
     % * keep more data of all the det evals, pass out?
       if nargin<3 | isempty(meth), meth='fd'; end   % default method
       if nargin<4, o = []; end
-      if ~isfield(o, 'tol'), o.tol = 1e-8; end   % tolerance for Boyd rootfind
+      if ~isfield(o, 'tol'), o.tol = 1e-8; end   % tolerance for all rootfinds
       if ~isfield(o, 'verb'), o.verb = 1; end; v = o.verb; % default verbosity
       if ~isfield(o, 'modes'), o.modes = 0; end
       if numel(p.doms)~=1, warning('problem has more than one domain...'); end
       d = p.doms;                            % the domain(s)
-      d1 = d(1);            % the first domain
+      d1 = d(1);            % the first, and we hope only, domain
       wantmodes = nargout>2 | o.modes;
       if v, fprintf('solvespectrum: wantmodes = %d\n', wantmodes); end
       klo = kwin(1); khi = kwin(2); p.kwin = kwin;
@@ -181,10 +185,28 @@ classdef evp < problem & handle
         end            % ==== end window loop
         p.kj = kj; p.err = err; p.coj = [];
         
-      else, error(fprintf('unknown method %s', meth));
+      elseif strcmp(meth,'ms') % ........... SVD iter min search method........
+        io = o; io.xtol = o.tol;
+        dE = 4*pi/d1.area;  % Weyl mean level spacing in E=k^2
+        ppls = 5;          % user param: # grid points per mean levelspacing
+        ng = ceil(ppls * (khi^2-klo^2)/dE + 1);
+        if v, fprintf('# k-gridpts = %d. Doing gridminfit...\n', ng); end
+        g = sqrt(linspace(klo^2, khi^2, ng));
+        f = @(k) svd(p.fillfredholmop(k)); % vector function to rootfind on
+        [kj sj p.err.mininfo] = evp.gridminfit(f, g, io); % the meat: do search
+        % currently discards higher sing vals - keep them?
+        p.err.ej = sqrt(min(sj,[],1));  % min sing val error estimates
+        kj = kj(:); p.err.ej = p.err.ej(:); % make col vecs
+        p.kj = kj;
+        
+        if wantmodes  % same as in 'fd'
+          if v, disp('computing eigenmodes at each eigenwavenumber...'); end
+          p.solvemodescoeffs(meth, o); end  % compute all eigenfuncs
+
+      else, error(fprintf('unknown method %s', meth)); % ...................
       end
     
-      if nargout>2, coj = p.coj; end        % outputs if needed...
+      if nargout>2, coj = p.coj; end    % outputs if needed (might be empty)...
       if nargout>3, ndj = p.ndj; end
     end
     
@@ -305,7 +327,8 @@ classdef evp < problem & handle
     function [co nd e] = solvemodecoeffs(p, k, meth, o) % ........ single efunc
     % SOLVEMODECOEFFS - helper (see SOLVEMODESCOEFFS) finds single efunc, O(N^3)
     %
-    % see code for documentation
+    % see code for documentation. Dir is normalized correctly; Neu is not.
+    % Braxton needed multiple segs, so done.
       if nargin<3 | isempty(meth), meth='fd'; end   % default method
       if nargin<4, o = []; end
       if ~isfield(o, 'iter'), o.iter = 1; end   % default iterative
@@ -322,8 +345,8 @@ classdef evp < problem & handle
       % ...
       co = v ./ p.sqrtwei.';        % density, convert from l^2 to value vector
       % L sv's are R sv's w/ D^*, so u gives boundary function...
-      s = p.segs;                   % assume only a single segment!
-      xdn = real(conj(s.x).*s.nx); w = sqrt(xdn/2); % sqrt Rellich bdry wei
+      x = vertcat(p.segs.x); nx = vertcat(p.segs.nx); % allow multiple segs
+      xdn = real(conj(x).*nx); w = sqrt(xdn/2); % sqrt Rellich bdry wei
       u = u/max(u);                 % make real-valued (imag part is error est)
       u = k * u/norm(w.*u);         % Rellich-normalize
       nd = u ./ p.sqrtwei.';        % convert from l^2 to value vector        
@@ -406,7 +429,7 @@ classdef evp < problem & handle
     function weylsmoothcheck(p, o)
       % ...
       % this will dump kj.^2 as Gaussians into regular E array, compare to Weyl
-    end  
+    end
     
     % methods needing an EVP object, but defined by separate files...
     [d V] = NtDspectrum(p, kstar, opts)
@@ -416,5 +439,8 @@ classdef evp < problem & handle
   methods(Static)    % these don't need EVP obj to exist to call them...
     [k_weyl] = weylcountcheck(k_lo, k, perim, area, dkfig)   % old Weyl routine
     kh = solvebetaode(kstar, beo, A, B, C, Ap, Bp, Cp)  % NtD scaling helper
+    [xm ym info] = gridminfit(f, g, o)   % gridded vectorial minimizer
+    [xm fm info] = iterparabolafit(f, x, y, opts)   % minimization helper
+    [A,B,C] = para_fit(e, f)        % parabolic helper
   end
 end

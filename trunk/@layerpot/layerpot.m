@@ -105,8 +105,6 @@ classdef layerpot < handle & basis
 %  To do: make it handle a segment list, with correct accounting of self-eval.
 %
 % See also: LAYERPOT.FMMEVAL
-%
-% (c) Alex Barnett 2008-2011
       if nargin<3, o = []; end
       if ~isfield(o, 'fast'), o.fast = b.fast; end    % default given in b obj
       if ~isempty(b.quad), o.quad = b.quad; end % pass quadr type to S,D,T eval

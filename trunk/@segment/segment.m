@@ -77,7 +77,7 @@ classdef segment < handle & pointset
           s.Z = @(t) p(1) + p(2)*exp(1i*(p(3) + t*(p(4)-p(3))));
           s.Zp = @(t) 1i*(p(4)-p(3))*p(2)*exp(1i*(p(3) + t*(p(4)-p(3))));
           s.Zpp = @(t) -(p(4)-p(3))^2*p(2)*exp(1i*(p(3) + t*(p(4)-p(3))));
-          if abs(p(4)-p(3)-2*pi)<1e-15, qtype = 'p'; end % closed -> periodic q
+          if abs(p(4)-p(3)-2*pi)<1e-15 & nargin<3, qtype = 'p'; end % closed -> periodic q
           Napprox = 50;      % # pts for crude inside-polygon test, must be even
         else
           error('segment second argument not valid!');
