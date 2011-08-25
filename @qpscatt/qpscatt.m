@@ -479,12 +479,13 @@ classdef qpscatt < scattering & handle
       pd.basnoff = [pr.basnoff pr.N+pr.t.basnoff]; % effective setupbasisdofs
       pd.N = pr.N + pr.t.N;            % finish up appending to pd basis setup
       [u di] = pd.pointsolution@problem(p, o);     % pass to usual evaluator
+%figure; imagesc(reshape(di,[130 50]));
       if numel(extdomi)~=1, error('there appears to be >1 exterior domain!');end
       for n=[-pr.nei:-1 1:pr.nei]                % direct sum nei contribs
         uc = pr.pointsolution@problem(pointset(p.x-pr.d*n, p.nx), o);
         u = u + pr.a^n * uc .* (di==extdomi);    % only affects obst exterior
       end
-      % correct for displacement using Bloch phase, assuming quasi-periodic!
+      % correct for wrap displacement w/ Bloch phase, assuming quasi-periodic!
       u(li) = u(li) * pr.a^(-1); u(ri) = u(ri) * pr.a;
     end
 

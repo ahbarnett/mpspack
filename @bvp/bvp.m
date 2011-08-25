@@ -47,6 +47,11 @@ classdef bvp < problem & handle
       rhs  = rhs .* pr.sqrtwei.';          % include sqrt quad weights factor
       if nargout==0, pr.rhs = rhs; end     % this only stores pr.rhs if no outp
     end
+
+    function updateN(pr,N)         % overloads @problem, added 8/19/11
+      pr.updateN@problem(N);
+      pr.rhs = [];              % causes rhs to be refilled (eg for layerpots)
+    end
     
     function co = linsolve(pr, o) % ........................ linear solve
     % LINSOLVE - solve the full linear system matrix directly or iteratively
@@ -84,7 +89,7 @@ classdef bvp < problem & handle
         if ~isnumeric(A)
           error('cannot direct solve given only an operator applier function!');
         end
-        disp('direct solve...')
+        %disp('direct solve...')
         co = A \ pr.rhs;
       elseif strcmp(o.meth, 'iter') % NB here o.mat can be matrix or func...
         maxit = min(1e3, numel(pr.rhs));
