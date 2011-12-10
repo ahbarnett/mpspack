@@ -36,3 +36,20 @@ end  % squared L2-norms shown should be within O(grid spacing) of unity
 tic; p.solvespectrum([2.5 20], [], struct('modes',1)); toc      
 tic; p.showmodes; toc
 max(p.err.minsigj) % since N=160 still, see some deterioration approaching k=20
+
+
+
+
+% =========== NtD scaling method test taken from smoothdrummodesNtD.m =======
+
+clear all classes; N = 300;               % # quadrature nodes good up to k=30
+s = segment.smoothnonsym(N, 0.3, 0.2, 3); % closed smooth non-symm segment
+d = domain(s, 1);                % create an interior domain
+s.setbc(-1, 'D');               % Dirichlet BC's applied on inside: note -1
+p = evp(d);                     % sets up eigenvalue problem object
+
+% NtD spectrum with keeping a dat object...
+tic; [kj err coj ndj dat] = p.solvespectrum([30 31], 'ntd', struct('eps',0.1,'khat','o','modes',0,'fhat','f')); toc;
+
+% check reusing this dat object... (should be v fast)
+tic; [kj err] = p.solvespectrum([30 31], 'ntd', struct('eps',0.1,'khat','l','dat',dat)); toc;

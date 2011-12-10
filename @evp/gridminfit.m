@@ -28,8 +28,9 @@ function [xm ym info] = gridminfit(f, g, o)
 %
 % [xm ym info] = ... also returns info struct with info.fevals # func evals
 %
-% Notes: discussion with Taylor Sipple has helped.
-% This supercedes fparamin.
+% Notes: This supercedes fparamin. Discussion with Taylor Sipple has helped.
+% v.1.0 Aug 2011
+% v.1.1 added crude degeneracy handling, 10/28/11
 % * Could build in a quick check for exact multiplicities based on higher sing
 %   vals being less that xtol.maxslope ? Saves lots of recursion
 %
@@ -38,10 +39,11 @@ function [xm ym info] = gridminfit(f, g, o)
 % Copyright (C) 2011, Alex Barnett
 
 if nargin<3 | isempty(o), o = []; end    % process options, defaults...
-if ~isfield(o, 'xtol'), o.xtol = 1e-8; end
+if ~isfield(o, 'xtol'), o.xtol = 1e-8; end  % default returned arg tolerance
 if ~isfield(o, 'maxit'), o.maxit = 30; end
 if ~isfield(o, 'verb'), o.verb = 0; end
 if ~isfield(o, 'maxslope'), o.maxslope = @(x) 0; end % default not to recurse
+if isnumeric(o.maxslope), o.maxslope = @(x) o.maxslope; end % ensure a func!
 
 n = numel(g);
 if ~isempty(find(diff(g)<0)), error('grid not everywhere increasing!'); end
@@ -53,6 +55,7 @@ yg = nan(m,n); yg(:,1) = sort(y(:));  % preallocate and put in 1st col
 for i=2:n, y = f(g(i)); if o.verb, fprintf('f(%.15g)=%.15g\n',g(i),min(y)); end
   yg(:,i) = sort(y(:)); end    % stack into array
 % note, if RAM issue, could keep only lowest 2 values of f at each x ?
+info = []; info.ys = yg(1:2,:); info.xs = g; % keep lowest two sing vals
 
 if o.verb>2, figure; plot(g, yg(1,:), '+-'); % plot lowest
   if m>1, hold on; plot(g, yg(2,:), 'g+'); end, end % plot 2nd lowest
@@ -73,19 +76,22 @@ for i=1:n
       if m>1, mingap = min(yg(2,ii)-yg(1,ii)); end
       if o.verb, fprintf('considering %d %d %d:\n',ii(1),ii(2),ii(3));
         fprintf('htyp=%g, fm=%g, maxslp=%g, mingap=%g\n',htyp,fm,ms,mingap); end
-      if o.maxit>0 && m>1 && mingap < 1.1*htyp*ms   % 2nd smallest too close?
+      if o.maxit>0 && m>1 && (g(ii(3))-g(ii(1))>o.xtol) && mingap < 1.1*htyp*ms   % 2nd smallest too close?
         p = o; p.maxit = o.maxit - 1;          % use up one of the recursions
         if o.verb, fprintf('recursing, maxit=%d...\n',o.maxit); end
         [ii t] = fattenlist(ii,t,g,yg,fm); % build out the ii list
         if o.verb, fprintf('\t ii fattened to size %d\n',numel(ii)); end
         shrink = 3;          % factor to shrink the grid by, then recurse...
         [x y in] = evp.gridminfit(f, linspace(g(ii(1)),g(ii(end)),(length(ii)-1)*shrink+1), p);
-        fe = fe + in.fevals;
+        fe = fe + in.fevals; info.ys=[info.ys in.ys]; info.xs=[info.xs in.xs];
       else
         p = o; p.maxit = 10;        % for para fit on square of function
         if o.verb, fprintf('%.15g ', [g(ii), yg(1,ii)]); fprintf('\n'); end
         [x y in] = evp.iterparabolafit(@(x) f(x).^2, g(ii), yg(:,ii), p); % get one acc min
-        fe = fe + in.fevals;
+        y = sqrt(y); fe = fe + in.fevals; info.xs=[info.xs in.xs];
+        info.ys=[info.ys sqrt(in.ys)];% note: sqrt(ys) is kept since sees f^2
+        ndeg = numel(find(y-y(1) < o.xtol*ms)); % estimate degeneracy, crude
+        if ndeg>1, x = repmat(x,[1 ndeg]); y = repmat(y,[1 ndeg]); end % dupli!
       end
       if o.verb, fprintf('found %d min(s): ', numel(x));  % plot all pairs...
         if ~isempty(x), a = [x;y(1,:)];
