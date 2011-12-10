@@ -41,7 +41,8 @@ if ~o.cayley
 else
   wNtD = inv(HpD - 1i*eta*Sw) * (-HpD - 1i*eta*Sw);
 end
-  
+clear Sw HpD
+
 if nargout==1
   d = eig(wNtD);     % eigenvalues only: dense
 else

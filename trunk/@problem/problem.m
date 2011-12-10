@@ -1,6 +1,6 @@
 % PROBLEM - abstract class defining interfaces for Helmholtz/Laplace BVPs/EVPs
 
-% Copyright (C) 2008, 2009, Timo Betcke, Alex Barnett
+% Copyright (C) 2008 - 2011 Timo Betcke, Alex Barnett
 classdef problem < handle
   properties
     segs                    % array of handles of segments in problem
@@ -12,6 +12,7 @@ classdef problem < handle
     basnoff                 % dof index offsets for basis objs referred by bas
     N                       % total number of dofs in a problem
     co                      % basis coefficient (length N column vector)
+%    info                    % info structure from solution (EVP has err)
   end
   
   methods % ------------------------------ methods common to problem classes
@@ -170,6 +171,8 @@ classdef problem < handle
     % fortran code lpevalselfmanycc , to be written...
     %
       if nargin<3, o = []; end
+      % use for visual feedbakc of iterations...
+     % fprintf('applybcmatrixFMM@problem coeff norm=%g\n',norm(co))
       N = pr.N;
 
       if 1  % HACK FOR 1 SEGMENT

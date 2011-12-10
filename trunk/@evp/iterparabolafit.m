@@ -18,7 +18,8 @@ function [xm fm info] = iterparabolafit(f, x, y, o)
 %      opts.maxresc - max # rescues from outside the interval (default 2)
 %      opts.verb    - 0 (silent; default) or 1 (debugging output)
 %
-% [xm fm info] = ... also returns info struct with info.fevals # func evals
+% [xm fm info] = ... also returns info struct with info.fevals # func evals,
+%      info.ys y values found at info.xs x values computed at.
 %
 %  Issues:
 %   * how handle roundoff in subtraction as rescue ends gets too close?
@@ -36,10 +37,11 @@ if ~isfield(o, 'verb'), o.verb = 0; end
 resc = 0.1;  % factor by which rescued ordinates pulled in from edge
 
 if x(2)<=x(1) || x(3)<=x(2), error('x not increasing!'); end
-xoff = x(1); x = x - xoff;   % work relative to left-side point
+xoff = x(1); x = x - xoff;   % work relative to left-side point, avoid roundoff
 xlo = x(1); xhi = x(3);      % keep original interval
 if numel(y)>3, y = sort(y,1); end % sort along the vector axis
 
+info = []; info.xs = []; info.ys = [];
 outs = 0; nresc = 0; fe = 0;    % fell-outside flag, # rescues, # fevals
 bold = nan;        % keep previous para-fit min estimate
 for i=1:o.maxit
@@ -48,7 +50,8 @@ for i=1:o.maxit
   [a,b,c] = evp.para_fit(x, y(1,:));
   if o.verb, fprintf('para_fit a,b,c = %.15g  %.15g %.15g\n',a,b,c); end
   if abs(b-bold)<o.xtol, yb = sort(f(b + xoff)); yb = yb(:); % col vec
-    fe = fe + 1; break; end % two close b's, done
+    fe = fe + 1; info.xs=[info.xs,b+xoff]; info.ys=[info.ys yb(1:2)];
+    break; end % two close b's, done
   if b<xlo, if o.verb, fprintf('b fell off left\n', b); end
     if nresc<o.maxresc
       b = (1-resc)*xlo + resc*x(2); nresc = nresc+1; % rescue back insid
@@ -60,7 +63,8 @@ for i=1:o.maxit
   end
   if min(abs(b-x))<o.xtol/2, b = b + o.xtol/2; end  % jiggle if too close
   bold = b;
-  yb = sort(f(b + xoff)); yb = yb(:); fe = fe + 1; % col vec
+  yb = sort(f(b + xoff)); yb = yb(:); % col vec
+  fe = fe + 1; info.xs=[info.xs,b+xoff]; info.ys=[info.ys yb(1:2)];
   if o.verb, fprintf('f_1(%.15g)=%.15g\n',b,yb(1)); end
   [dummy j] = sort(abs(x-b)); j = j(1:2); % indices of two old x's closest to b
   x = [x(j) b]; y = [y(:,j) yb];  % add the new point

@@ -1,12 +1,12 @@
 % Test and demo routine for EVP solvespectrum 'ms' in MPSpack. Barnett 8/23/11
 
 clear all classes;
-s = segment.smoothnonsym(130, 0.3, 0.2, 3); % create a closed segment
+s = segment.smoothnonsym(160, 0.3, 0.2, 3); % create a closed segment
 d = domain(s, 1);                           % create an interior domain
 s.setbc(-1, 'D');                           % put Dirichlet BCs on inside
 p = evp(d);                                 % create eigenvalue problem
 d.addlayerpot(s, 'd');  % needed for 'fd' and 'ms' but not 'ntd'
-kint = [2.5 9]; p.solvespectrum(kint, 'fd'); kjgood = p.kj;  % reference method
+kint = [2.5 20]; tic; p.solvespectrum(kint, 'fd'); toc, kjgood = p.kj; % ref
 
 if 0, ks = 100:0.005:100.1; % check slopes of sing vals of (1/2-D): max is 1.5
   for i=1:numel(ks), ss(:,i)=svd(p.fillfredholmop(ks(i))); ss(end,i), end
@@ -17,6 +17,13 @@ tic; p.solvespectrum(kint, 'ms', o); toc, fe = p.err.mininfo.fevals;
 fprintf('fevals = %d  (%g per min found)\n', fe, fe/numel(p.kj)) 
 p.kj - kjgood
 p.err.ej
+
+stop
+
+% data on oliver: 492 eigs [90,100] in
+% 4023 secs (fd)
+% 792 s (ntd)
+% 26030 s (ms)
 
 
 % to use...

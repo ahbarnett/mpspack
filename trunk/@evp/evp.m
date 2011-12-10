@@ -42,7 +42,7 @@ classdef evp < problem & handle
       end
     end
   
-    function [kj err coj ndj] = solvespectrum(p, kwin, meth, o)
+    function [kj err coj ndj dat] = solvespectrum(p, kwin, meth, o)
     % SOLVESPECTRUM - compute spectrum, and possibly modes, in wavenumber window
     %
     % [kj] = SOLVESPECTRUM(p, [klo khi]) uses default 'fd' method to find all
@@ -54,6 +54,8 @@ classdef evp < problem & handle
     % [kj err coj ndj] = ... also returns basis coeffcients, normal derivatives,
     %   and error estimates struct, if possible. Certain methods may return
     %   empty arrays for some of these.
+    %
+    % [kj err coj ndj dat] = ... also returns NtD spectral sweep data object
     %
     % SOLVESPECTRUM(p, [klo khi]) with no output argument stores kj and err
     %   (and if opts.modes=1, also ndj) as property fields in the object p.
@@ -78,6 +80,7 @@ classdef evp < problem & handle
     %                (default is 0.2/(max radius of domain))
     %     opts.khat = 'ntd' k_hat predict method: 'l' linear, 'o' frozen-f ODE.
     %     opts.fhat = 'ntd' f_hat predict method: 'f' use f*, 'l' lin, 's' 2nd-o
+    %     opts.dat : if nonempty, use as NtD spectral sweep data object.
     %
     % Notes / issues:
     % * 'fd' and 'ms' require p to have appropriate layerpot basis on domain
@@ -88,11 +91,12 @@ classdef evp < problem & handle
       if nargin<4, o = []; end
       if ~isfield(o, 'tol'), o.tol = 1e-8; end   % tolerance for all rootfinds
       if ~isfield(o, 'verb'), o.verb = 1; end; v = o.verb; % default verbosity
-      if ~isfield(o, 'modes'), o.modes = 0; end
+      wantmodes = nargout>2; if isfield(o, 'modes'), wantmodes = o.modes; end
+      datavail=0; dat = []; if isfield(o, 'dat'), dat = o.dat; datavail=1; end
+      outdat = nargout>4;       % want saving of spectral data?
       if numel(p.doms)~=1, warning('problem has more than one domain...'); end
       d = p.doms;                            % the domain(s)
       d1 = d(1);            % the first, and we hope only, domain
-      wantmodes = nargout>2 | o.modes;
       if v, fprintf('solvespectrum: wantmodes = %d\n', wantmodes); end
       klo = kwin(1); khi = kwin(2); p.kwin = kwin;
       p.fillquadwei; M = numel(p.sqrtwei);   % total # boundary pts
@@ -125,7 +129,7 @@ classdef evp < problem & handle
         
       elseif strcmp(meth,'ntd') % ............... NtD scaling method...........
         if ~isfield(o, 'eps'), o.eps = 0.2/d1.diam; end % defaults
-        if ~isfield(o, 'khat'), o.khat = 'o'; end         % (most acc)
+        if ~isfield(o, 'khat'), o.khat = 'r'; end         % (most acc)
         if ~isfield(o, 'fhat'), o.fhat = 's'; end         % (")
         sx = d1.x; snx = d1.nx; sp = d1.speed; % quad info for the one domain
         xn = real(conj(sx).*snx); ww = p.sqrtwei.'.^2./xn; % x.n bdry func
@@ -137,21 +141,41 @@ classdef evp < problem & handle
           xnt = D*xn; xtt = D*xt; m = (xn.*xtt-xt.*xnt)./xn;  % Andrew's m func
         end  % note avoided storing and computing V matrix
         k = klo; kj = []; err.imbej = []; err.koj = []; p.ndj = []; % prealloc?
-        while k<khi      % ==== loop over windows
+        n = 1;    % index to write to or read out of, in dat obj
+        while k<khi      % ==== loop over windows (kstart is called just k)
           ktop = min(k + o.eps, khi); % top of current k window
-          if v, fprintf('NtD k* = %.14f ...\t', k); end
-          if ~wantmodes & strcmp(o.khat,'l') % eigenvectors not needed
-            d = p.NtDspectrum(k, o);
-          else, [d U] = p.NtDspectrum(k, o); end
-          betamin = -1.1*o.eps/k;  % little penalty for excess factor here
-          % loop over all negative eigvals and keep those khats in window...
-          rd = real(d)'; % note rd is row vec for for-loop find work
+          if v, fprintf('NtD k* = %.15g ...\t', k); end
+          if ~datavail     % compute NtD spec and possibly eigenvectors
+            if ~wantmodes & strcmp(o.khat,'l') % eigenvectors not needed
+              clear U; d = p.NtDspectrum(k, o);
+            else, [d U] = p.NtDspectrum(k, o); end
+            betamin = -1.1*o.eps/k;  % dat RAM penalty for excess factor here
+            % loop over all negative eigvals and keep those khats in window...
+            rd = real(d)';
+            ii = find(rd>betamin & rd<=0);   % NtD-eigvals to keep
+            bes = d(ii); if exist('U','var'), fs = U(:,ii); end   % keep
+            if outdat, dat.bes(n,1:numel(bes)) = bes;   % save to dat object
+              dat.nes(n) = numel(bes);       % number of eigenvalues kept
+              if exist('fs','var'), dat.fs(n,:,1:numel(bes)) = fs; end
+            end
+          else    % instead get bes, fs, from n'th spectral data object
+            ne = dat.nes(n); bes = dat.bes(n,1:ne);
+            if isfield(dat,'fs'), fs = reshape(dat.fs(n,:,1:ne),M,ne); end
+          end
           kl = []; imbel = []; ndl = []; kol = [];
-          for i=find(rd>betamin & rd<0), be = rd(i);
-            if exist('U','var'), f = U(:,i); end  % NtD eigenfunc at kstar
-            khat = k/(1+be);  % basic eigenfreq approximation
-            if strcmp(o.khat, 'o')
+          for i=1:numel(bes), be = real(bes(i));  % only use real part for comp
+            if exist('fs','var'), f = fs(:,i); f = f/ixnrm(f); end % f at kstar
+            khat = k/(1+be);  % basic linear eigenfreq approximation
+            if strcmp(o.khat, 'r')   % Ricatti exact (Andrew)
               Df = D*f; mf = m.*f; % compute ODE constants...
+              kavg = (khat+k)/2;  % kavg=k; % average k to use for Ricatti
+              A = kavg^2*ixnrm(xn.*f)^2-ixnrm(xn.*Df)^2; B = -real(ixnip(f,mf));
+              mu = sqrt(A - B^2/4); B2mu = B/(2*mu);
+              khat = k*exp((atan(B2mu)-atan(A*be/mu + B2mu))/mu);
+            elseif strcmp(o.khat, 'o')  % ODE numerical (slowish)
+              Df = D*f; mf = m.*f; % compute ODE constants...
+              %A = k^2*ixnrm(xn.*f)^2-ixnrm(xn.*Df)^2; B = -real(ixnip(f,mf));
+              %khat = evp.solvebetaode(k, be, A, -B); % frozen A,B
               A = ixnrm(xn.*Df)^2; B = real(ixnip(f,mf)); C = ixnrm(xn.*f)^2;
               khat = evp.solvebetaode(k, be, A, B, C); % frozen A,B,C
             end
@@ -172,7 +196,7 @@ classdef evp < problem & handle
               nd = sqrt(2) * khat * fhat ./ xn; % normal-deriv function 
             else nd = []; end
             if khat>=k & khat<ktop   % if in window, keep it
-              kl = [kl; khat]; imbel = [imbel; imag(d(i))]; % keep Im(beta)
+              kl = [kl; khat]; imbel = [imbel; imag(bes(i))]; % keep Im(beta)
               ndl = [ndl nd]; kol = [kol; k];
             end
           end
@@ -182,6 +206,7 @@ classdef evp < problem & handle
           err.koj = [err.koj; kol(i)];
           if wantmodes, p.ndj = [p.ndj ndl(:,i)]; end
           k = ktop;                        % increment k and repeat
+          n = n+1;  % increment data obj counter
         end            % ==== end window loop
         p.kj = kj; p.err = err; p.coj = [];
         
@@ -189,6 +214,7 @@ classdef evp < problem & handle
         io = o; io.xtol = o.tol;
         dE = 4*pi/d1.area;  % Weyl mean level spacing in E=k^2
         ppls = 5;          % user param: # grid points per mean levelspacing
+        if ~isfield(io, 'maxslope'), io.maxslope = 1.0; end  % not sure why this is good, but O(1)
         ng = ceil(ppls * (khi^2-klo^2)/dE + 1);
         if v, fprintf('# k-gridpts = %d. Doing gridminfit...\n', ng); end
         g = sqrt(linspace(klo^2, khi^2, ng));
@@ -371,6 +397,7 @@ classdef evp < problem & handle
     %               Green's rep. formula on p.ndj (Dirichlet BC only) (default)
     %   opts.kwin - only computes modes in given wavenumber window
     %   opts.inds - only computes modes in given (unordered) index set
+    %   opts.col - 'jet' (default, matlab colorscale), 'bw' (phi^2 in grey)
     %
     % Notes/issues:
     %  * Normalization hasn't been considered much. For GRF case, they are
@@ -387,6 +414,7 @@ classdef evp < problem & handle
       if ~isfield(o, 'kwin'), o.kwin=p.kwin; end
       if ~isfield(o, 'inds'), o.inds=1:numel(p.kj); end
       if ~isfield(o, 'bdry'), o.bdry = 0; end
+      if ~isfield(o, 'col'), o.col = 'jet'; end
       wantdata = nargout>0;
       inlist = 0*p.kj; inlist(o.inds) = 1;         % true if in index list
       js = find(p.kj>o.kwin(1) & p.kj<o.kwin(2) & inlist); % indices to plot
@@ -418,9 +446,15 @@ classdef evp < problem & handle
           if i==1, uj = nan(size(u,1), size(u,2), n); end % allocate output
           uj(:,:,i) = u;                                  % copy data to array
         end
-        tsubplot(ndn, nac, i); imagesc(gx, gy, u, 'alphadata', ~isnan(di));
-        caxis(3.5*[-1 1]/sqrt(p.doms.area)); % rescale values based on area
-        axis equal tight; colormap(jet(256)); axis off;
+        tsubplot(ndn, nac, i);
+        if strcmp(o.col,'jet')
+          imagesc(gx, gy, u, 'alphadata', ~isnan(di)); colormap(jet(256));
+          caxis(3.5*[-1 1]/sqrt(p.doms.area)); % rescale values based on area
+        elseif strcmp(o.col,'bw')
+          imagesc(gx, gy, u.^2, 'alphadata', ~isnan(di)); colormap(1-gray(256));
+          caxis([0 4]/p.doms.area); % rescale values based on area
+        end
+        axis equal tight; axis off;
         set(gca,'ydir','normal'); hold on; if o.bdry, pr.showbdry; end
         drawnow;                                          % for fun
       end                        % ----
