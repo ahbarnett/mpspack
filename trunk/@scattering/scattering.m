@@ -12,6 +12,7 @@
 
 classdef scattering < bvp & handle
   properties
+    inctype                            % type of inc wave: 'pw', 'pt', etc
     incang                             % incident angle
     ui                                 % incident field function in air domain
     uix, uiy                           % x,y-deriv functions of above
@@ -31,11 +32,16 @@ classdef scattering < bvp & handle
       end
     end
   
-    function setincidentwave(pr, t)
+    function setincidentwave(pr, ui, uix, uiy)
     % SETINCIDENTWAVE - choose plane wave or u_incident field, compute f,g BCs
     %
     %  setincidentwave(pr, t) sets up the inhomogeneous BCs required in
     %   scattering problem pr, for planewave at angle t in [0,2pi].
+    %   Wavenumber must already be chosen by the problem k.
+    %
+    %  setincidentwave(pr, z0, 'pt') sets up the inhomogeneous BCs required in
+    %   scattering problem pr, for pointsource at z0. Currently assumed to be
+    %   in an air-domain.
     %   Wavenumber must already be chosen by the problem k.
     %
     %  setincidentwave(pr, ui, uix, uiy) uses a given incident field function
@@ -47,14 +53,26 @@ classdef scattering < bvp & handle
     %  Careful: calling this routine overwrites all inhomogeneity functions or
     %   data f, g stored on any of the problem's segments. However it preserves
     %   existing a, b BC or matching coeffs (which must be set up on entry).
-    %
+
     %  Issues: * changed so incident wave only given to isair=1 domains.
-      if nargin==2
-        if isempty(pr.k), error('please set wavenumber before choosing incident plane wave angle!'); end
+    % * 12/19/11 added pt src type.
+      if nargin<4   % if not-explicit ui, uix, uiy input form, check k present.
+        if isempty(pr.k), error('please set wavenumber before choosing incident point source location!'); end
+      end
+      if nargin==2  % plane wave inc field
+        t = ui;    % angle
         kvec = pr.k*exp(1i*t);                % set up a plane-wave field
-        pr.incang = t;
+        pr.incang = t; pr.inctype = 'pw';
         ui = @(x) exp(1i*real(conj(kvec) .* x));
         uix = @(x) 1i*real(kvec)*ui(x); uiy = @(x) 1i*imag(kvec)*ui(x);
+      elseif nargin==3          
+        if strcmp(uix,'pt')     % point src
+          x0 = ui;              % location
+          ui = @(z) (1i/4)*besselh(0,pr.k*abs(x0-z));
+          uix = @(z) -(1i/4)*pr.k*real(z-x0)./abs(z-x0).*besselh(1,pr.k*abs(x0-z));
+          uiy = @(z) -(1i/4)*pr.k*imag(z-x0)./abs(z-x0).*besselh(1,pr.k*abs(x0-z));
+        else, error('unknown incident wave type!');
+        end
       end
       pr.ui = ui; pr.uix = uix; pr.uiy = uiy;
       % now set up inhomogeneities in BCs, incident air field & no other field..
