@@ -9,7 +9,7 @@
 
 #rev := $(shell ./getrevisionnumber)
 #pkg := mpspack-r$(rev)
-pkg := mpspack-1.1beta-evp
+pkg := mpspack-1.2beta
 
 default: all
 
@@ -22,7 +22,7 @@ special:
 
 tar:
 #	echo $(rev); echo $(pkg)
-	(cd ..; svn export mpspack $(pkg); tar zcvf $(pkg).tar.gz $(pkg); rm -Rf $(pkg))
+	(cd ..; /opt/CollabNet_Subversion/bin/svn export mpspack $(pkg); tar zcvf $(pkg).tar.gz $(pkg); rm -Rf $(pkg))
 
 clean:
 	(cd @utils; make clean)

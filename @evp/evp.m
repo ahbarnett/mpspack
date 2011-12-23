@@ -136,7 +136,7 @@ classdef evp < problem & handle
         ixnip = @(f,g) sum(ww.*conj(f).*g);    % 1/(x.n)-weighted inner prod
         ixnrm = @(g) sqrt(real(ixnip(g,g)));   % 1/(x.n)-weighted bdry norm
         xt = real(conj(sx).*1i.*snx);
-        if wantmodes | ~strcmp(o.khat,'l')
+        if wantmodes | ~strcmp(o.khat,'l') % todo: replace D by FFT application
           D = 2*pi*repmat(1./sp,[1 M]) .* circulant(quadr.perispecdiffrow(M));
           xnt = D*xn; xtt = D*xt; m = (xn.*xtt-xt.*xnt)./xn;  % Andrew's m func
         end  % note avoided storing and computing V matrix
@@ -187,9 +187,12 @@ classdef evp < problem & handle
                 fhat = f + (khat-k)*dfdk; % 1st, uses best avail khat. Normed
                 if strcmp(o.fhat, 's')       % use 2nd-deriv of f:
                 % Alex formula, leading order bits only, no c parallel cmpt...
-                  ddfdkk = xn.*xn.*f + (xt.*(D*(Vf+mf)) + m.*(Vf+mf) + ...
-                                        xn.*(D*(xn.*(Df))))/k^2;
-                  fhat = fhat + (khat-k)^2*ddfdkk/2;
+                %  ddfdkk = xn.*xn.*f + (xt.*(D*(Vf+mf)) + m.*(Vf+mf) + ...
+                %                        xn.*(D*(xn.*(Df))))/k^2;
+                % Andrew's version which drops the negligible xn(xn)'f term...
+                  ddfdkk = xn.*xn.*(D*Df/k^2 + f) + ...        % todo: FFTs!
+                            (xt.*(D*(Vf+mf)) + m.*(Vf+mf))/k^2;
+                  fhat = fhat + (khat-k)^2*ddfdkk/2; % note sign
                 end
               end
               fhat = fhat / ixnrm(fhat);   % normalize (avoids needing c)
@@ -305,10 +308,19 @@ classdef evp < problem & handle
       p.intpts = pointset(intpts);
     end
     
-    function A = fillfredholmop(p, k) % .... helper for solvespectrum meth='fd'
+    function A = fillfredholmop(p, k) % .... helper for solvespectrum
     % FILLFREDHOLMOP - fill l^2 normed (sqrtwei) layer-potential matrix at k
     %
-    % This works for Dirichlet (bc='D', lp='d') or Neumann (bc='N', lp='s')
+    % A = FILLFREDHOLMOP(p, k) fills the matrix A = (I - 2D) for Dirichlet BCs
+    %    or (I + 2D^T) for Neumann BCs, at wavenumber k, for evp object p.
+    %    The appropriate layerpotential must have been set up in the evp object.
+    %
+    % This works for Dirichlet (bc='D', lp='d') or Neumann (bc='N', lp='s').
+    % It is a helper routine for solvespectrum meth='fd' and 'ms', and
+    % for solvemodecoeffs meth='ms'.
+    %
+    % Issues: not fully documented yet.
+      if numel(k)~=1, error('k must be a single number!'); end
       p.setoverallwavenumber(k);
       A = p.fillbcmatrix;   % fill matrix mapping density values to field values
       N = size(A,1); if size(A,2)~=N, error('A must be square!'); end
@@ -317,33 +329,51 @@ classdef evp < problem & handle
       A = -2*A;     % for Dirichlet, -2 turns (D-1/2) into (1-2D) for det
     end
     
-    function [coj ndj minsigj] = solvemodescoeffs(p, meth, o) %all evals in kwin
-    % SOLVEMODESCOEFFS - compute modes and n-derivs at set of eigenwavenumbers
+    function [coj ndj minsigj] = solvemodescoeffs(p, meth, o) % all evals in pr
+    % SOLVEMODESCOEFFS - find modes and n-derivs for all eigenwavenumbers in p
     %
     % [coj ndj minsigj] = SOLVEMODESCOEFFS(p, meth) takes eigenwavenumbers kj in
-    %   p evp object and computes a mode at each. For degeneracies, eigenspaces
-    %   are not computed. For meth='fd' (Fredholm det, the default),
-    %   minsigj give the value of the minimum singular value of 1/2-D, which
-    %   is a good error measure.
-    %   This also verifies the list of kj as good approximate eigenwavenumbers.
-    %   Data is saved in p object, but may also be passed out for convenience:
-    %   Outputs: coj is stack of column vecs of coefficients of each mode,
-    %   ndj - stack of col vecs giving boundary function data for each mode.
+    %   given p evp object and, starting with only this information, computes an
+    %   eigenmode representation (coefficients and boundary data) at each.
+    %   Degeneracies are identified (see o.degtol below), and for them, a set of
+    %   linearly-independent modes spanning the eigenspace is returned.
+    %   Solution method is as in SOLVEMODECOEFFS. Cost is O(N^3) per mode.
+    %   An appropriate layer-potential basis must already exist in p.
+    %
+    %   Outputs:
+    %   coj - stack of column vecs of coefficients of each mode,
+    %   ndj - stack of col vecs giving boundary function data for each mode,
+    %   minsigj - minimum singular values for each kj: small values verify kj
+    %             as a good approximate eigenfrequency.
+    %   Note: this data is also saved in p object, overwriting p.coj, p.ndj and
+    %         p.err.minsigj.
     %
     % [...] = SOLVEMODESCOEFFS(p, meth, opts) controls options such as:
     %   opts.verb = 0,1,... : verbosity (0=silent, 1=diagnostic text, ...)
+    %   opts.degtol : absolute tolerance on closeness of kj to count as
+    %                 degenerate (default 1e-12). Choose to match desired
+    %                 tolerance on kj.
     %
-    % See also: EVP.SOLVESPECTRUM
-      if nargin<2 | isempty(meth), meth='fd'; end   % default method
+    % See also: EVP.SOLVESPECTRUM, EVP.SOLVEMODECOEFFS
+      if nargin<2, meth = []; end
       if nargin<3, o = []; end
       if ~isfield(o, 'verb'), o.verb = 1; end; v = o.verb;  % default verbosity
-      if numel(p.kj)<1, warning('no eigenwavenumbers kj in evp object!'); end
-      p.coj = []; p.ndj = []; p.err.minsigj = [];  % erase any existing data
-      for i=1:numel(p.kj), k = p.kj(i);
-        [co nd e] = solvemodecoeffs(p, k, meth, o);
+      if ~isfield(o, 'degtol'), o.degtol = 1e-12; end;  % default tol
+      ne = numel(p.kj);
+      if ne<1, warning('no eigenwavenumbers kj in evp object!'); end
+      j=1; p.coj = []; p.ndj = []; p.err.minsigj = [];  % erase existing data
+      while j<=ne
+        dim = numel(find(abs(p.kj(j:end)-p.kj(j))<o.degtol)); % degeneracy
+        js = j:j+dim-1;  % list of indices in this subspace
+        [co nd e] = solvemodecoeffs(p, p.kj(js), meth, o);
         p.coj = [p.coj co]; p.ndj = [p.ndj nd];  % stack (todo: realloc?)
         p.err.minsigj = [p.err.minsigj; e];
-        if v, fprintf('\t mode #%d, k=%.16g: min sing val=%.3g\n',i,k,e); end
+        if v, k = p.kj(js(1));  % text output (k thereof)
+          if dim==1, fprintf('   mode #%d      \tk=%.16g: min sing val=%.3g\n',j,k,e);
+          else, fprintf('   modes #%d-%d   \tk=%.16g: sing vals in [%.3g,%.3g]\n',min(js),max(js),k,min(e),max(e));
+          end
+        end
+        j = j+dim;
       end
       if nargout>=1, coj = p.coj; end        % outputs if needed...
       if nargout>=2, ndj = p.ndj; end
@@ -351,33 +381,112 @@ classdef evp < problem & handle
     end
     
     function [co nd e] = solvemodecoeffs(p, k, meth, o) % ........ single efunc
-    % SOLVEMODECOEFFS - helper (see SOLVEMODESCOEFFS) finds single efunc, O(N^3)
+    % SOLVEMODECOEFFS - compute mode or eigenspace for single wavenumber; O(N^3)
     %
-    % see code for documentation. Dir is normalized correctly; Neu is not.
-    % Braxton needed multiple segs, so done.
-      if nargin<3 | isempty(meth), meth='fd'; end   % default method
+    % Compute an eigenmode representation (coefficients and boundary data) at
+    %   a single eigenfrequency k, or eigenspace at at degenerate cluster of k,
+    %   using the minimum singular value(s) of 1/2-D (for Dirichlet BC case).
+    %   Desired eigenspace dimension (dim) is indicated by passing in a list of
+    %   (repeated) values for k.
+    %   An appropriate layer-potential basis must already exist in p.
+    %
+    % Outputs: co - (N-by-dim) coeff data, ie columns of density functions
+    %          nd - (N-by-dim) columns of mode normal-derivative funcs
+    %           e - (dim-by-1) singular value(s) of Fredholm operator - should
+    %               be small if k is a good approximate eigenwavenumber.
+    %
+    % [...] = solvemodecoeffs(p, k, meth, opts) sets various options, including:
+    %    opts.meth = 'ms' (default; the only implemented method) use min sing
+    %              values of Fredholm operator (I - 2D) for Dirichlet BCs, or
+    %              (I + 2D^T) for Neumann BCs. Operator chosen by fillfredholmop
+    %    opts.iter = 0 use matlab's full svd to get the lowest singular values
+    %                  and vectors,
+    %                1 use custom iterative method (default), 10x faster.
+    %                  (For degenerate cases, reverts to iter=0 method).
+    % Notes/issues:
+    % * only Dirichlet BC is normalized correctly, since this uses Rellich
+    %   formula. This could be done for general BCs, would need specrowdiff to
+    %   compute tangential derivs.
+    % * Braxton Osting needed domains w/ multiple segments, so that is done.
+    %
+    % See also: EVP.FILLFREDHOLMOP
+
+    if nargin<3 | isempty(meth), meth='ms'; end   % default method
       if nargin<4, o = []; end
       if ~isfield(o, 'iter'), o.iter = 1; end   % default iterative
       
-      A = p.fillfredholmop(k);      % (I - 2D) in Dirichlet, (I + 2D^T) Neu
-      if o.iter
-        [u e v info] = utils.minsingvalvecs(A);  % iterative O(N^3) small const
-        if info.flag, error('info.flag failed from utils.minsingvalvec; try setting opts.iter=0 instead!'); end
-      else
-        [U S V] = svd(A); u = U(:,end); v = V(:,end); e = S(end,end); % slow
+      if strcmp(meth,'ms') %......... min sing val(s) method
+        
+        dim = numel(k); if dim>1, k=mean(k); end
+        A = p.fillfredholmop(k);      % eg (I - 2D) in Dirichlet, (I + 2D^T) Neu
+        if o.iter && dim==1
+          [u e v info] = utils.minsingvalvecs(A);  % iter O(N^3) small const
+          if info.flag, error('info.flag failed from utils.minsingvalvec; try setting opts.iter=0 instead!'); end
+        else                                       % O(N^3) 10x slower method
+          [U S V] = svd(A); u = U(:,end-dim+1:end); v = V(:,end-dim+1:end);
+          s = diag(S); e = s(end-dim+1:end);
       end
       if p.segs(1).a==0, z = u; u = v; v = z; end % for Neu case, swap u,v HACK
-      % need to correctly normalize Neu case now... (specrowdiff needed)
+      % todo: correctly normalize Neu case now...(specrowdiff would be needed)
       % ...
-      co = v ./ p.sqrtwei.';        % density, convert from l^2 to value vector
+
+      % co = density, converted from l^2 to value vector
+      co = v .* repmat(1./p.sqrtwei.', [1 dim]);
       % L sv's are R sv's w/ D^*, so u gives boundary function...
       x = vertcat(p.segs.x); nx = vertcat(p.segs.nx); % allow multiple segs
       xdn = real(conj(x).*nx); w = sqrt(xdn/2); % sqrt Rellich bdry wei
-      u = u/max(u);                 % make real-valued (imag part is error est)
-      u = k * u/norm(w.*u);         % Rellich-normalize
-      nd = u ./ p.sqrtwei.';        % convert from l^2 to value vector        
+      for i=1:dim
+        u(:,i) = u(:,i)/max(u(:,1)); % make real-valued (imag part is error est)
+        u(:,i) = k * u(:,i)/norm(w.*u(:,i));         % Rellich-normalize
+      end
+      nd = u .* repmat(1./p.sqrtwei.', [1 dim]); % convert l^2 to values
+      
+      else
+        error('unknown method');
+      end
     end
     
+    function [e] = modeserrors(p, q, o) % ... L2 errors of modes vs ref set
+    % MODESERRORS - L2 bdry errors of set of modes relative to a reference set
+    %
+    % e = MODESERRORS(p, q) where p and q are evp objects computes
+    %   angles between boundary functions of modes in p against corresponding
+    %   modes in q. p and q must contain the same geometry and set of modes,
+    %   otherwise the results are meaningless.
+    %   In case of degeneracies, the principal subspace angle between
+    %   eigenspaces is used, and this one value is written out to all entries
+    %   in the cluster. See options for choice of L2 inner product weight.
+    %
+    % e = MODESERRORS(p, q, opts) controls options such as:
+    %   opts.degtol : absolute tolerance on closeness of p.kj to count as
+    %                 degenerate (default 1e-12). Choose to match desired
+    %                 eigenwavenumber tolerance.
+    %  opts.wei : 0 uses plain L2(bdry) applied to d_n phi (default)
+    %             1 uses Rellich weight (x.n), equivalent to <f,f> inner prod
+    %               from Barnett-Hassell scaling paper (must be star-shaped).
+      if nargin<3, o = []; end
+      if ~isfield(o, 'degtol'), o.degtol = 1e-12; end;
+      if ~isfield(o, 'wei'), o.wei = 0; end;
+      ne = numel(p.kj);
+      if numel(q.kj)~=ne, error('different numbers of modes, stuck!'); end
+      if size(q.ndj)~=size(p.ndj), error('ndj different sizes, stuck!'); end
+      w = p.sqrtwei.';   % vanilla L2 weighting for derivative values in ndj
+      if o.wei==1
+        x = vertcat(p.segs.x); nx = vertcat(p.segs.nx); % allow multiple segs
+        xdn = real(conj(x).*nx); w = w.*sqrt(xdn); % l2 wei for phi_n IP
+      end
+      j=1; e = nan(size(p.kj));
+      while j<=ne
+        dim = numel(find(abs(p.kj(j:end)-p.kj(j))<o.degtol)); % degeneracy
+        js = j:j+dim-1;  % list of indices in this subspace
+        if max(q.kj(js))-min(q.kj(js))>o.degtol
+          warning(sprintf('eigenwavenumbers #%d-%d not degenerate (degtol=%g) in evp object q', min(js), max(js),o.degtol));
+        end
+        e(js) = subspace(p.ndj(:,js).*repmat(w,[1 dim]), q.ndj(:,js).*repmat(w,[1 dim]));
+        j = j+dim;
+      end
+    end
+      
     function [uj gx gy di js] = showmodes(p, o) % .............. plot all modes
     % SHOWMODES - compute and plot eigenmodes given their eigenvalues and coeffs
     %
@@ -402,7 +511,6 @@ classdef evp < problem & handle
     % Notes/issues:
     %  * Normalization hasn't been considered much. For GRF case, they are
     %    correctly L2-normalized over the domain. Phase removal is a bad hack!
-    %  * Degeneracies!
     %  * No account taken of non-simply connected domains (needs GRF for
     %    this to be set up...)
     %  * Neumann, Robin ... ?
