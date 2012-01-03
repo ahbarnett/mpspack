@@ -34,7 +34,12 @@ Note comments don't use % character; anything outside an (AT){...} is a comment
 @STRING{ cpc = "Comput. Phys. Commun." }
 @STRING{ jcp = "J. Comput. Phys." }
 @STRING{ sirev = "SIAM Review" }
+@STRING{ sinum = "SIAM J. Numer. Anal." }
+@STRING{ sisc = "SIAM J. Sci. Comp." }
 @STRING{ oe = "Opt. Express" }
+@STRING{ ao = "Appl. Optics" }
+@STRING{ mmas = "Math. Meth. Appl. Sci." }
+@STRING{ bit = "BIT Numer. Math." }
 
 
 % ----------------------------------------------- some of my publications
@@ -46,9 +51,9 @@ dissipation rate, and quasi-orthogonality of the boundary wavefunctions},
 journal=prl,
 volume={85},
 pages={1412},
-year=2000,
-note={\url{http://arxiv.org/nlin.CD/0003018}}
+year=2000
 }
+%note={{\tt http://arxiv.org/nlin.CD/0003018}}
 
 @article{pnm,
 author = {Cohen, Doron and Barnett, Alex and Heller, Eric J.},
@@ -57,7 +62,7 @@ journal = pre,
 volume = {63},
 pages = {046207},
 year=2001,
-note={\url{http://arxiv.org/nlin.CD/0008040}}
+note={{\tt http://arxiv.org/nlin.CD/0008040}}
 }
 
 @article {wlf,
@@ -72,7 +77,7 @@ note={\url{http://arxiv.org/nlin.CD/0008040}}
      CODEN = {JPHAC5},
    MRCLASS = {81Q50},
   MRNUMBER = {MR1822784 (2002a:81069)},
-note={\url{http://arxiv.org/nlin.CD/0006041}}
+note={{\tt http://arxiv.org/nlin.CD/0006041}}
 }
 
 @phdthesis{mythesis,
@@ -80,7 +85,7 @@ author={Barnett, A. H.},
 title={Dissipation in deforming chaotic billiards},
 school={Harvard University},
 year={2000},
-note={available at \url{http://www.math.dartmouth.edu/~ahb/thesis_html/}}
+note={available at \verb+http://www.math.dartmouth.edu/~ahb/thesis_html/+}
 }
 
 @article{que,
@@ -90,18 +95,18 @@ billiards",
 year = {2006},
 journal = cpam,
 volume = 59,
-issue= 10,
+number= 10,
 pages = {1457--88}
 }
 %note = "\url{http://arxiv.org/math-ph/0512030}"
 
+%note="13 pages, {\tt nlin.CD/0611059}",
 @article{mush,
 author="Barnett, A. H. and Betcke, T.",
 title="Quantum mushroom billiards",
 volume=17,
-note="13 pages, {\tt nlin.CD/0611059}",
 journal="CHAOS",
-pages=043123,
+pages=043125,
 year="2007",
 }
 
@@ -109,12 +114,13 @@ year="2007",
 author = "Barnett, A. H.",
 title = "Quasi-orthogonality on the boundary for {E}uclidean {L}aplace
 eigenfunctions",
-note = "{\em preprint}, {\tt math-ph/0601006}"
+note = "{\em preprint}, {\tt math-ph/0601006}, available at
+{\tt http://arxiv.org}"
 }
 
-@misc{scaling,
-author = "Barnett, A. H.",
-title = "The scaling method for the {D}irichlet eigenproblem",
+@misc{sca,
+author = "Barnett, A. H. and Hassell, A.",
+title = "Fast computation of high frequency {D}irichlet eigenmodes via the spectral flow of the interior {N}eumann-to-{D}irichlet map",
 note = "in preparation"
 }
 
@@ -122,18 +128,21 @@ note = "in preparation"
 author="Barnett, A. H.",
 title="Perturbative analysis of the {M}ethod of {P}articular {S}olutions
 for improved inclusion of high-lying {D}irichlet eigenvalues",
-journal="SIAM J. Numer. Anal.",
+journal=sinum,
 year=2009,
 volume=47,
-issue=3,
+number=3,
 pages={1952--1970},
 }
 
-@misc{polygonscatt,
+@article{polygonscatt,
 author="Barnett, A. H. and Betcke, T.",
 title="An exponentially convergent non-polynomial finite element
 method for time-harmonic scattering from polygons",
-note={in press, SIAM J.\ Sci.\ Comp.},
+journal=sisc,
+volume=32,
+number=3,
+pages={1417--1441},
 year=2010
 }
 
@@ -145,7 +154,7 @@ for {H}elmholtz problems on analytic domains",
 year=2008,
 journal=jcp,
 volume="227",
-issue="14",
+number="14",
 pages={7003--7026}
 }
 
@@ -213,20 +222,52 @@ month="January"
 
 @article{qplp,
 author="A H Barnett and L Greengard",
-title="A new integral representation for quasiperiodic fields
+title="A new integral representation for quasi-periodic fields
 and its application to two-dimensional band structure calculations",
-journal="J. Comput. Phys., {\it in press}",
-year=2010
+journal=jcp,
+year=2010,
+volume=229,
+pages={6898--6914}
 }
 
 @article{qpsc,
 author="A H Barnett and L Greengard",
-title="A new integral representation for quasiperiodic scattering
+title="A new integral representation for quasi-periodic scattering
 problems in two dimensions",
-journal="{\it in preparation}, BIT Numerical Analysis",
-year=2010
+journal="BIT Numer. Math.",
+year=2011,
+volume=51,
+pages={67--90}
 }
 
+@article{tenney,
+author={Larry Polansky and Alex Barnett and Michael Winter},
+title="A Few More Words About {J}ames {T}enney:
+Dissonant Counterpoint and Statistical Feedback",
+journal="J. Math. Music",
+volume=5,
+number=2,
+pages={63--82},
+year=2011
+}
+
+%note={\verb+http://arXiv.org/abs/1006.3592v1+}
+@article{bnds,
+title="Boundary quasi-orthogonality and sharp inclusion bounds for large {D}irichlet eigenvalues",
+author="A. H. Barnett and Andrew Hassell",
+journal="SIAM J. Numer. Anal.",
+year=2011,
+volume=49,
+pages={1046--1063}
+}
+
+@inproceedings{neubnds,
+title={Estimates on {N}eumann eigenfunctions at the boundary, and the ``{M}ethod of {P}articular {S}olutions'' for computing them},
+author="A. H. Barnett and Andrew Hassell",
+year=2011,
+note={submitted},
+booktitle={Spectral Geometry, proceedings of the International Conference on Spectral Geometry, Dartmouth College}
+}
 
 % ----------------------------------------- dynamical systems, classical chaos
 
@@ -758,6 +799,33 @@ volume=102,
 number=5,
 pages={869--902}
 }
+
+@article{Tataru,
+author={D. Tataru},
+title={On the regularity of boundary traces for the wave equation},
+journal={Ann. Scuola Norm. Sup. Pisa Cl. Sci.},
+volume={26},
+number=1,
+pages={185--206},
+year={1998},
+}
+
+@article{Xu,
+author={X. Xu},
+title={Upper and lower bounds for normal derivatives of spectral clusters of Dir
+ichlet Laplacian},
+note={available at \verb+http://arXiv.org/abs/1004.2517+}
+}
+
+@article{nonnenrev,
+author={S Nonnenmacher},
+title={Anatomy of quantum chaotic eigenstates},
+journal={S\'eminaire Poincar\'e},
+year=2010,
+volume={XIV},
+pages={177--220}
+}
+
 
 
 % ------------------------------------------------------------ automorphic
@@ -1583,16 +1651,6 @@ note="available at
 }
 
 
-@article{demen07,
-title="Numerical experiments on quantum chaotic billiards",
-author="de Menezes, D. D. and Jar E. Silva, M. and de Aguiar, F. M.",
-journal="CHAOS",
-volume=17,
-issue=2,
-year=2007,
-pages="023116"
-}
-
 @article{dietz,
 author={Dietz, B. and Friedrich, T. and Miski-Oglu, M. and Richter, A. and
 Sch\"{a}fer, S.},
@@ -1681,8 +1739,15 @@ volume=253,
 pages={481--509}
 }
 
-
-
+@article{hillairetjudge,
+author="L Hillairet and C Judge",
+journal="Proc. Amer. Math. Soc.",
+title="GENERIC SPECTRAL SIMPLICITY OF POLYGONS",
+volume=137,
+number=6,
+pages={2139--2145},
+year=2009
+}
 
 % -----------------------------------------------------eigenmode applications
 
@@ -1835,8 +1900,14 @@ MRREVIEWER = {J. T. Oden},
   publisher = {American Physical Society}
 }
 
-
-
+@article{GiraudThas,
+author={O Giraud and K Thas},
+title="Hearing shapes of drums: Mathematical and physical aspects of isospectrality",
+journal={Rev.\ Mod.\ Phys.},
+year=2010,
+volume=82,
+pages={2213--2255}
+}
 
 % ------------------------------------------eigenmode numerical methods 
 
@@ -1949,6 +2020,16 @@ year=2007
    MRCLASS = {65F15 (81-04 81Q50)},
   MRNUMBER = {MR2159324},
 }
+
+@article{kosztin,
+author={Ioan Kosztin and Klaus Schulten},
+title={Boundary Integral Method for Stationary States of Two-Dimensional Quantum Systems},
+journal={Internat. J. Modern Phys. C},
+volume={8},
+number=2,
+pages={293--325},
+year=1997
+} 
 
 @article {KS,
     AUTHOR = {Kuttler, J. R. and Sigillito, V. G.},
@@ -2067,6 +2148,126 @@ title="The {T}refftz method for the {H}elmholtz equation with degeneracy",
 year=2008,
 volume=58,
 pages={131--159}
+}
+
+@article{berrydiab,
+author={M V Berry and M Wilkinson},
+title={Diabolical points in the spectra of triangles},
+year=1984,
+journal=proy,
+volume=392,
+pages={15--43}
+}
+
+@article{steinbachunger,
+author={O Steinbach and G Unger},
+title={A boundary element method for the {D}irichlet eigenvalue problem of the {L}aplace operator},
+year=2009,
+journal={Numer. Math.},
+volume=113,
+pages={281--298}
+}
+
+@article{duran,
+author={M. Dur\'an and J.-C. N\'ed\'elec and S. Ossand\'on},
+title={An Efficient {G}alerkin {BEM} to Compute High Acoustic Eigenfrequencies},
+journal={J. Vib. Acoust.},
+year=2009,
+volume=131,
+number=3,
+pages={03100(1--9)}
+}
+
+@article{kirkup,
+author={S. M. Kirkup and S. Amini},
+title={Solution of the {H}elmholtz Eigenvalue Problem via the Boundary Element Method},
+journal={Int. J. Numer. Meth. Eng.},
+volume=36,
+number=2,
+pages={321--330},
+year=1993
+}
+
+@article{lepore,
+author={D Cohen and N Lepore and E J Heller},
+title={Consolidating boundary methods for finding the eigenstates of billiards},
+journal=jpa,
+year=2004,
+volume=37,
+pages={2139--2161}
+}
+
+@article{tai74,
+author={G R C Tai and R P Shaw},
+title={{H}elmholtz-equation eigenvalues and eigenmodes for arbitrary
+domains},
+journal={J. Acoust.\ Soc.\ Am.},
+year=1974,
+volume=56,
+number=3,
+pages={796--804}
+}
+
+@incollection{babosrev,
+author={I M Babuska and J Osborn},
+title={Eigenvalue problems},
+booktitle={Handbook of numerical analysis, Volume {II}},
+pages={643--787},
+editor={P G Ciarlet and J I Lions},
+year=1991,
+publisher={Elsevier (North-Holland)}
+}
+
+
+% FEM:
+@article{demen07,
+title="Numerical experiments on quantum chaotic billiards",
+author="de Menezes, D. D. and Jar E. Silva, M. and de Aguiar, F. M.",
+journal="CHAOS",
+volume=17,
+issue=2,
+year=2007,
+pages="023116"
+}
+
+% FEM
+@article{dietzFEM,
+author={B Dietz and A Heine and V Heuveline and A Richter},
+title="Test of a numerical approach to the quantization of billiards",
+year=2005,
+journal=pre,
+volume={71},
+pages={026703}
+}
+
+% best FEM so far?
+@article{heuveline,
+author={V Heuveline},
+title={On the computation of a very large number of eigenvalues for selfadjoint elliptic operators by means of multigrid methods},
+journal=jcp,
+volume=184,
+year=2003,
+pages={321--337}
+}
+
+% scaling variant:
+@article{veblemonza,
+author={G Veble and T Prosen and M Robnik},
+title="Expanded boundary integral method and chaotic time-reversal doublets in quantum billiards",
+journal={New J.\ Phys.},
+year=2007,
+volume=9,
+pages=15
+}
+
+% scaling variant:
+@article{hakansca,
+title={An efficient {F}redholm method for calculation of highly excited states of billiards},
+author={Hakan E. Tureci and H. G. L. Schwefel},
+journal=jpa,
+volume=40,
+pages=13869,
+year=2007
 }
 
 
@@ -2404,12 +2605,22 @@ issue=4,
 pages={3001--6}
 }
 
+@article{ganesh10,
+title="A far-field based {T}-matrix method for two dimensional obstacle
+scattering",
+author={M. Ganesh and S. C. Hawkins},
+journal={ANZIAM J.},
+volume={51},
+year=2010,
+pages={215--230}
+}
+
 
 % ------------------------------------------ wave scattering
 
 @article{brunoFMM,
 author="Bruno, O. P. and Kunyansky, L. A.",
-title="High-order algorithm for the solution of surface scattering problems:
+title="A fast, high-order algorithm for the solution of surface scattering problems:
 basic implementation, tests, and applications",
 journal=jcp,
 year=2001,
@@ -2428,11 +2639,21 @@ pages={2921--2934}
 
 @article{monkwang,
 author="Monk, P. and Wang, D.-Q.",
-title="A least-squares method for the Helmholtz equations",
+title="A least-squares method for the {H}elmholtz equation",
 journal="Comput. Meth. Appl. Mech. Engrg.",
 year=1999,
 volume=175,
 pages={121--136}
+}
+
+@article{uwvf,
+title={Application of an Ultra Weak Variational Formulation of Elliptic {PDE}S to the Two-Dimensional {H}elmholtz Problem},
+author={Olivier Cessenat and Bruno Despres},
+journal=sinum,
+volume=35,
+number=1,
+year=1998,
+pages={255--299}
 }
 
 @article{zickar,
@@ -2464,6 +2685,74 @@ volume=205,
 pages={1--23}
 }
 
+@misc{youngmart,
+author={P. Young and P.G. Martinsson},
+title={A high order {N}ystr\"om method for boundary integral equations on axisymmetric surfaces},
+note={preprint, {\tt arXiv.org:1002.2001}},
+year=2010
+}
+
+@article{ying06,
+author={L Ying and G Biros and D Zorin},
+title={A high-order 3D boundary integral equation solver for elliptic PDEs in smooth domains},
+year=2006,
+journal=jcp,
+volume=216,
+pages={247--275}
+}
+
+@article{kirsch,
+author={A. Kirsch and P. Monk},
+title={An analysis of the coupling of finite-element and {N}ystr\"{o}m
+methods in acoustic scattering},
+journal={IMA J. Numer. Anal.},
+volume=14,
+year=1994,
+pages={523--544}
+}
+
+@article{CWrealline,
+title={Boundary integral equations on unbounded rough surfaces: {F}redholmness and the finite section method},
+author={S N Chandler-Wilde and M Lindner},
+year=2008,
+journal={J. Integral Equations Appl.},
+volume=20,
+pages={13--48}
+}
+
+@misc{zydtri,
+author={Zydrunas Gimbutas and Leslie Greengard},
+title={A simple implementation of the {FMM} for time-harmonic scattering problems},
+note="in preparation",
+year=2010
+}
+
+@misc{HFMM2D,
+author={Zydrunas Gimbutas and Leslie Greengard},
+title={{HFMM2D}, {F}ortran code for fast multipole method with {H}elmholtz kernel in two dimensions (version 20110313)},
+year=2011
+}
+
+
+@article{ainsworth,
+journal=sinum,
+author="M Ainsworth",
+volume=42,
+pages={553--575},
+title="Discrete Dispersion Relation for hp-Version Finite Element Approximation at High Wave Number",
+year=2004
+}
+
+@article{pollution,
+journal=sinum,
+author={I M Babuska and S A Sauter},
+title={Is the pollution effect of the {FEM} avoidable for the {H}elmholtz equation considering high wave numbers?},
+year=1997,
+volume=34,
+number=6,
+pages={2392--2423}
+}
+
 % ----------------------------------------- Computational E&M
 
 @book{CMS,
@@ -2479,6 +2768,81 @@ title="The Generalized Multipole Technique for Computational Electromagnetics",
 publisher="Artech House Books",
 address="Boston",
 year=1990
+}
+
+@book{muller,
+author="C M{\"{u}}ller",
+title="Foundations of the Mathematical Theory of Electromagnetic Waves",
+publisher="Springer-Verlag, Berlin, New York",
+year=1969
+}
+
+@book{taflove,
+author={A. Taflove},
+title={Computational Electrodynamics: The Finite-Difference Time-Domain Method},
+publisher={Artech House, Norwood, MA},
+year={1995}
+}
+
+@misc{epgreenoneil,
+author={C L Epstein and L Greengard and M O'Neil},
+title={{D}ebye Sources and the Numerical Solution of the Time Harmonic {M}axwell Equations, II},
+note={preprint, {\tt arXiv:1105.3217}},
+year=2011
+}
+
+% ------------------------------ solar cells & absorbers
+
+@article{saeta,
+title="How much can guided modes enhance
+absorption in thin solar cells?",
+author="Peter N. Saeta and Vivian E. Ferry and Domenico Pacifici and Jeremy N. Munday and Harry A. Atwater",
+journal=oe,
+volume=17,
+number=23,
+year=2009,
+pages={20975--20990}
+}
+
+@article{atwater,
+title={Plasmonics for improved photovoltaic devices},
+pages={205--213},
+author={Harry A. Atwater and Albert Polman},
+year=2010,
+journal={Nature Materials},
+volume=9,
+number=3
+}
+
+@misc{atwaterreport,
+title={Plasmonic photovoltaics},
+author={H. A. Atwater and K. Langeland and I. Price and V. Ferry},
+note={GCEP Progress Report April 30th, 2010},
+}
+
+
+@article{kelzenberg,
+title={Enhanced absorption and carrier collection in {S}i
+wire arrays for photovoltaic applications},
+author={Michael D. Kelzenberg and Shannon W. Boettcher and Jan A. Petykiewicz and Daniel B. Turner-Evans and
+Morgan C. Putnam and Emily L. Warren and Joshua M. Spurgeon and Ryan M. Briggs and Nathan S. Lewis
+and Harry A. Atwater},
+journal={Nature Materials},
+year=2010,
+volume=9,
+number=3,
+pages={239--244}
+}
+
+@article{absorber,
+title={High performance solar-selective absorbers
+using coated sub-wavelength gratings},
+author={Nicholas P. Sergeant and Mukul Agrawal and Peter Peumans},
+journal=oe,
+year=2010,
+volume=18,
+number=6,
+pages={5525--5540}
 }
 
 % ------------------------- Periodic Problems,  Lattice Sums, Photonic Crystals
@@ -2561,6 +2925,45 @@ volume=44,
 pages={165--175}
 }
 
+@article{linton98,
+author="Linton, C. M.",
+title="The {G}reen's function for the two-dimensional {H}elmholtz equation in periodic domains",
+journal="J. Eng. Math.",
+volume=33,
+pages={377--402},
+year=1998
+}
+
+@article{lintonrev,
+author={Linton, C. M.},
+title={Lattice sums for the {H}elmholtz equation},
+journal=sirev,
+volume=52,
+number=4,
+pages={603--674},
+year=2010
+}
+%DOI is 10.1137/09075130X
+%howpublished={available at {\tt http://www.lboro.ac.uk/departments/ma/research/preprints/papers09/09-04.pdf}},
+
+
+@misc{arens10,
+title={Analysing {E}wald's Method for the Evaluation of {G}reen's Functions for Periodic Media},
+author={T Arens and K Sandfort and Suzanne Schmitt and A Lechleiter},
+note="Preprint, submitted to IMA J. Numer. Anal.",
+year=2010
+}
+% available at {\tt http://digbib.ubka.uni-karlsruhe.de/volltexte/1000019136}",
+
+@article{wood,
+author="R W Wood",
+title="On a remarkable case of uneven distribution of light in a diffraction grating spectrum",
+journal={Philos. Mag.},
+volume=4,
+year=1902,
+pages={396­-408}
+}
+
 @article{smajic,
 author="Smajic, J. and Hafner, C. and Erni, D.",
 title="Automatic Calculation of band diagrams of photonic crystals using
@@ -2601,7 +3004,7 @@ pages={257--272}
 
 @article{otani08,
 author="Otani, Y. and Nishimura, N.",
-title="A periodic {FMM} for {M}axwell's equations in 3D and
+title="A periodic {FMM} for {M}axwell's equations in {3D} and
 its applications to problems related to photonic crystals",
 journal=jcp,
 year=2008,
@@ -2652,6 +3055,54 @@ volume=15,
 issue={3--5},
 year=1991,
 pages={229--243}
+}
+
+@incollection{kressacrev,
+author="Kress, R.",
+title="Acoustic scattering: {S}pecific theoretical tools (topic 1.2.1) and {S}cattering by obstacles (topic 1.2.2)",
+booktitle="Scattering: Scattering and Inverse Scattering in Pure and Applied Science (two volumes)",
+editor={E.R. Pike and P.C. Sabatier},
+year=2001,
+pages={37--73},
+publisher={Academic Press, London},
+note={available at {\tt http://diogenes.iwt.uni-bremen.de/vt/laser/papers/Kress-acustic-scatter-ed-book.ps}}
+}
+
+@book{anselone,
+author="P. M. Anselone",
+title="Collectively compact operator approximation theory",
+publisher={Prentice-Hall, Englewood Cliffs, NJ},
+year=1971
+}
+
+@article{osbornrate,
+author="J. Osborn",
+title="Spectral Approximation for Compact Operators",
+journal="Math. Comput.",
+volume=29,
+issue={131},
+year=1975,
+pages={712--725}
+}
+
+@article{atkinspec,
+author="K. Atkinson",
+title="The Numerical Solution of the Eigenvalue Problem for Compact Integral Operators",
+journal="Trans. Amer. Math. Soc.",
+volume=129,
+issue={3},
+year=1967,
+pages={458--465}
+}
+
+@article{atkinrate,
+author="K. Atkinson",
+title="Convergence rates for approximate eigenvalues of compact integral operators",
+journal=sinum,
+volume=12,
+issue={2},
+year=1975,
+pages={213--222}
 }
 
 @article{tang,
@@ -2705,6 +3156,15 @@ issue=5,
 pages={1686--1706}
 }
 
+@article{haider02,
+title="Boundary-Integral Calculations of Two-Dimensional Electromagnetic Scattering in Infinite Photonic Crystal Slabs: Channel Defects and Resonances",
+author="M Haider and S. Shipman and S. Venakides",
+journal="SIAM J. Appl. Math.",
+volume=62,
+year=2002,
+number=6,
+pages={2129--2148}
+}
 
 @article{channeldrop,
 author={S. Fan and P. R. Villeneuve and J. D. Joannopoulos and H. A. Haus},
@@ -2757,7 +3217,7 @@ month = {Jan},
 @article{botten03,
 author = {L C Botten and R C McPhedran and N A Nicorovici and A A Asatryan and C M de Sterke and P A Robinson and K Busch and G H Smith and T N Langtry}, 
 journal = {Progress in Electromagnetics Research},
-title = {Rayleigh Multipole Methods for Photonic Crystal Calculations },
+title = {Rayleigh Multipole Methods for Photonic Crystal Calculations},
 pages = {21--60},
 volume = {41},
 year = {2003},
@@ -2854,6 +3314,336 @@ series={Applied Mathematical Sciences, volume 46},
 publisher={Springer-Verlag}
 }
 
+@article{arens06,
+author="T Arens and S N Chandler-Wilde and J A DeSanto",
+title="On integral equation and least squares methods for scattering by diffraction gratings",
+journal="Commun. Comput. Phys.",
+year=2006,
+volume=1,
+pages={1010--42}
+}
+
+@article{zhang03,
+author="Bo Zhang and Simon N Chandler-Wilde",
+title="Integral equation methods for scattering by infinite rough
+surfaces",
+journal="Math. Meth. Appl. Sci.",
+year=2003,
+volume=26,
+pages={463--488}
+}
+
+@article{CWzhang99,
+author="Simon N Chandler-Wilde and Bo Zhang",
+title="Scattering of electromagnetic waves by rough interfaces and inhomogeneous layers",
+journal="SIAM J. Math. Anal.",
+year=1999,
+volume=30,
+number=3,
+pages={559--583}
+}
+
+@article{CWnystrom,
+title={A {Nystr\"{o}m} method for a class of integral equations on the real line with applications to scattering by diffraction gratings and rough surfaces},
+author={A Meier and T Arens and S N Chandler-Wilde and A Kirsch},
+year=2000,
+journal={J. Integral Equations Appl.},
+volume=12,
+pages={281--321}
+}
+
+@article{bao95,
+title="Finite Element Approximation of Time Harmonic Waves in Periodic Structures",
+author={Gang Bao},
+journal=sinum,
+volume=32,
+number=4,
+year=1995,
+pages={1155--1169}
+}
+
+@article{baodobsonrev,
+author="Gang Bao and David C. Dobson",
+title="Modeling and optimal design of diffractive optical structures",
+journal="Surv. Math. Ind.",
+volume=8,
+year=1998,
+pages={37--62}
+}
+
+@article{bonnetBDS,
+title="Guided Waves by Electromagnetic Gratings and
+Non-uniqueness Examples for the Diffraction Problem",
+author="{Bonnet-BenDhia, A.-S.} and F Starling",
+year=1994,
+journal=mmas,
+volume=17,
+pages={305-338}
+}
+%author="{Bonnet-BenDhia, A.-S.} and F Starling",
+% note the hack to get A.-S. hyphen initials correct in spmpsci bibtex style!
+% Initials come before surname in CAREER award references, but other way
+% round in BIT Numer Math.
+
+@article{nedelec-starling,
+journal={SIAM J. Math. Anal.},
+volume=22,
+number=6,
+pages={1679--1701},
+year=1991,
+title={Integral equation methods in a quasi-periodic diffraction problem
+for the time-harmonic {M}axwell's equations},
+author={J. C. {N\'{e}d\'{e}lec} and F. Starling}
+}
+
+@inbook{shipmanreview,
+title="Resonant scattering by open periodic waveguides",
+author="S Shipman",
+booktitle="Wave Propagation in Periodic Media: Analysis, Numerical Techniques and Practical Applications",
+series="Progress in Computational Physics (PiCP)",
+volume=1,
+year=2010,
+pages={7--50},
+publisher={Bentham Science Publishers}
+}
+%editor="Matthias Ehrhardt",
+
+@book{petit,
+editor="R Petit",
+title="Electromagnetic Theory of Gratings",
+series="Topics in Current Physics",
+volume=22,
+publisher={Springer-Verlag,Heidelberg},
+year=1980
+}
+
+@article{horoshenkov,
+title={Efficient calculation of two-dimensional periodic and waveguide acoustic {G}reen's functions},
+author={K V Horoshenkov and S N Chandler-Wilde},
+year=2002,
+journal="J. Acoust. Soc. Amer.",
+volume=111,
+pages={1610--1622}
+}
+
+@article{kurkcu,
+author={H Kurkcu and F Reitich},
+title={Stable and efficient evaluation of periodized {G}reen's functions
+for the {H}elmholtz equation at high frequencies},
+journal=jcp,
+volume=228,
+year=2009,
+pages={75--95}
+}
+
+@article{rayleigh,
+author={Lord Rayleigh},
+title={On the dynamical theory of gratings},
+journal="Proc. R. Soc. Lond. A",
+volume=79,
+year=1907,
+pages={399--416}
+}
+
+@article{nicholas,
+author="Nicholas, Michael J.",
+title="A higher order numerical method for {3-D} doubly periodic
+electromagnetic scattering problems",
+journal="Commun. Math. Sci.",
+volume=6,
+year=2008,
+number=3,
+pages={669--694}
+}
+
+
+@article{elschner,
+title={Finite Element Solution of Conical Diffraction Problems},
+author={Johannes Elschner and Rainer Hinder and Gunther Schmidt},
+journal={Adv. Comput. Math.},
+volume=16,
+number={2--3},
+year=2002,
+pages={139--156}
+}
+
+@misc{arenshabil,
+author={T Arens},
+title={Scattering by Biperiodic Layered Media:
+   The Integral Equation Approach},
+howpublished={Habilitation thesis, Karlsruhe},
+year=2010
+}
+
+@article{wulu09,
+author={Y. Wu and Y. Y. Lu},
+title={Analyzing diffraction gratings by a boundary integral equation {N}eumann-to-{D}irichlet map method},
+journal={J. Opt. Soc. Am. A},
+volume=26,
+number=11,
+year=2009,
+pages={2444--2451}
+}
+
+
+@article{plasmonholes,
+author="T.W. Ebbessen and H.J. Lezec and H.F. Ghaemi and T. Thio and P.A. Wolff",
+title="Extraordinary optical
+   transmission through sub-wavelength hole arrays",
+journal="Nature",
+volume=391,
+year=1998,
+pages={667--669}
+}
+
+@article{Cmethod,
+title={Rigorous and Efficient Grating-Analysis Method Made Easy for Optical Engineers},
+journal=ao,
+volume=38,
+number=2,
+pages={304--313},
+year=1999,
+author={Lifeng Li and Jean Chandezon and G{\'{e}}rard Granet and Jean-Pierre Plumey}
+}
+
+@article{qpfdtd,
+title={Some Experiences From {FDTD} Analysis of Infinite and Finite Multi-Octave Phased Arrays},
+author={Henrik Holter and Hans Steyskal},
+journal={IEEE Trans.\ Antennae Prop.},
+year=2002,
+volume=50,
+number=12,
+pages={1725--1731}
+}
+
+@misc{brunowaves11,
+title={Efficient Solution of Acoustic and Electromagnetic Scattering Problems in Three-Dimensional Periodic Media},
+author={Oscar P Bruno and Stephen Shipman and Catalin Turc and Stephanos Venakides},
+year=2011,
+journal={Proceedings of WAVES2011: the 10th international conference
+on the mathematical and numerical aspects of waves.}
+}
+
+@article{brunohaslam09,
+title={  Efficient high-order evaluation of scattering by periodic surfaces: deep gratings, high frequencies,              and glancing incidences},
+author={Oscar P Bruno and Michael C Haslam},
+year=2009,
+journal={J. Opt. Soc. Am. A},
+volume=26,
+number=3,
+pages={658--668}
+}
+
+
+
+% ====================== Diffraction and photonics applications ============ 
+
+@book{planarlightwave,
+title={Frontiers in Planar Lightwave Circuit Technology
+Design, Simulation, and Fabrication},
+author={Siegfried Janz and Jiri Ctyroky and Stoyan Tanev},
+series={NATO Science Series II: Mathematics, Physics and Chemistry,
+volume 216},
+publisher={Springer Netherlands},
+year=2006
+}
+
+@article{acoustmeta,
+author={Shu Zhang and Yin, Leilei and Fang, Nicholas},
+title={Focusing Ultrasound with an Acoustic Metamaterial Network},
+journal=prl,
+year=2009,
+volume=102,
+pages=194301
+}
+
+@article{vlasov,
+title={Active control of slow light on a chip with photonic crystal waveguides},
+author={Yurii A. Vlasov and Martin O'Boyle and  Hendrik F. Hamann and Sharee J. McNab},
+journal={Nature},
+volume=438,
+pages={65--69},
+year=2005
+}
+
+%other authors: M. Key , J. Britten , R. Beach , G. Beer , C. Brown , S. Bryan , J. Caird , T. Carlson , J. Crane , J. Dawson , A.C. Erlandson , D. Fittinghoff , M. Hermann , C. Hoaglan , A. Iyer , L. Jones II , I. Jovanovic , A. Komashko , O. Landen , Z. Liao , W. Molander , S. Mitchell , E. Moses , N. Nielsen , H-H. Nguyen , J. Nissen , S. Payne , D. Pennington , L. Risinger , M. Rushford , K. Skulina , M. Spaeth , B. Stuart , G. Tietbohl and B. Wattellier
+@article{NIF,
+title={An overview of {LLNL} high-energy short-pulse technology for advanced radiography of laser fusion experiments},
+author={C. P. J. {Barty, et al.}},
+journal={Nuclear Fusion},
+volume=44,
+number=12,
+pages={S266},
+year=2004
+}
+
+@article{interconnects,
+author={A. Shacham and K. Bergman and L. P. Carloni},
+title={Photonic Networks-on-Chip for Future Generations of Chip Multi-Processors},
+journal={IEEE Trans. Computers},
+volume=57,
+number=9,
+year=2008,
+pages={1246--1260}
+}
+
+% This is for lower-power-consumption of optical interconnects....
+@misc{consumption,
+title="Smart 2020: enabling the low carbon economy in the information age",
+author="{The Climate Group for the Global e-Sustainability Initiative}",
+note={\verb+http://www.smart2020.org/_assets/files/03_Smart2020Report_lo_res.pdf+},
+year=2008
+} 
+
+@article{pendry,
+year=2006,
+volume=312,
+number=5781,
+pages={1780--1782},
+journal={Science},
+title={Controlling Electromagnetic Fields},
+author={J. B. Pendry and D. Schurig and D. R. Smith}
+}
+
+@article{kohncloak,
+author={R. V. Kohn and D. Onofrei and M. S. Vogelius and M. I. Weinstein},
+title={Cloaking via change of variables for the {H}elmholtz equation},
+journal=cpam,
+volume=63,
+year=2010,
+pages={973--1016}
+}
+
+@article{scatterometry,
+author={R Model and A Rathsfeld and H Gross and M Wurm and B Bodermann},
+title={A scatterometry inverse problem in optical mask metrology},
+year=2008,
+journal={J. Phys.: Conf. Ser.},
+volume=135,
+pages=012071
+}
+
+@inproceedings{refmodels,
+author={Gregory L. Wojcik and John Mould Jr. and Egon Marx† and Mark P. Davidson},
+title={Numerical Reference Models for Optical Metrology Simulation},
+booktitle={SPIE Microlithography ‘92: IC Metrology, Inspection, and Process Control VI, \#1673-06},
+year=1992
+}
+
+@article{waterwave,
+journal={J. Fluid Mech.},
+year=2006,
+volume=548,
+pages={237--256},
+title={Water-wave scattering by a periodic array of arbitrary bodies},
+author={M. A. Peter and M. H. Meylan and C. M. Linton}
+}
+
+@misc{CWnote,
+author={S. Chandler-Wilde},
+year=2010,
+note={personal communication}
+}
 
 % ------------------------------------- analysis of PDEs in complex plane, Vekua
 
@@ -3022,6 +3812,41 @@ year=1998,
 publisher="Springer-Verlag"
 }
 
+@article{hale,
+title="Computing {$A^\alpha$}, {$\log(A)$}, and related MATRIX FUNCTIONS
+                 BY CONTOUR INTEGRALS",
+author="N Hale and N J Higham and L N Trefethen",
+journal=sinum,
+year=2008,
+volume=46,
+number=5,
+pages={2505­-2523}
+}
+
+@article{bromwich,
+journal="Math. Comput.",
+volume=76,
+number=259,
+year=2007,
+pages={1341­-1356},
+title="                 PARABOLIC AND HYPERBOLIC CONTOURS
+              FOR COMPUTING THE BROMWICH INTEGRAL",
+author="J. A. C. Weideman and L. N. Trefethen"
+}
+
+
+@article{weidemanrev,
+title="Numerical Integration of Periodic Functions: A Few Examples",
+author="J. A. C. Weideman",
+journal="Amer. Math. Monthly",
+volume=109,
+number=1,
+year=2002,
+pages={21--36}
+}
+
+
+
 @book {numrec,
     AUTHOR = {Press, William H. and Teukolsky, Saul A. and Vetterling,
               William T. and Flannery, Brian P.},
@@ -3115,7 +3940,7 @@ publisher="SIAM"
 AUTHOR={{The MathWorks, Inc.}},
 title={{MATLAB} software},
 note={{\tt http://www.mathworks.com/matlab}},
-year={Copyright (c) 1984--2009},
+year={Copyright (c) 1984--2011},
 }
 
 @article{helsing_corner,
@@ -3126,6 +3951,15 @@ title="Corner singularities for elliptic problems: Integral equations, graded
 meshes, quadrature, and compressed inverse preconditioning",
 volume=227,
 pages={8820--8840}
+}
+
+@article{bremer10,
+title={Efficient discretization of {L}aplace boundary integral equations on polygonal domains},
+author={J. Bremer and V. Rokhlin},
+journal=jcp,
+year=2010,
+volume=229,
+pages={2507--2525}
 }
 
 @article{beale,
@@ -3159,7 +3993,7 @@ pages={1551--1584}
 author="Mayo, A.",
 year=1985,
 journal="SIAM J. Sci. Stat. Comput.",
-title="Fast high order accurate solution of Laplace's equation on irregular regions ",
+title="Fast high order accurate solution of {L}aplace's equation on irregular regions ",
 volume=6,
 pages={144--157}
 }
@@ -3191,6 +4025,12 @@ volume=227,
 pages={2899--2921}
 }
 
+@misc{gillman,
+year=2011,
+author={A. Gillman and P. Young and P. G. Martinsson},
+title="A direct solver with $O(N)$ complexity for integral equations on one-dimensional domains",
+notes={{\em in review}}
+} 
 
 % -------------------------------------------------- PDEs (non-numerical)
 
@@ -3335,8 +4175,11 @@ MRREVIEWER = {}
 }
 
 @book{bdip,
-author={Boyce and DiPrima},
-title={standard diff eq textbook}
+author={W. E. Boyce and R. C. DiPrima},
+title={Elementary Differential Equations and Boundary Value Problems},
+edition={8th Ed.},
+year=2004,
+publisher={Wiley}
 }
 
 
@@ -3367,7 +4210,29 @@ year=1998,
 pages={223--237}
 }
 
+@book{mikhlinbook,
+author="S G Mikhlin",
+title="Integral equations",
+edition="2nd",
+publisher="MacMillan, New York",
+year=1964
+}
 
+@book{taodisp,
+author="T Tao",
+title="Nonlinear dispersive equations: local and global analysis",
+publisher="AMS",
+bookseries="CBMS regional conference series in mathematics",
+year=2006
+}
+
+@book{TaylorI,
+author="Taylor, M. E.",
+title="Partial Differential Equations: Basic Theory",
+year=1996,
+address="Berlin",
+publisher="Springer"
+}
 
 
 
@@ -3387,10 +4252,16 @@ pages={223--237}
 
 @book{jaynes,
 author="Jaynes, E.T.",
-title="Probability theory : the logic of science",
+title="Probability theory: the logic of science",
 publisher="Cambridge University Press",
 editor="Bretthorst, G. Larry",
 year=2003
+}
+
+@book{complexsys,
+author={G. Leibon and S. Pauls and D. N. Rockmore and R. Savell AND M. Herron},
+title="Statisical Learning for Complex Systems: an Example-driven Introduction",
+year=2010
 }
 
 @book{larsen,
@@ -3723,6 +4594,17 @@ year=2007
 }
 
 
+% ============================================= NUMERICAL ANALYSIS
+
+@article{boyd,
+journal=sinum,
+year=2002,
+author={J. P. Boyd},
+title={Computing zeros on a real interval through Chebyshev expansion and polynomial rootfinding},
+volume=40,
+number=5,
+pages={1665--1682}
+}
 
 % -------------------------------------------------- general math
 
@@ -3747,6 +4629,13 @@ year=2007
 MRREVIEWER = {J. B. Diaz},
 }
 
+@book{m+f,
+author="Morse, Philip and Feshbach, Herman",
+title="Methods of theoretical physics, volume 1",
+year={1953},
+publisher="McGraw-Hill"
+}
+
 @book{m+f2,
 author="Morse, Philip and Feshbach, Herman",
 title="Methods of theoretical physics, volume 2",
@@ -3761,6 +4650,12 @@ year="1974",
 publisher="Academic Press, New York"
 }
 
+@book{dlmf,
+title="{NIST} Handbook of Mathematical Functions",
+editor={Frank W. J. Olver and Daniel W. Lozier and Ronald F. Boisvert and Charles W. Clark},
+publisher={Cambridge University Press},
+year=2010
+}
 
 @book {watson,
 author = {G N Watson},
@@ -3784,7 +4679,7 @@ publisher ={Cambridge University Press}
 @book{kato,
 author={Kato, Tosio},
 title="Perturbation Theory for Linear Operators",
-publisher="springer-verlag",
+publisher="Springer-Verlag",
 address = {New York},
 edition="2nd",
 year=1976
@@ -3838,7 +4733,7 @@ note="with the assistance of Timothy S. Murphy"
 
 @article{cotlar,
 author={M Cotlar},
-title="A combinatorial inequality and its applications to $L^2$-spaces",
+title="A combinatorial inequality and its applications to ${L}^2$-spaces",
 journal="Rev. Mat. Cuyana",
 volume=1,
 year=1955,
@@ -3852,6 +4747,58 @@ journal="preprint, http://www.\-math.tamu.edu/$\sim$comech/papers/CotlarStein/Co
 year=2007
 }
 
+@book{strang,
+author={G. Strang},
+title="Introduction to Linear Algebra",
+edition="4th Ed.",
+year=2009
+}
+
+% -------------------------------- MATH EDUCATION
+
+@misc{connectdots,
+author={Kuh, G. D. and Kinzie, J. and Cruce, T. and Shoup, R. and Gonyea, R. M.},
+year=2007,
+title={Connecting the dots: Multi-faceted analyses of the relationships between student engagement results from the {NSSE}, and the institutional practices and conditions that foster student success},
+note={Revised final report prepared for {\em {L}umina {F}oundation for {E}ducation}},
+howpublished={\verb+http://nsse.iub.edu/pdf/Connecting_the_Dots_Report.pdf+}
+}
+
+@article{crouch,
+author="C. H. Crouch and E. Mazur",
+title={{P}eer {I}nstruction: Ten years of experience and results},
+journal="Am.\ J.\ Phys.",
+volume=69,
+number=9,
+year=2001,
+pages={970--977}
+}
+
+@misc{cooplearning,
+author="Johnson, D. and Johnson, R. and Stanne, M.",
+year=2000,
+note={Cooperative Learning Center, U. Minnesota},
+title={Cooperative learning methods: A meta-analysis},
+howpublished={{\tt http://www.co-operation.org/pages/cl-methods.html}}
+}
+
+@misc{demospositiveimpact,
+year=2006,
+title={Demos with Positive Impact},
+note="{\tt http://mathdemos.gcsu.edu/}",
+author={David R. Hill and Lila F. Roberts}
+}
+
+@article{farrell,
+author={Farrell, E. F.},
+year=2002,
+title="Engineering a warmer welcome for female students",
+journal={The Chronicle of Higher Education},
+volume=48,
+pages={A31}
+}
 
 
 % end
+
+

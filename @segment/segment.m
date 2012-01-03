@@ -82,8 +82,18 @@ classdef segment < handle & pointset
         else
           error('segment second argument not valid!');
         end
-        s.qtype = qtype;             % keep for later reference
-        s.requadrature(M, qtype);    % set up quadrature pts, w, nx, etc...
+        s.qtype = qtype(1);             % keep 1st qtype char for later use
+        if length(qtype)>1 && qtype(2)=='c' % corner reparametrization
+          q = 8;
+          v = @(s) (1/q-1/2)*(1-s).^3 + (s-1)/q + 1/2; % Kress's preferred
+          w = @(s) v(s).^q ./ (v(s).^q + v(1-s).^q);
+          % ... !
+          
+          
+          
+          
+        end        
+        s.requadrature(M, qtype(1));    % set up quadrature pts, w, nx, etc...
         s.Zn = @(t) -1i*s.Zp(t)./abs(s.Zp(t)); % new; supercedes normal method
         s.eloc = s.Z([0;1]);
         eZp = s.Zp([0;1]);                     % derivs at the 2 ends

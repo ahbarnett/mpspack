@@ -176,7 +176,14 @@ as explained in that file
 you will need to remove the lines in {\tt @utils/Makefile} which
 compile codes using GSL before executing {\tt make}).
 
-You should now add the {\tt mpspack}
+If, on the other hand, you do not choose (or are unable) to compile the
+above, then you should edit the file {\tt @utils/inpolywrapper.m} as follows:
+comment out the last line, and uncomment the
+first code line labelled "Matlab's native inpolygon". This will give you
+a slower version of checking if points are inside polygons, but will get
+you going.
+
+In either case, you should now add the {\tt mpspack}
 directory to your \matlab\ path, for instance by adding the line
 \co{addpath 'path/to/mpspack';}
 to your \matlab\ {\tt startup.m} file.
@@ -747,7 +754,7 @@ $u_{inc}$, $u_s$ and $u$, as in Fig.~\ref{f:hard}.
 This class is a subclass of {\tt scattering}.
 It solves plane-wave diffraction problems from infinite one-dimensional
 gratings of obstacles, as illustrated in Sec.~8 of the tutorial,
-and as defined for instance in \ref{linton07}.
+and as defined for instance in \cite{linton07}.
 Its use is very similar to the {\tt scattering} class discussed above,
 the additional information needed being the periodicity of the problem.
 Recently-developed methods detailed \cite{qpsc} are used,
