@@ -1,9 +1,0 @@
-MPSpack Version 1.1 beta: INSTALLATION NOTES
-
-Please note that if @utils/inpoly.c did not mex compile for you, you will
-need to switch the choice of inside polygon tester called in
-@utils/inpolywrapper.m as follows: comment out the last line and uncomment the
-first code line labelled "Matlab's native inpolygon". This will be slower
-but will get you going.
-
-Alex Barnett 8/3/10

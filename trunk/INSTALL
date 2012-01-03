@@ -15,8 +15,15 @@ as follows: Edit the file "make.inc" in the MPSPACK directory,
 changing the locations of GSL and BLAS librares to match those on your
 system.  Then from this directory type "make".
 
-You should now add the MPSPACK directory to your MATLAB path, for instance by
-adding the line
+If, on the other hand, you do not choose (or are unable) to compile the
+above, then you should edit the file @utils/inpolywrapper.m as follows:
+comment out the last line and uncomment the
+first code line labelled "Matlab's native inpolygon". This will give you
+a slower version of checking if points are inside polygons, but will get
+you going.
+
+In either case, you should now add the MPSPACK directory to your
+MATLAB path, for instance by adding the line
 
 	  addpath 'path/to/mpspack';
 
@@ -25,4 +32,4 @@ You are now ready to use MPSPACK !
 
 For further info see the documentation and tutorial in MPSPACK/doc
 
-(C) 2008, 2009. Alex Barnett and Timo Betcke
+(C) 2008 - 2012.  Alex Barnett and Timo Betcke
