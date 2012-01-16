@@ -38,13 +38,14 @@ function [A Dker_noang cosker] = D(k, s, t, o)
 %
 % Issues: need to remove the diag=999 hack (affects slow matlab eval only)!
 
-% Copyright (C) 2008 - 2011, Alex Barnett and Timo Betcke
+% Copyright (C) 2008 - 2012, Alex Barnett and Timo Betcke
 
 if isempty(k) | isnan(k), error('DLP: k must be a number'); end
 if nargin<4, o = []; end
 if nargin<3, t = []; end
 if ~isfield(o, 'quad'), o.quad='m'; end; % default self periodic quadr
 if ~isfield(o, 'ord'), o.ord=10; end;    % default quadr order
+symmflagval = -999;   % all diag vals of this signifies symmetric - a hack
 self = isempty(t);               % self-interact: potentially sing kernel
 N = numel(s.x);                  % # src pts
 if self, t = s; end              % use source as target pts (handle copy)
@@ -55,7 +56,7 @@ if isfield(o, 'displ'), d = o.displ; else
   d = repmat(t.x, [1 N]) - repmat(s.x.', [M 1]); end % C-# displacements mat
 if isfield(o, 'rdist'), r = o.rdist; else
   r = abs(d); end                                    % dist matrix R^{MxN}
-if self, r(diagind(r)) = 999; end % dummy nonzero diag values triggers self
+if self, r(diagind(r)) = symmflagval; end % flag diag vals as self-int
 dSLP=0; if isfield(o, 'derivSLP') & o.derivSLP, dSLP=1; end  % flag
 if dSLP                           % dPhi(x,y)/dnx, ie D^T adjoint op
   nx = repmat(-t.nx, [1 N]);      % identical cols given by targ normals

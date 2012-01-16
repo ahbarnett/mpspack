@@ -1,7 +1,7 @@
 % dielectric transmission scattering with Rokhlin hypersingular-cancel scheme
 % Barnett 6/18/10
 
-clear all classes; verb = 0;                      % verbosity
+clear all classes; verb = 1;                      % verbosity
 k = 30;                                           % overall (ext) wavenumber
 n = 1.5;                                          % interior refractive index
 M = 330;                                          % gives 13 digit acc at k=30

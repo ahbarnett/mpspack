@@ -102,7 +102,7 @@ classdef evp < problem & handle
       p.fillquadwei; M = numel(p.sqrtwei);   % total # boundary pts
       if v, fprintf('mean M ppw @ khi = %.3g\n', 2*pi*M/khi/d1.perim); end
       
-      if strcmp(meth,'fd') % ............... Fredholm det method..............
+      if strcmp(meth,'fd') % ....... Fredholm det Boyd rootfind method..........
         k = klo; kj = []; ej = []; N = M;  % square system
         kscale = 70/d1.diam;             % est k at which level density ~ 20
         io.Ftol = 1e-10; io.tol = o.tol;   % allows leeway in collecting roots
@@ -125,7 +125,7 @@ classdef evp < problem & handle
         
         if wantmodes
           if v, disp('computing eigenmodes at each eigenwavenumber...'); end
-          p.solvemodescoeffs(meth, o); end  % compute all eigenfuncs
+          p.solvemodescoeffs('ms', o); end  % compute all eigenfuncs via ms
         
       elseif strcmp(meth,'ntd') % ............... NtD scaling method...........
         if ~isfield(o, 'eps'), o.eps = 0.2/d1.diam; end % defaults
@@ -136,6 +136,7 @@ classdef evp < problem & handle
         ixnip = @(f,g) sum(ww.*conj(f).*g);    % 1/(x.n)-weighted inner prod
         ixnrm = @(g) sqrt(real(ixnip(g,g)));   % 1/(x.n)-weighted bdry norm
         xt = real(conj(sx).*1i.*snx);
+        size(sp)
         if wantmodes | ~strcmp(o.khat,'l') % todo: replace D by FFT application
           D = 2*pi*repmat(1./sp,[1 M]) .* circulant(quadr.perispecdiffrow(M));
           xnt = D*xn; xtt = D*xt; m = (xn.*xtt-xt.*xnt)./xn;  % Andrew's m func
@@ -415,7 +416,7 @@ classdef evp < problem & handle
       if nargin<4, o = []; end
       if ~isfield(o, 'iter'), o.iter = 1; end   % default iterative
       
-      if strcmp(meth,'ms') %......... min sing val(s) method
+      if strcmp(meth,'ms') %....... min sing val(s) method
         
         dim = numel(k); if dim>1, k=mean(k); end
         A = p.fillfredholmop(k);      % eg (I - 2D) in Dirichlet, (I + 2D^T) Neu
@@ -425,21 +426,21 @@ classdef evp < problem & handle
         else                                       % O(N^3) 10x slower method
           [U S V] = svd(A); u = U(:,end-dim+1:end); v = V(:,end-dim+1:end);
           s = diag(S); e = s(end-dim+1:end);
-      end
-      if p.segs(1).a==0, z = u; u = v; v = z; end % for Neu case, swap u,v HACK
-      % todo: correctly normalize Neu case now...(specrowdiff would be needed)
-      % ...
+        end
+        if p.segs(1).a==0, z = u; u = v; v = z; end % Neu case: swap u,v HACK
+        % todo: correctly normalize Neu case now...(specrowdiff would be needed)
+        % ...
 
-      % co = density, converted from l^2 to value vector
-      co = v .* repmat(1./p.sqrtwei.', [1 dim]);
-      % L sv's are R sv's w/ D^*, so u gives boundary function...
-      x = vertcat(p.segs.x); nx = vertcat(p.segs.nx); % allow multiple segs
-      xdn = real(conj(x).*nx); w = sqrt(xdn/2); % sqrt Rellich bdry wei
-      for i=1:dim
-        u(:,i) = u(:,i)/max(u(:,1)); % make real-valued (imag part is error est)
-        u(:,i) = k * u(:,i)/norm(w.*u(:,i));         % Rellich-normalize
-      end
-      nd = u .* repmat(1./p.sqrtwei.', [1 dim]); % convert l^2 to values
+        % co = density, converted from l^2 to value vector
+        co = v .* repmat(1./p.sqrtwei.', [1 dim]);
+        % L sv's are R sv's w/ D^*, so u gives boundary function...
+        x = vertcat(p.segs.x); nx = vertcat(p.segs.nx); % allow multiple segs
+        xdn = real(conj(x).*nx); w = sqrt(xdn/2); % sqrt Rellich bdry wei
+        for i=1:dim
+          u(:,i) = u(:,i)/max(u(:,1)); % make Re-valued (Im part is error est)
+          u(:,i) = k * u(:,i)/norm(w.*u(:,i));         % Rellich-normalize
+        end
+        nd = u .* repmat(1./p.sqrtwei.', [1 dim]); % convert l^2 to values
       
       else
         error('unknown method');

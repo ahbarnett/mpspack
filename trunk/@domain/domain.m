@@ -143,13 +143,13 @@ classdef domain < handle
       end
       
       function sp = speed(d) % ........... get all quadr speeds assoc w/ domain
-      % SPEED - return row vector of quadrature speeds for a domain boundary
+      % SPEED - return col vector of quadrature speeds for a domain boundary
         sp = [];
         for j=1:numel(d.seg)
           if d.pm(j)==1
-            sp = [sp, d.seg(j).speed];
+            sp = [sp; d.seg(j).speed];
           else                            % reverse order
-            sp = [sp, d.seg(j).speed(end:-1:1)];
+            sp = [sp; d.seg(j).speed(end:-1:1)];
           end
         end
       end

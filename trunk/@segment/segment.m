@@ -17,11 +17,15 @@
 % 
 %  s = SEGMENT(M, p, qtype) where p is any of the above, chooses quadrature type
 %   qtype = 'p': periodic trapezoid (appropriate for periodic segments, M pts)
+%           'pc': same as p but w/ Kress reparametrization adapted for corners
 %           't': trapezoid rule (ie, half each endpoint, M+1 pts)
 %           'c': Clenshaw-Curtis (includes endpoints, M+1 pts)
 %           'g': Gauss (takes O(M^3) to compute, M pts)
 %         (Note that corrections to quadrature may be carried out in
 %          layerpot constructors and methods.)
+%
+%  s = SEGMENT(M, p, qtype, opts) controls additional options such as:
+%   opts.kressq: sets the grading power q in Kress 1991 (default 6; typ 4-8)
 %
 %  If M is empty, a default value of 20 is used.
 %
@@ -29,7 +33,7 @@
 %
 % See also: POINTSET, segment/PLOT, LAYERPOT
 
-% Copyright (C) 2008 - 2011, Alex Barnett, Timo Betcke
+% Copyright (C) 2008 - 2012, Alex Barnett, Timo Betcke
 
 
 classdef segment < handle & pointset
@@ -55,9 +59,10 @@ classdef segment < handle & pointset
         qpblocha               % if open periodized grating, its Bloch phase
    end
     methods
-      function s = segment(M, p, qtype)
+      function s = segment(M, p, qtype, o)
         if nargin==0, return; end               % empty constructor (for copy)
         if nargin<3, qtype='c'; end             % default quadrature type
+        if nargin<4, o=[]; end
       
         % convert different types of input format all to an analytic curve...
         if iscell(p)         % ------------ analytic function (cell array)
@@ -83,15 +88,27 @@ classdef segment < handle & pointset
           error('segment second argument not valid!');
         end
         s.qtype = qtype(1);             % keep 1st qtype char for later use
-        if length(qtype)>1 && qtype(2)=='c' % corner reparametrization
-          q = 8;
-          v = @(s) (1/q-1/2)*(1-s).^3 + (s-1)/q + 1/2; % Kress's preferred
+        if length(qtype)>1 && qtype(2)=='c' % corner-graded reparametrization
+          q = 6;                            % default Kress' grading power
+          if isfield(o, 'kressq'), q = o.kressq; end
+          v = @(s) (1/2-1/q)*(s-1).^3 + (s-1)/q + 1/2; % Kress's preferred
+          vp = @(s) (3/2-3/q)*(s-1).^2 + 1/q;
+          vpp = @(s) (3-6/q)*(s-1);
+          ap = @(s) q*((3/2-3/q)*(s-1).^2 + 1/q) .* v(s).^(q-1); % a = v^q
+          app = @(s) q*(3-6/q)*(s-1).*v(s).^(q-1) + ...
+                (q^2-q)*((3/2-3/q)*(s-1).^2 + 1/q).^2.*v(s).^(q-2);
           w = @(s) v(s).^q ./ (v(s).^q + v(1-s).^q);
-          % ... !
-          
-          
-          
-          
+          wp = @(s) ap(s)./(v(s).^q+v(1-s).^q) - ...
+               v(s).^q.*(ap(s)-ap(1-s))./(v(s).^q+v(1-s).^q).^2;
+          wpp = @(s) app(s)./(v(s).^q+v(1-s).^q) -(2*ap(s).*(ap(s)-ap(1-s)) +...
+                 v(s).^q.*(app(s)+app(1-s)))./(v(s).^q+v(1-s).^q).^2 + ...
+            2*v(s).^q.*(ap(s)-ap(1-s)).^2./(v(s).^q+v(1-s).^q).^3; %inefficient
+          % notice that would be faster to make evaluation func for all these
+          % (since too many layers of recursive inline functions now)
+          Z = s.Z; Zp = s.Zp; Zpp = s.Zpp; % this prevents recursion
+          s.Z = @(t) Z(w(t));   % now reparametrize the existing segment
+          s.Zp = @(t) wp(t) .* Zp(w(t));
+          s.Zpp = @(t) wpp(t) .* Zp(w(t)) + (wp(t)).^2 .* Zpp(w(t));
         end        
         s.requadrature(M, qtype(1));    % set up quadrature pts, w, nx, etc...
         s.Zn = @(t) -1i*s.Zp(t)./abs(s.Zp(t)); % new; supercedes normal method
@@ -110,7 +127,8 @@ classdef segment < handle & pointset
       %   depending on the type, see below), without changing the quadrature
       %   type. If seg is a list of segments, it does so for each.
       %
-      %  REQUADRATURE(seg, M, qtype) chooses new M and new quadrature type
+      %  REQUADRATURE(seg, M, qtype) chooses new M and new quadrature type, via
+      %   the single character qtype.
       %   qtype = 'p': periodic trapezoid (appropriate for periodic segments,
       %                M pts are created)
       %           't': trapezoid rule (ie, half each endpoint, M+1 pts)
@@ -405,7 +423,7 @@ classdef segment < handle & pointset
 
     % --------------------------------------------------------------------
     methods(Static)    % these don't need segment obj to exist to call them...
-      s = polyseglist(M, p, qtype)
+      s = polyseglist(M, p, qtype, opts)
       s = radialfunc(M, fs)
       s = smoothstar(M, a, w)
       s = smoothfourier(M, aj, bj)
