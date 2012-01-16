@@ -39,7 +39,7 @@ function [A Sker Dker_noang] = T(k, s, t, o);
 %   kernel values matrices Sker, Dker_noang, when k>0 (empty for Laplace)
 %
 
-% Copyright (C) 2008 - 2011, Alex Barnett and Timo Betcke
+% Copyright (C) 2008 - 2012, Alex Barnett and Timo Betcke
 
 
 if isempty(k) | isnan(k), error('T: k must be a number'); end
@@ -47,6 +47,7 @@ if nargin<4, o = []; end
 if nargin<3, t = []; end
 if ~isfield(o, 'quad'), o.quad='m'; end; % default self periodic quadr
 if ~isfield(o, 'ord'), o.ord=10; end;    % default quadr order (Kapur-Rokh)
+symmflagval = -999;   % all diag vals of this signifies symmetric - a hack
 self = isempty(t);               % self-interact: potentially sing kernel
 N = numel(s.x);                  % # src pts
 if self, t = s; end              % use source as target pts (handle copy)
@@ -57,7 +58,7 @@ if isfield(o, 'displ'), d = o.displ; else
   d = repmat(t.x, [1 N]) - repmat(s.x.', [M 1]); end % C-# displacements mat
 if isfield(o, 'rdist'), r = o.rdist; else
   r = abs(d); end                                    % dist matrix R^{MxN}
-if self, r(diagind(r)) = 999; end % dummy nonzero diag values
+if self, r(diagind(r)) = symmflagval; end % dummy diag values flag self
 ny = repmat(s.nx.', [M 1]);      % identical rows given by src normals
 csry = conj(ny).*d;              % (cos phi + i sin phi).r
 nx = repmat(t.nx, [1 N]);        % identical cols given by target normals

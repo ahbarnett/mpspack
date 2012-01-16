@@ -74,8 +74,6 @@ classdef qpscatt < scattering & handle
           error('unable to choose yB and/or a yT segments!'); end
         pr.Bseg = segment(Mt, 1i*yB+[-d/2,d/2], 'p');
         pr.Tseg = segment(Mt, 1i*yT+[d/2,-d/2], 'p');
-        pr.Tseg.x = pr.Tseg.x + pr.Tseg.w(1)/2;
-        pr.Bseg.x = pr.Bseg.x - pr.Bseg.w(1)/2; % safely away from walls 1/2 a gridpoint
       end
     end
 
