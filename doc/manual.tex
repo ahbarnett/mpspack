@@ -248,7 +248,7 @@ If $\Omega_j$ is the exterior domain (with $n_j=1$), we may wish to impose
 additional boundary conditions at infinity, such as Sommerfeld's
 radiation condition,
 \be
-iku - \frac{\partial u}{\partial r} = o(r^{1/2})~,
+iku - \frac{\partial u}{\partial r} = o(r^{-1/2})~,
 \ee
 where $r$ is the radial coordinate.
 This occurs in the scattering context, where the unknown satisfying
@@ -486,9 +486,13 @@ Or, for the Laplace ($k=0$) case, as a function of coordinate $z$,
 &\{1, \re w, \re w^2, \ldots, \re w^N,
 \im w, \ldots, \im w^N\}
 \quad &\mbox{(real case)} \nonumber \\
-\mbox{or }&\{w^{-N}, w^{-N+1}, \ldots, w^N\}&\mbox{(complex case)}\nonumber
+\mbox{or }&\{(-\overline{w})^{N}, (-\overline{w})^{N-1}, \ldots, -\overline{w}, 1, w, \ldots, w^N\}&\mbox{(complex case)}\nonumber
 \eea
 where $w:= z-z_0$.
+Note that the alternating signs in the Laplace case are there to mirror
+those of the Bessel reflection principle $J_{-n} = (-1)^nJ_n$
+for the Helmholtz case.
+
 
 \item Fractional-order (wedge of angle $\pi/\nu$) Fourier-Bessel expansion
 ({\tt nufbbasis})

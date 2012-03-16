@@ -416,6 +416,69 @@ classdef segment < handle & pointset
         end
       end
      
+    function t = invertZparam(s, z, o)
+    % INVERTZPARAM - given z, solve for t that solves segment param s.Z(t) = z
+    %
+    % t = invertZparam(s, z) where s is a segment object, and z a list of
+    %  complex numbers, solves for the complex parameter values t near the real
+    %  axis such that z(j) = s.Z(t(j)) for each j.
+    %
+    % t = invertZparam(s, z, opts) also controls various options:
+    %   opts.maxnsol : how many solutions to look for (ie, size(t,1))
+    %   opts.to : row vec of initial t in [0,1], overrides internal default
+    %
+    % Notes: 1) Uses complex Newton iteration from many starting pts on bdry
+    % 2) unused values in the t output array are nan+1i*nan, so that imag(t)
+    %   returns nan in these entries. [Careful: imag(nan) = 0, stupidly]
+    %
+    % Also see: SEGMENT, test/testinvertZparam.m
+    
+    % Barnett 3/9/12
+      if nargin<3, o = []; end
+      m = numel(z);
+      
+      n = 10;      % Algorithm params: how many bdry pts to start from
+      Imtmax = 0.3; % Im part of t cutoff for iter (reduce to speed up)
+      tol = 1e-14;  % solution abs tolerance
+      maxit = 100;  % # Newton iters
+      
+      to = ((1:n)-0.5)/n;     % t-param starting pts (on bdry, ie real axis)
+      if isfield(o, 'to'), to = o.to; n = numel(to); end   % override start pts
+      si = nan(n,m);          % all final iteration pts for each start & z
+      ni = nan(n,1);          % how many its for each start (diagnostic)
+      % outer loop over starting pts, vectorize over z pts...
+      for i=1:n
+        x = to(i) + 0*z;        % for all z's, start at same bdry pt
+        kk = find(~isnan(x));    % hack to start with all indices
+        for j=1:maxit
+          xold = x;
+          x(kk) = x(kk) + (z(kk) - s.Z(x(kk)))./s.Zp(x(kk));  % Newton iter
+          kk = find(abs(x-xold)>tol & abs(imag(x))<Imtmax); % alive ones
+          if numel(kk)==0, break; end          % stop if none alive
+        end
+        ni(i) = j;   % save how many iters
+        x(abs(imag(x))>Imtmax) = nan + 1i*nan;  % kill bad ones which fell out
+        si(i,:) = x(:).';
+      end
+      % now postprocess & remove duplicates...
+      si = mod(real(si),1) + 1i*imag(si);  % wrap into [0,1] real part
+      %[dummy,I] = sort(imag(si),1);   % attempt to vectorize
+      t = nan + 1i*nan + 0*si;                      % output array (NB 1i*nan!)
+      maxi = 0;                                     % keeps track of # solns
+      for k=1:m, sik = si(find(~isnan(si(:,k))),k);  % drop nans
+        [dummy,I] = sort(imag(sik)); sik = sik(I);   % sort by im part
+        sikr = mod(real(sik+0.5),1)-0.5 + 1i*imag(sik); % wrapped half way along
+        i = find(abs(diff([sik; Inf]))>tol & abs(diff([sikr; Inf]))>tol);
+        maxi = max(maxi,numel(i));
+        if ~isempty(i)
+          i = ceil(([0;i] + [i;numel(sik)])/2); % choose from middles of clumps
+          t(1:numel(i),k) = sik(i);             % keep only unique vals
+        end
+      end      
+      if isfield(o,'maxnsol'), maxi=o.maxnsol; end
+      t = t(1:maxi,:);         % clip to max # distinct solutions found
+    end
+      
      % ----------------------- methods in other m-files -----------------
      h = plot(s, pm, o)
      b = addinoutlayerpots(seg, a, opts)
@@ -425,7 +488,7 @@ classdef segment < handle & pointset
     methods(Static)    % these don't need segment obj to exist to call them...
       s = polyseglist(M, p, qtype, opts)
       s = radialfunc(M, fs)
-      s = smoothstar(M, a, w)
+      s = smoothstar(M, a, w, p)
       s = smoothfourier(M, aj, bj)
       s = smoothnonsym(M, a, b, w)
       [a b] = dielectriccoeffs(pol, np, nm)

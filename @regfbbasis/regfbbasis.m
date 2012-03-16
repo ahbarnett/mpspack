@@ -8,7 +8,8 @@ classdef regfbbasis < handle & basis
     %
     %   k=0 gives harmonic polynomials,
     %       {1, Re z, Re z^2, ..., Re z^N, Im z, ..., Im z^N}   (real case)
-    %    or {z^{-N}, z^{-N+1}, ..., z^N}                        (complex case)
+    %    or {(-1)^N.conj(z)^N, (-1)^{N-1}, conj(z)^{N-1} ,...., -conj(z),
+    %                                        1, z,..., z^N}     (complex case)
     %   k>0 gives generalized harmonic polynomials,
     %       {J_n(kr)cos(n.theta)} n=0,..,N and {J_n(kr)sin(n.theta)} n=1,..,N
     %    or {J_n(kr)exp(in.theta)} n=-N,..,N                    (complex case)
@@ -25,6 +26,8 @@ classdef regfbbasis < handle & basis
     %              = 'm' use Matlab's built-in besselj, is slower (default).
     %              = 'g' use GNU Scientific Library via MEX interface, fast.
     %
+    % Note: the alternating signs in the negative orders for k=0, real=0 case
+    % is to match the signs of the k>0 Bessels reflection principles.
     %
     % See also: DOMAIN/ADDREGFBBASIS
     
