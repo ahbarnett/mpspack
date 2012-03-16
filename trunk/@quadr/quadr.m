@@ -11,6 +11,7 @@ classdef quadr
         [x,w,cs,ier]=kapurtrap(n,m)
         Rjn = kress_Rjn(n)
         D = perispecdiffrow(N)
+        [g] = interptrig(f, N);
         
         % the following are Alpert quadrature endpoint correction rules
         % (from Andras Pataki):  test_Alpert_Pataki.m to test

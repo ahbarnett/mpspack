@@ -191,9 +191,9 @@ classdef domain < handle
       end
       
       function diam = diam(d) % ..... diameter of interior domain (about center)
-      % DIAM - approximate diameter of an interior domain
+      % DIAM - approximate radius of an interior domain
       %
-      %  d = diam(dom) returns the diameter of domain dom, defined as the
+      %  d = diam(dom) returns the radius of domain dom, defined as the
       %   maximum distance of any of its defining points from its `center'.
       %
       % See also: DOMAIN.CENTER
@@ -240,6 +240,30 @@ classdef domain < handle
           opts.label = sprintf('%d', i);              % label by domain's bas #
           d.bas{i}.showgeom(opts);
         end
+      end
+      
+      function [c h mis gx gy] = showimagparam(d, o)  % ..... invert Z imag dist
+      % SHOWIMAGPARAM - compute and show imag param dist on grid in domain
+      %
+      % [c h mis gx gy] = showimagparam(d, o) adds contour lines of constant
+      %   Im part of S(z) computed using z on a grid filling the interior of
+      %   domain d.  mis returns an array of the imag part (or nan if outside),
+      %   on the product grid given by gx and gy.
+      %
+      % o.dx : grid spacing (smaller dx is slower)
+      % o.levels : levels to feed to contouring
+      % Other options fed to segment.invertZparam
+        if nargin<2, o = []; end
+        if ~isfield(o, 'dx'), o.dx = 0.03; end       % default opts
+        [zz ii gx gy] = d.grid(o.dx);
+        s = d.seg;
+        if numel(s)~=1, error('domain must have exactly 1 segment!'); end
+        t = s.invertZparam(zz,o);      % expensive part
+        t(find(imag(t)<0)) = nan+1i*nan;  % note imag(nan)=0 so need 1i*nan too!
+        mis = nan*ii;       % output array
+        mis(ii) = min(imag(t), [], 1);
+        if isfield(o, 'levels'), L = o.levels; else, L = 0:0.01:0.1; end
+        [c h] = contour(gx, gy, mis, L, 'k-', 'linewidth', 2); colorbar;
       end
       
       % methods defined by separate files...
