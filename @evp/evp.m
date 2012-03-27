@@ -585,5 +585,6 @@ classdef evp < problem & handle
     [xm ym info] = gridminfit(f, g, o)   % gridded vectorial minimizer
     [xm fm info] = iterparabolafit(f, x, y, opts)   % minimization helper
     [A,B,C] = para_fit(e, f)        % parabolic helper
+    [t V F G] = tensionsq(d, E, opts)  % domain eigenvalue solver helper
   end
 end

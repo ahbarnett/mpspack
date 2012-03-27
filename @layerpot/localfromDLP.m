@@ -25,23 +25,15 @@ function A = localfromDLP(s, Jexp)
 % Laplace case added 3/16/12
 
 M = Jexp.N;                       % get max order from regFB object
-  sc = Jexp.Jrescalefactors(0:M);   % rescaling factors from regFB obj
-  if ~Jexp.real
-    sc = [sc(end:-1:2) sc];         % ordering for complex exp basis, -M<=m<=M
-  else
-    warning 'localfromDLP not implemented for real regFB basis yet!'
-    sc = [sc sc(2:end)];            % ordering for real 0:M cos then 1:M sin
-  end
   N = numel(s.x);                   % # src pts
   k = Jexp.k;
   x = s.x - Jexp.origin;            % take all coords relative to J-exp origin
   
   if k==0
-    A = repmat(x.', [M+1 1]) .^ repmat(-(1:M+1)', [1 N]);
-    A(1,:) = 2i*imag(A(1,:));          % guessed using testlayerpotJfilter.m
-    sgn = (-1).^(M-1:-1:0)';            % alternating signs of negative orders
+    A = repmat(x.', [M+1 1]) .^ repmat(-(1:M+1)', [1 N]) .* repmat((-1/(4*pi))*s.w .* s.nx.', [M+1 1]);  % prefactor (ncludes 1/2 for Re part)
+    A(1,:) = 2*real(A(1,:));          % m=0 term
+    sgn = (-1).^(M:-1:1)';    % signs same as Helmholtz case.
     A = [conj(A(end:-1:2,:)).*repmat(sgn, [1 N]); A];   % stack to m=-M..M
-    prefac = -1/(4*pi*i);               % prefactor (ncludes 1/2 for Re part)
   else  
     % Now evaluate rotexp and bes matrices which have orders m=-M-1...M+1 :
     rotexp = exp(-1i*(1:M+1)' * angle(x)');% *=outer-prod, exp(-im.ang(x)), 1..M
@@ -51,7 +43,16 @@ M = Jexp.N;                       % get max order from regFB object
     bes = [bes(end:-1:2,:).*repmat(sgn, [1 N]); bes]; % now m=-M-1..M+1
     
     A = bes(1:end-2,:).*rotexp(1:end-2,:).*repmat(exp(-1i*angle(s.nx).'), [2*M+1 1]) - bes(3:end,:).*rotexp(3:end,:).*repmat(exp(1i*angle(s.nx).'), [2*M+1 1]);
-    prefac = (1i*k/8);
+    A = A .* repmat((1i*k/8) * s.w, [2*M+1 1]); % src quadr wei (no speed!)
   end
-  A = A .* repmat(prefac * s.w, [2*M+1 1]); % ik/8, src quadr wei (no speed!)
-  A = A .* repmat(sc.', [1 N]);                 % do J-rescaling
+  
+  if Jexp.rescale_rad~=0
+    sc = Jexp.Jrescalefactors(0:M);   % rescaling factors from regFB obj
+    if ~Jexp.real
+      sc = [sc(end:-1:2) sc];         % ordering for complex exp basis, -M<=m<=M
+    else
+      warning 'localfromDLP not implemented for real regFB basis yet!'
+      sc = [sc sc(2:end)];            % ordering for real 0:M cos then 1:M sin
+    end
+    A = A .* repmat(sc.', [1 N]);                 % do J-rescaling
+  end
