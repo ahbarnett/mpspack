@@ -8,7 +8,7 @@ classdef regfbbasis < handle & basis
     %
     %   k=0 gives harmonic polynomials,
     %       {1, Re z, Re z^2, ..., Re z^N, Im z, ..., Im z^N}   (real case)
-    %    or {(-1)^N.conj(z)^N, (-1)^{N-1}, conj(z)^{N-1} ,...., -conj(z),
+    %    or {(-conj(z))^N, (-conj(z))^{N-1} ,...., -conj(z),
     %                                        1, z,..., z^N}     (complex case)
     %   k>0 gives generalized harmonic polynomials,
     %       {J_n(kr)cos(n.theta)} n=0,..,N and {J_n(kr)sin(n.theta)} n=1,..,N
@@ -31,7 +31,7 @@ classdef regfbbasis < handle & basis
     %
     % See also: DOMAIN/ADDREGFBBASIS
     
-    % Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
+    % Copyright (C) 2008 - 2012, Alex Barnett, Timo Betcke
     
     
     properties

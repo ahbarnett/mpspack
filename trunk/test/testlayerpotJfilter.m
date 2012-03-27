@@ -1,6 +1,6 @@
 % Test passing layerpot eval through Jfilter (option of layerpot.eval)
 % Seeing if smooth density function can be done with close eval via J filter
-% Barnett 1/17/09, added Laplace case 3/16/12.
+% Barnett 1/17/09, debugged Laplace case 3/18/12.
 
 clear
 verb = 1;            % 0 = text only, 1 = couple figs, 2 = lots of figs
@@ -8,7 +8,8 @@ dens = 'd';          % 's' SLP, 'd' DLP
 acc = 'm';           % method for acc field eval: c=close-interp, m=many quadr
 d = domain(); d.k = 0;                          % wavenumber, eg 5
 hlen = 1.0;                                     % half-length of src LP line
-y = -1.05; s = segment(70, [-hlen+1i*y hlen+1i*y]);  % line of src pts, fixed y
+%y = -1.05; s = segment(70, [-hlen+1i*y hlen+1i*y]);  % line of src pts, fixed y
+y = -1.05; s = segment(70, [-hlen-1.3i hlen-0.8i]);  % line of src pts, fixed y
 lp = layerpot(s, dens); lp.doms = d;            % set up dummy domain
 R = 1.0;                                          % radius of circle eval
 orig = 0.05+0.07i;                              % origin of circle eval
@@ -52,7 +53,7 @@ fprintf('rel L-infty targ field err (naive - true) = %g\n', ...
 fprintf('rel L-infty targ field err (Jfiltered - true) = %g\n', ...
         max(abs(ufil - uacc))/max(abs(uacc)))
 % following helps debug signs...
-if verb>1, disp('ratios of local exp coeffs:'); fft(ufil)./fft(uacc), end
+if verb>0, disp('ratios of local exp coeffs:'); fft(ufil)./fft(uacc), end
 
 x = -2:0.02:2; [xx yy] = meshgrid(x); g = pointset(xx(:)+1i*yy(:));
 po.arrow=0; po.normals=0;
