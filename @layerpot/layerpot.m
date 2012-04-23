@@ -14,10 +14,13 @@ classdef layerpot < handle & basis
 %   Note that the discretization of the layerpot is given by that of the seg,
 %    apart from periodic segments where new quadrature weights may be used.
 %
+%   Note that fast MEX-interfaced fortran code can be used for evaluation.
+%   The user should do (cd @utils; make) to access these, and ensure that
+%   matlab sees them in the "exist" checks for opts.fast below.
 %
 % See also: DOMAIN/ADDLAYERPOT
 
-% Copyright (C) 2008-2011, Alex Barnett and Timo Betcke
+% Copyright (C) 2008-2012, Alex Barnett and Timo Betcke
   properties
     real                            % true if fund sol is Y_0, false for H_0^1
     seg                             % handle of segment on which density sits
@@ -35,10 +38,10 @@ classdef layerpot < handle & basis
       if nargin<3, opts = []; end
       if ~isfield(opts, 'fast'), opts.fast = 2; end
       % TODO: speed up the following check which happens every time created...
-      if opts.fast==2 & exist('greengardrokhlinhank106')~=3
+      if opts.fast==2 & exist('@utils/greengardrokhlinhank106')~=3
         opts.fast = 1;               % downgrade the speed if 106 not available
       end
-      if opts.fast==1 & exist('greengardrokhlinhank103')~=3
+      if opts.fast==1 & exist('@utils/greengardrokhlinhank103')~=3
         opts.fast = 0;               % downgrade the speed if 103 not available
       end
       b.fast = opts.fast;

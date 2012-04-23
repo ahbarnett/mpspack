@@ -229,10 +229,12 @@ classdef regfbbasis < handle & basis
                 [ret,err]=utils.gslbesselj(0,N,r); % Timo's MEX interface to GSL
               else
                 warning('besselwrapper: @utils/gslbesselj not compiled to MEX')
-                [ret,err] = besselj(0:N, r(:));  % built-in, expands to table
+                ret = bsxfun(@besselj, 0:N, r(:)); % built-in, does outer prod
+                err = 0;   % >2012a releases have no err output.
               end
              case 'm'
-              [ret,err] = besselj(0:N, r(:));  % built-in, expands to table
+              ret = bsxfun(@besselj, 0:N, r(:)); % built-in, does outer prod
+              err = 0;   % >2012a releases have no err output.
              otherwise
               error('regfbbasis: invalid besselcode property!');
             end
