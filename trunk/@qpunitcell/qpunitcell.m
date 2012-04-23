@@ -9,8 +9,8 @@
 %  uc = qpunitcell(e1, e2, k, M, quad) sets quadrature type as in SEGMENT.
 %
 %  See also SETBLOCH, DOMAIN
-%
-% (C) Alex Barnett
+
+% (C) Alex Barnett 2009 - 2012
 classdef qpunitcell < handle & domain
   properties
     a, b                 % alpha, beta: QP phase factors
@@ -303,6 +303,29 @@ classdef qpunitcell < handle & domain
       if nargin<3, qtype = 'g'; end  % default for unit cell
       uc.L.requadrature(M, qtype); uc.B.requadrature(M, qtype);
       uc.setupbasisdofs;
+    end
+    
+    function [xx yy] = periodicgrid(uc, M)
+    % PERIODICGRID - return xx & yy for regular 2d grid covering unit cell
+      if nargin<2, M = 20; end       % default
+      x = ((1:M)-0.5)/M - 0.5;   % uniform in [-.5,.5]
+      [xx yy] = meshgrid(x,x);
+      z = uc.e1*xx + uc.e2*yy;
+      xx = real(z); yy = imag(z);
+    end
+    
+    function [krb kap] = reciplattinball(uc,K)
+    % RECIPLATTINBALL - all unit cell's Rayleigh-Bloch wavevectors within K-ball
+    %
+    % [krb kap] = reciplattinball(uc,K) returns Rayleigh-Bloch wavevectors krb
+    %  as a col vector of complex numbers, and kap the corresponding col vector
+    %  of z-wavenumbers appropriate for overall wavenumber uc.k.
+      om = uc.k;                       % omega = overall wavenumber
+      n=ceil(K/min(svd(uc.recip)))+1;  % size of rect array of points in k-space
+      [xx yy] = meshgrid(-n:n); 
+      krb = uc.kbloch + xx(:)*uc.r1 + yy(:)*uc.r2; % Bloch wavevectors
+      krb = krb(find(abs(krb)<=K));    % intersection with ball radius K
+      kap = sqrt(om^2 - abs(krb).^2);  % kappa's (z-wavenumbers)
     end
     
     % external functions...
