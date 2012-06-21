@@ -1,4 +1,4 @@
-function s = radialfunc(M, fs)
+function s = radialfunc(M, fs, varargin)
 % RADIALFUNC - closed segment from radial function r=f(theta) and derivatives
 %
 %  s = radialfunc(M, {f fp}) generates a smooth closed radial function segment
@@ -20,6 +20,6 @@ else
   Zp = @(s) 2*pi*(1i*Z(s) + exp(2i*pi*s).*fp(2*pi*s));
   fpp = fs{3};
   Zpp = @(s) 4*pi^2*((fpp(2*pi*s) + 2i*fp(2*pi*s)).*exp(2i*pi*s) - Z(s));
-  s = segment(M, {Z, Zp, Zpp}, 'p');
+  s = segment(M, {Z, Zp, Zpp}, 'p', varargin{:});
 end
 % Notice that all this routine did was manipulate function handles, no evals.

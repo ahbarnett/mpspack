@@ -26,6 +26,8 @@
 %
 %  s = SEGMENT(M, p, qtype, opts) controls additional options such as:
 %   opts.kressq: sets the grading power q in Kress 1991 (default 6; typ 4-8)
+%   opts.napproxv: number of vertices in approximating polygon for inside test
+%                  (default 100 for smooth function handles)
 %
 %  If M is empty, a default value of 20 is used.
 %
@@ -115,6 +117,7 @@ classdef segment < handle & pointset
         s.eloc = s.Z([0;1]);
         eZp = s.Zp([0;1]);                     % derivs at the 2 ends
         s.eang = eZp./abs(eZp);
+        if isfield(o,'napproxv'), Napprox = o.napproxv; end % override
         s.approxv = s.Z((0:Napprox)'/Napprox); % start, endpt (drop one later)
         s.dom = {[] []};             % not bordering any domains
         s.bcside = NaN;              % no BCs or matching conditions
@@ -426,6 +429,8 @@ classdef segment < handle & pointset
     % t = invertZparam(s, z, opts) also controls various options:
     %   opts.maxnsol : how many solutions to look for (ie, size(t,1))
     %   opts.to : row vec of initial t in [0,1], overrides internal default
+    %   opts.toz : list of initial t in [0,1], overrides internal default, one
+    %              for each z value inputted (overrides opts.to too)
     %
     % Notes: 1) Uses complex Newton iteration from many starting pts on bdry
     % 2) unused values in the t output array are nan+1i*nan, so that imag(t)
@@ -444,11 +449,15 @@ classdef segment < handle & pointset
       
       to = ((1:n)-0.5)/n;     % t-param starting pts (on bdry, ie real axis)
       if isfield(o, 'to'), to = o.to; n = numel(to); end   % override start pts
+      usetoz = 0; if isfield(o,'toz'), n=1; usetoz = 1;
+        if ~isequal(size(o.toz),size(z)), error('opts.toz must be same size as z!'); end
+      end
       si = nan(n,m);          % all final iteration pts for each start & z
       ni = nan(n,1);          % how many its for each start (diagnostic)
       % outer loop over starting pts, vectorize over z pts...
       for i=1:n
-        x = to(i) + 0*z;        % for all z's, start at same bdry pt
+        if usetoz, x = o.toz;   % must be same size as z
+        else, x = to(i) + 0*z; end       % for all z's, start at same bdry pt
         kk = find(~isnan(x));    % hack to start with all indices
         for j=1:maxit
           xold = x;
@@ -487,10 +496,10 @@ classdef segment < handle & pointset
     % --------------------------------------------------------------------
     methods(Static)    % these don't need segment obj to exist to call them...
       s = polyseglist(M, p, qtype, opts)
-      s = radialfunc(M, fs)
+      s = radialfunc(M, fs, opts)
       s = smoothstar(M, a, w, p)
-      s = smoothfourier(M, aj, bj)
-      s = smoothnonsym(M, a, b, w)
+      s = smoothfourier(M, aj, bj, opts)
+      s = smoothnonsym(M, a, b, w, qtype, opts)
       [a b] = dielectriccoeffs(pol, np, nm)
     end % methods
 end
