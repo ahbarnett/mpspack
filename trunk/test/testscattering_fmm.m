@@ -14,7 +14,7 @@ p = scattering(de, []); p.setoverallwavenumber(k);
 p.setincidentwave(pi/2 - pi/20);  % if just angle given, it's a plane wave
 
 fprintf('testing N=%d; please wait about %g min...\n', N, N/1e4); 
-o.FMM = 0; o.meth = 'iter'; %o.meth = 'direct';
+o.FMM = 1; o.meth = 'iter'; %o.meth = 'direct';
 tic; p.solvecoeffs(o); fprintf('solve done in %.3g sec\n', toc)
 p.pointsolution(pointset(-1.5-1.5i))
 if verb,  figure; tic; p.showthreefields(o); % Note FMM also used here!

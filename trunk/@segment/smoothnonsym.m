@@ -1,4 +1,4 @@
-function s = smoothnonsym(M, a, b, w)
+function s = smoothnonsym(M, a, b, w, varargin)
 % SMOOTHNONSYM - non-symmetric oscillatory radial function closed segment
 %
 %  s = smoothnonsym(M, a, b, w) generates a smooth closed radial function
@@ -10,4 +10,5 @@ function s = smoothnonsym(M, a, b, w)
 s = segment.radialfunc(M, {@(q) 1 + a*cos(w*(q+b*cos(q))), ...
                     @(q) -a*sin(w*(q+b*cos(q))).*w.*(1-b*sin(q)), ...
                     @(q) -a*cos(w*(q+b*cos(q))).*w^2.*(1-b*sin(q)).^2 + ...
-                    a*sin(w*(q+b*cos(q))).*w.*b.*cos(q)}); % includes curvature
+                    a*sin(w*(q+b*cos(q))).*w.*b.*cos(q)}, varargin{:});
+% includes curvature

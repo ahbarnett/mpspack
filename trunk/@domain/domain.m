@@ -200,7 +200,7 @@ classdef domain < handle
         diam = max(abs(d.x - center(d))); % not quite optimal since uses box
       end
       
-      function [zz ii gx gy] = grid(d, dx) % ............. grid covering domain
+      function [zz ii gx gy] = grid(d, dx, bb) % ......... grid covering domain
       % GRID - make grid covering interior domain, or some of exterior domain
       %
       %  [zz ii gx gy] = grid(dom, dx) returns column-vector list of C-#s zz
@@ -208,9 +208,11 @@ classdef domain < handle
       %   regular rectangular grid with x- an y-axis 1D grids gx and gy
       %   respectively.
       %
+      %  [zz ...] = grid(dom, dx, bb) overrides bounding box
+      %
       %  See also: DOMAIN.BOUNDINGBOX
         if dx<=0, error('dx must be positive!'); end
-        bb = d.boundingbox;
+        if nargin<3, bb = d.boundingbox; end
         bb(1) = dx * floor(bb(1)/dx);            % quantize to grid through 0
         bb(3) = dx * floor(bb(3)/dx);
         gx = bb(1):dx:bb(2); gy = bb(3):dx:bb(4);         % plotting region
@@ -251,19 +253,26 @@ classdef domain < handle
       %   on the product grid given by gx and gy.
       %
       % o.dx : grid spacing (smaller dx is slower)
+      % o.bb : override bounding box
       % o.levels : levels to feed to contouring
+      % o.outside : 0 (default) shows only inside; 1 shows inside & outside.
+      %
       % Other options fed to segment.invertZparam
         if nargin<2, o = []; end
         if ~isfield(o, 'dx'), o.dx = 0.03; end       % default opts
-        [zz ii gx gy] = d.grid(o.dx);
+        if ~isfield(o, 'outside'), o.outside = 0; end  % default: inside only
+        if isfield(o, 'bb'); [zz ii gx gy] = d.grid(o.dx, o.bb);
+        else, [zz ii gx gy] = d.grid(o.dx); end
+        if o.outside, [xx yy] = meshgrid(gx,gy);
+          zz = xx(:) + 1i*yy(:); ii = true(size(xx)); end % plot inside&outside
         s = d.seg;
         if numel(s)~=1, error('domain must have exactly 1 segment!'); end
         t = s.invertZparam(zz,o);      % expensive part
-        t(find(imag(t)<0)) = nan+1i*nan;  % note imag(nan)=0 so need 1i*nan too!
+        if ~o.outside, t(find(imag(t)<0)) = nan+1i*nan; end % note imag(nan)=0 so need 1i*nan too!
         mis = nan*ii;       % output array
-        mis(ii) = min(imag(t), [], 1);
+        mis(ii) = min(abs(imag(t)), [], 1);
         if isfield(o, 'levels'), L = o.levels; else, L = 0:0.01:0.1; end
-        [c h] = contour(gx, gy, mis, L, 'k-', 'linewidth', 2); colorbar;
+        [c h] = contour(gx, gy, mis, L, 'k-', 'linewidth', 1.5); colorbar;
       end
       
       % methods defined by separate files...

@@ -3,7 +3,7 @@
 
 clear; v = 1;        % verbosity: 0 no pics, 1 final pic, 2 diagnostics
 ob = 'd'; d = 1.0;   % type of obstacle: 'd', 't', etc; problem x-periodicity 
-if 0
+if 1
   N=1e3; s = scale(segment.smoothstar(N, 0.3, 30), 0.35); % .25 closed curve
 elseif 1
   N=1e4; mmax = 100; wsc = .04; rand('twister',123); % typ fuzz scale, seed
