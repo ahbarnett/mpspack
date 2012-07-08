@@ -34,5 +34,21 @@ p = evp(tri);                   % sets up eigenvalue problem object
 tri.addlayerpot(s, 's');        % layerpot basis needed for 'fd' method
 o.modes = 1;                    % compute mode representations too
 % small-scale calc...
-kint = [3.5 15]; o.tol=1e-3; tic; p.solvespectrum(kint, 'fd', o); toc
+kint = [2 10]; o.tol=1e-3; tic; p.solvespectrum(kint, 'fd', o); toc
+tic; p.showmodes; toc           % plot the resulting modes
+
+% Neumann with polygon hole
+clear; o.kressq = 5; N=120;
+s = segment.polyseglist(N, [1, exp(3i*pi/8), exp(5i*pi/4)], 'pc', o); % tri
+si = translate(s.scale(0.4), 0.2+0.1i); % interior cutout tri
+d = domain(s, 1, {si(end:-1:1)}, {-1 -1 -1}); % domain
+d.plot;
+s.setbc(-1, 'N');               % Neumann BC's applied on inside: note -1
+si.setbc(1, 'N');              % also on outside of inner tri
+p = evp(d);                   % sets up eigenvalue problem object
+tri.addlayerpot(s, 's');        % layerpot basis needed for 'fd' method
+tri.addlayerpot(si, 's');        % layerpot basis needed for 'fd' method
+o.modes = 1;                    % compute mode representations too
+% small-scale calc...
+kint = [2 10]; o.tol=1e-3; tic; p.solvespectrum(kint, 'fd', o); toc
 tic; p.showmodes; toc           % plot the resulting modes
