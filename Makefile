@@ -5,11 +5,11 @@
 # Barnett 9/5/08, updated creation of archive & getrevisionnumber 1/21/09
 # simplified 8/5/09
 
-# (C) 2008 - 2011 Alex Barnett and Timo Betcke
+# (C) 2008 - 2012 Alex Barnett and Timo Betcke
 
 #rev := $(shell ./getrevisionnumber)
 #pkg := mpspack-r$(rev)
-pkg := mpspack-1.2beta
+pkg := mpspack-1.3
 
 default: all
 
@@ -22,7 +22,10 @@ special:
 
 tar:
 #	echo $(rev); echo $(pkg)
-	(cd ..; /opt/CollabNet_Subversion/bin/svn export mpspack $(pkg); tar zcvf $(pkg).tar.gz $(pkg); rm -Rf $(pkg))
+#       note sequential here to avoid race conditions...
+	(cd ..; svn export mpspack $(pkg); tar zcvf $(pkg).tar.gz $(pkg))
+	(cd ..; zip -r $(pkg).zip $(pkg))
+	rm -Rf ../$(pkg)
 
 clean:
 	(cd @utils; make clean)
