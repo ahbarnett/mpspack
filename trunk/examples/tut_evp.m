@@ -17,7 +17,9 @@ end
 
 % check L2 norm roughly right: (default is grf)
 [uj gx gy di js] = p.showmodes; u = uj(:,:,1); u = u(~isnan(u));
-sqrt(sum(dx^2*abs(u).^2))
+dx = gx(2)-gx(1); sqrt(sum(dx^2*abs(u).^2));
+u2 = uj(:,:,2); u2 = u2(~isnan(u2)); sum(dx^2*u2.*u) % crude orthogonality
+
 
 
 
@@ -34,7 +36,8 @@ end
 
 % check L2 norm roughly right: (default is basis; should be grid-norm'ed)
 [uj gx gy di js] = p.showmodes; u = uj(:,:,1); u = u(~isnan(u));
-sqrt(sum(dx^2*abs(u).^2))
+dx = gx(2)-gx(1); sqrt(sum(dx^2*abs(u).^2))
+u2 = uj(:,:,2); u2 = u2(~isnan(u2)); sum(dx^2*u2.*u) % crude orthogonality
 
 
 % high-lying Dirichlet
