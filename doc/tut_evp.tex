@@ -1,0 +1,183 @@
+\section{Dirichlet and Neumann eigenvalue problems}
+\label{s:evp}
+
+
+\bfi % ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+\hspace{-5ex}\mbox{
+\ig{width=3in}{rfnDlow.eps}
+\qquad
+\ig{width=3in}{rfnNlow.eps}
+}
+\ca{The lowest few Dirichlet (left) and non-trivial
+Neumann (right) eigenmodes for
+the smooth nonsymmetric domain eigenvalue problem.}{f:rfnmodes}
+\efi
+
+\bfi % ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+\ig{width=\textwidth}{rfnDk30.eps}
+\ca{All Dirichlet eigenmodes with eigenfrequencies lying in $[30,31]$ for
+the smooth nonsymmetric domain eigenvalue problem.}{f:rfnmodeshigh}
+\efi
+
+\bfi % ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+\ig{width=\textwidth}{triDlow.eps}
+\ca{The lowest Dirichlet eigenmodes of a triangle with $k_j\le 20$,
+computed in 7 seconds to 9 digit accuracy via the Fredholm
+determinant method.}{f:triDlow}
+\efi
+
+
+We now illustrate the solution of some Laplace eigenvalue problems
+of the form
+$$
+-\Delta u = k^2 u    \qquad \mbox{ in } \Omega
+$$
+where $\Omega$ is a bounded domain,
+with homogeneous boundary conditions either
+$$
+u = 0 \qquad \mbox{ on } \pO   \qquad \mbox{(Dirichet)}
+$$
+or
+$$
+u_n = 0 \qquad \mbox{ on } \pO   \qquad \mbox{(Neumann)} ~.
+$$
+This has a discrete set of non-trivial solutions $u=\phi_j$ (eigenmodes) and corresponding $k=k_j$ (eigenfrequencies), labeled in nondecreasing
+frequency order by $j=1,2,\ldots$.
+We start with a smooth domain, which (unlike the trefoil domain
+used earlier) is non-symmetric. We apply Dirichlet boundary conditions
+and set up an eigenvalue problem (EVP) object.
+\begin{verbatim}
+s = segment.smoothnonsym(80, 0.3, 0.2, 3);
+d = domain(s, 1);        % create an interior domain
+s.setbc(-1, 'D');        % Dirichlet BC's applied on inside of segment
+p = evp(d);              % sets up eigenvalue problem object
+\end{verbatim}
+There are three main solver methods coded into \mpspack:
+\bi
+\item {\tt 'fd'}: the Fredholm determinant method, most efficient and convenient for low-lying
+eigenvalues (i.e.\ the lowest few hundred).
+\item  {\tt 'ntd'}: the Neumann-to-Dirichlet map method \cite{sca}, most efficient
+for high-lying Dirichlet eigenvalues (not available for Neumann case).
+\item {\tt 'ms'}: the minimum singular-value method. This is less efficient
+(around 10 times slower than {\tt fd}),
+but serves as an accurate and reliable reference method (it handles
+degeneracies better than {\tt fd}).
+\ei
+To use the first method a double-layer potential basis is needed
+for Dirichlet (single-layer would be used for Neumann).
+Then to solve for all eigenvalues lying in $2\le k_j \le 10$ the call
+is as follows.
+\begin{verbatim}
+d.addlayerpot(s, 'd');          % basis set appropriate for BCs
+p.solvespectrum([2 10], 'fd');  % Fredholm det method
+\end{verbatim}
+In 3 seconds, 19 eigenvalues are found and stored in {\tt p.kj}.
+Their accuracy may be estimated by {\tt p.ej} which shows
+around 13 digits at the low end, deteriorating slightly to 9 digits
+at the high end: this is due to the choice of $N=80$ which would need
+to be increased to handle higher frequencies.
+A simple (but crude and not completely rigorous) check whether any eigenvalues were missed is via Weyl's law:
+\begin{verbatim}
+p.weylcountcheck(p.kj(1),p.kj,d.perim,d.area);
+\end{verbatim}
+The resulting graph should oscillate with a range of around 1
+without making any permanent
+jumps of integer sizes; such jumps up indicate missing (or if down, duplicated)
+eigenvalues.
+This is most useful for testing large numbers of eigenvalues.
+
+No information about the modes $\phi_j$ was stored.
+To also compute modes, and then to plot them, use the following.
+\begin{verbatim}
+o.modes = 1; p.solvespectrum([2 10], 'fd', o);
+p.showmodes;
+\end{verbatim}
+The solution takes 4 sec, and the plotting 2 sec.
+Mode boundary functions $\partial_n\phi_j$ are returned in the array
+{\tt p.ndj} from the right singular vector of $(I-2D^\ast)$,
+and the double-layer density which generates them in {\tt p.coj}
+from the left singular vector.
+The plotting is done by default
+by evaluation of the single-layer part of the
+Green's representation formula for $\phi_j$, using the
+normal-derivative data, since this doesn't involve any double-layer evaluation.
+The result is the left side of Fig.~\ref{f:rfnmodes}.
+When modes are requested, the minimum singular values are also
+checked for the eigenfrequencies, giving an independent test of the error.
+Errors in modes depends on the separation between eigenvalues,
+as in matrix eigenvalue problems, and would be better assessed by a convergence
+study in $N$.
+The mode data on a grid can be accessed via
+{\tt [uj gx gy di js] = p.showmodes;}
+The mode is $L^2$-normalized on $\Omega$.
+
+
+For degenerate eigenvalues you will need to set the option
+{\tt o.iter = 0} which switches to the usual SVD for mode checking;
+this is slower but scales with $N$ the same way, $O(N^3)$.
+This is in development.
+
+The Neumann case (switching to {\tt 'N'} in {\tt setbc} and {\tt 's'} in
+{\tt addlayerpot}), and solving in $1\le k_j \le 7.8$
+gives the right side of Fig.~\ref{f:rfnmodes}.
+As before, the eigevalue estimated accuracies vary from 15 to 10 digits.
+Note that the lowest $k$ in this range cannot include zero;
+of course the Neumann case does have a trivial eigenpair
+$k_0=0$, $\phi_0 \equiv 1$.
+Mode evaluation is by default done by evaluating the single-layer potential
+given by the left singular vector of $(I+2D)$,
+since this doesn't involve any double-layer evaluation.
+The mode is approximately $L^2$-normalized on $\Omega$, using the
+evaluation grid.
+
+
+When the domain has symmetries, the {\tt 'fd'} method is not so good,
+and does not find modes spanning the eigenspace.
+Switching to {\tt 'ms'} or {\tt 'ntd'} is more reliable.
+
+
+To illustrate computing high-lying Dirichlet eigenvalues as in \cite{sca},
+set up the Dirichlet case as above then try the following.
+\begin{verbatim}
+p.updateN(300);
+o.eps = 0.1; o.khat = 'r'; o.fhat = 's'; o.modes = 1;
+p.solvespectrum([30 31], 'ntd', o);
+p.showmodes;
+\end{verbatim}
+This takes 4 sec to solve and 4 sec to plot, producing
+Fig.~\ref{f:rfnmodeshigh}.
+For higher-frequencies, fast multipole evaluation of the modes is
+much more efficient. This is not yet documented.
+
+In order to handle corner domain eigenvalue problems, one needs to
+use special quadratures,
+for instance for a triangle use
+\begin{verbatim}
+o.kressq = 5;        % corner-packing parameter for Kress reparametrization
+s = segment.polyseglist(50, [1, exp(3i*pi/8), exp(5i*pi/4)], 'pc', o);
+\end{verbatim}
+The result for $k_j \in [4,20]$ is Fig.~\ref{f:triDlow}.
+The accuracy of this is currently limited to around 10 digits,
+because increasing {\tt kressq}
+can result in catastrophic cancellation due to geometry representation
+near the corner; this needs to be fixed.
+To stop less-accurate modes from being dropped by the solver,
+set an option such as
+{\tt o.tol = 1e-4}.
+A more complicated domain is also illustrated in Section~\ref{s:ridge}.
+Neither {\tt 'ntd'} nor {\tt 'ms'} works with corners yet in \mpspack.
+See {\tt verg} code on the first author's webpage for the former.
+
+The reader may benefit from also seeing the
+codes {\tt test/testevp.m}, {\tt test/testevpms.m}
+and the other codes in {\tt examples/} .
+
+There are also methods such as {\tt evp.crudempssolvespectrum}
+that are incomplete, orphaned, or in development.
+
+We have not tested \mpspack\ for mixed D-N boundary conditions, although
+it is probably quite easy to set that up by editing some of the
+codes in {\tt @evp}.
+
+%%%%%%
+

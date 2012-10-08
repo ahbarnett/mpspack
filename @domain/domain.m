@@ -28,7 +28,7 @@
 %
 % See also: SEGMENT, domain/PLOT
 
-% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
+% Copyright (C) 2008 - 2012, Alex Barnett, Timo Betcke
 
 
 classdef domain < handle

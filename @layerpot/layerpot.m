@@ -271,7 +271,7 @@ classdef layerpot < handle & basis
     function [u u1 u2] = evalFMM(b, co, p, o)
       % EVALFMM - FMM evaluate layer potential (SLP+DLP) basis at set of points
       %
-      % u = evalFMM(b, p, c) where b is a layerpot object, p is a pointset
+      % u = evalFMM(b, c, p) where b is a layerpot object, p is a pointset
       %  object containing M points, and c is a coefficient vector, returns
       %  u, the layer potential values at each target point m=1...M as a column
       %  vector. (Note p may also be a column vector of points in the C plane.)
@@ -283,14 +283,14 @@ classdef layerpot < handle & basis
       %  operators, and the jump relations are applied based on which side of
       %  the segment is implied by opts.dom (see below).
       %
-      % [u un] = evalFMM(b, p, c) also returns gradient of potential in the
+      % [u un] = evalFMM(b, c, p) also returns gradient of potential in the
       %  normal directions contained in the pointset p.nx.
       %
-      % [u ux uy] = evalFMM(b, p, c) also returns gradient of potential in the
+      % [u ux uy] = evalFMM(b, c, p) also returns gradient of potential in the
       %  x and y directions, ie its partials. (pointset normals not used).
       %  Not implemented (or meaningful) for self-evaluation!
       %
-      % [u ...] = evalFMM(b, p, c, opts) controls options.
+      % [u ...] = evalFMM(b, c, p, opts) controls options.
       %   The optional argument opts may contain the following fields:
       %    opts.dom: domain in which evaluation is performed. In the case of
       %     p being the segment on which the LP density sits, opts.dom must be
@@ -361,7 +361,8 @@ classdef layerpot < handle & basis
     
     % methods in separate files...
     [A Ax] = evalfty(b, f, o)                     % for 1.5D scatt, qpstrip
-   
+    [box i] = QBXbox(b, t, h, p, o)                % for QBX close evaluation
+    
   end % methods
   
   methods (Static) %...................... the beef: kernel evaluation routines

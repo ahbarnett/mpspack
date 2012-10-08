@@ -388,7 +388,7 @@ classdef qpscatt < scattering & handle
       end
       u = to.*conj(to).*angfacs.';
       d = bo.*conj(bo).*angfacs.';
-      if isfield(o,'table')           % show results table and flux error
+      if isfield(o,'table') & o.table    % show results table and flux error
         fprintf('\t\tBragg order\tflux fracs: up\t\t\tdown\n')
         disp([n u d]); fprintf('Bragg tot flux err = %.3g\n',sum([u;d])-1)
       end

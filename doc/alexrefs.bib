@@ -121,7 +121,7 @@ note = "{\em preprint}, {\tt math-ph/0601006}, available at
 @misc{sca,
 author = "Barnett, A. H. and Hassell, A.",
 title = "Fast computation of high frequency {D}irichlet eigenmodes via the spectral flow of the interior {N}eumann-to-{D}irichlet map",
-note = "in preparation"
+note = "in press, {\em Comm. Pure Appl. Math.}, 2012."
 }
 
 @article{incl,
@@ -145,6 +145,14 @@ number=3,
 pages={1417--1441},
 year=2010
 }
+
+@misc{mpspack,
+author="Barnett, A. H. and Betcke, T.",
+title="{\verb+MPSpack+}: A {MATLAB} toolbox to solve {H}elmholtz {PDE}, wave scattering, and eigenvalue problems using particular solutions and integral equations. [computer software]",
+note={version 1.2. Available at \verb+http://code.google.com/p/mpspack/+},
+year=2011
+}
+
 
 %note="{\tt arXiv:0708.3533 [math.NA]}",
 @article{mfs,
@@ -234,7 +242,7 @@ pages={6898--6914}
 author="A H Barnett and L Greengard",
 title="A new integral representation for quasi-periodic scattering
 problems in two dimensions",
-journal="BIT Numer. Math.",
+journal=bit,
 year=2011,
 volume=51,
 pages={67--90}
@@ -264,10 +272,21 @@ pages={1046--1063}
 @inproceedings{neubnds,
 title={Estimates on {N}eumann eigenfunctions at the boundary, and the ``{M}ethod of {P}articular {S}olutions'' for computing them},
 author="A. H. Barnett and Andrew Hassell",
-year=2011,
-note={submitted},
-booktitle={Spectral Geometry, proceedings of the International Conference on Spectral Geometry, Dartmouth College}
+year=2012,
+pages={196--210},
+booktitle={Spectral Geometry, proceedings of the 2010 International Conference on Spectral Geometry, Dartmouth College}
 }
+
+@misc{QBX,
+title={Quadrature by expansion:
+a new method for the evaluation of layer potentials},
+author={A. Kl\"ockner and A. H. Barnett and L. Greengard and M. O'Neil},
+year=2012,
+journal=jcp,
+note={submitted}
+}
+
+
 
 % ----------------------------------------- dynamical systems, classical chaos
 
@@ -554,11 +573,11 @@ note={also see Errata for this paper,
       YEAR = {2002},
     NUMBER = {48},
      PAGES = {10293--10310},
-       CODEN = {JPHAC5},
-   MRCLASS = {81Q50 (35P20)},
-  MRNUMBER = {MR1947308 (2003j:81065)},
-MRREVIEWER = {Jens Marklof},
+       CODEN = {JPHAC5}
 }
+%   MRCLASS = {81Q50 (35P20)},
+%  MRNUMBER = {MR1947308 (2003j:81065)},
+%MRREVIEWER = {Jens Marklof},
 
  
 
@@ -689,11 +708,11 @@ MRREVIEWER = {U. Hamenst{\"a}dt},
       YEAR = {2004},
     NUMBER = {1},
      PAGES = {119--168},
-     CODEN = {CMPHAY},
-   MRCLASS = {35P05 (35J05 37N20 47G30 58J37 58J40)},
-  MRNUMBER = {MR2104608 (2005h:35255)},
-MRREVIEWER = {Sergey G. Pyatkov},
+     CODEN = {CMPHAY}
 }
+%   MRCLASS = {35P05 (35J05 37N20 47G30 58J37 58J40)},
+%  MRNUMBER = {MR2104608 (2005h:35255)},
+%MRREVIEWER = {Sergey G. Pyatkov},
 
 @article {marklof,
     AUTHOR = {Marklof, Jens and O'Keefe, Stephen},
@@ -781,6 +800,15 @@ volume=135,
 pages={1029--1037}
 }
 
+@article{hassellBB,
+author={A. Hassell},
+title={Ergodic billiards that are not quantum unique ergodic. With an appendix by {A. Hassell} and {L. Hillairet}},
+journal="Ann. Math.",
+year=2010,
+pages={605--618}, 
+volume=171
+}
+
 @book{SafVas,
 title="The Asymptotic Distribution of Eigenvalues of
 Partial Differential Operators",
@@ -812,10 +840,16 @@ year={1998},
 
 @article{Xu,
 author={X. Xu},
-title={Upper and lower bounds for normal derivatives of spectral clusters of Dir
-ichlet Laplacian},
-note={available at \verb+http://arXiv.org/abs/1004.2517+}
+title={Upper and lower bounds for normal derivatives of spectral clusters of {D}irichlet {L}aplacian},
+journal={J. Math. Anal. Appl.},
+year=2012,
+volume=387,
+number=1,
+pages={374--383}
 }
+%note={available at \verb+http://arXiv.org/abs/1004.2517+}
+
+
 
 @article{nonnenrev,
 author={S Nonnenmacher},
@@ -1935,11 +1969,11 @@ MRREVIEWER = {L. Collatz},
   FJOURNAL = {SIAM Journal on Numerical Analysis},
     VOLUME = {5},
       YEAR = {1968},
-     PAGES = {64--70},
-    MRCLASS = {65.35},
-  MRNUMBER = {MR0226833 (37 \#2420)},
-MRREVIEWER = {James H. Wilkinson},
+     PAGES = {64--70}
 }
+%    MRCLASS = {65.35},
+%  MRNUMBER = {MR0226833 (37 \#2420)},
+%MRREVIEWER = {James H. Wilkinson},
 
 @article {descloux,
     AUTHOR = {Descloux, J. and Tolley, M.},
@@ -1975,10 +2009,10 @@ pages={201--223}
     VOLUME = {47},
       YEAR = {2005},
     NUMBER = {3},
-     PAGES = {469--491},
-    MRCLASS = {65N25},
-  MRNUMBER = {MR2178637},
+     PAGES = {469--491}
 }
+%    MRCLASS = {65N25},
+%  MRNUMBER = {MR2178637},
 
 @phdthesis{timothesis,
 author="Betcke, T.",
@@ -2730,7 +2764,8 @@ year=2010
 @misc{HFMM2D,
 author={Zydrunas Gimbutas and Leslie Greengard},
 title={{HFMM2D}, {F}ortran code for fast multipole method with {H}elmholtz kernel in two dimensions (version 20110313)},
-year=2011
+year=2011,
+note={{\tt http://www.cims.nyu.edu/cmcl/fmm2dlib/fmm2dlib.html}}
 }
 
 
@@ -2790,6 +2825,15 @@ title={{D}ebye Sources and the Numerical Solution of the Time Harmonic {M}axwell
 note={preprint, {\tt arXiv:1105.3217}},
 year=2011
 }
+
+@book{chewbook,
+author={Weng Cho Chew},
+title={Waves and Fields in Inhomogeneous Media},
+year=1999,
+publisher={Wiley-IEEE Press}
+}
+%(IEEE Press Series on Electromagnetic Wave Theory)}
+
 
 % ------------------------------ solar cells & absorbers
 
@@ -2925,6 +2969,15 @@ volume=44,
 pages={165--175}
 }
 
+@article{peter06,
+title="Water-wave scattering by a periodic arrya of arbitrary bodies",
+author={Peter, Malte A. and Meylan, Michael H. and Linton, C. M.},
+year=2006,
+journal="J. Fluid Mech.",
+volume=548,
+pages={237--256}
+}
+
 @article{linton98,
 author="Linton, C. M.",
 title="The {G}reen's function for the two-dimensional {H}elmholtz equation in periodic domains",
@@ -3055,6 +3108,15 @@ volume=15,
 issue={3--5},
 year=1991,
 pages={229--243}
+}
+
+@article{nystrom,
+author={Nystr{\"o}m, E.J.},
+title={{\"U}ber die praktische {Aufl\"osung} von {Integralgleichungen} mit {Andwendungen} aug {Randwertaufgaben}},
+journal={Acta Math.},
+volume=54,
+pages={185--204},
+year=1930
 }
 
 @incollection{kressacrev,
@@ -3764,6 +3826,16 @@ MRREVIEWER = {I. Aganovic},
 MRREVIEWER = {I. N. Baker},
 }
 
+@article{bookrevshapiro,
+author="Korevaar, J.",
+title={Book review of {\em The {S}chwarz function and its generalization to higher dimensions} by {H.} {S.} {S}hapiro},
+journal="Bull. Amer. Math. Soc.",
+volume=31,
+year=1994,
+pages={112--116}
+} 
+
+
 @article{melenkPUM,
 author="Melenk, J. M. and Babuska, I.",
 title="Approximation with harmonic and generalized harmonic polynomials in the partition of unity method",
@@ -3810,6 +3882,15 @@ title="Numerical Analysis",
 series="Graduate Texts in Mathematics \#181",
 year=1998,
 publisher="Springer-Verlag"
+}
+
+@article{lnt92,
+author="L.N. Trefethen",
+title="The definition of numerical Analysis",
+journal="SIAM News",
+month="November",
+year=1992,
+note="{\tt http://people.maths.ox.ac.uk/trefethen/essays.html}"
 }
 
 @article{hale,
@@ -4016,6 +4097,13 @@ volume=228,
 pages={8892--8907}
 }
 
+@misc{helsingtut,
+author="Helsing, J",
+year=2012,
+title="Solving integral equations on piecewise smooth boundaries using the {RCIP} method: a tutorial",
+note="preprint, 34 pages, {\tt arXiv:1207.6737v3}"
+}
+
 @article{helsing_close,
 author="Helsing, J and Ojala, R.",
 year=2008,
@@ -4025,12 +4113,153 @@ volume=227,
 pages={2899--2921}
 }
 
+@inproceedings{davis59,
+year=1959,
+author={P. J. Davis},
+title="On the numerical integration of periodic analytic functions",
+booktitle={Proceedings of a Symposium on Numerical Approximations},
+editor={R. E. Langer},
+publisher={University of Wisconsin Press}
+}
+
+@article{hunter71,
+year=1971,
+author={D. B. Hunter},
+title={The evaluation of integrals of periodic analytic functions},
+journal=bit,
+volume=11,
+pages={175--180}
+}
+
+% ------------------ Fast Direct Solvers -----------------------------------
+
 @misc{gillman,
 year=2011,
 author={A. Gillman and P. Young and P. G. Martinsson},
-title="A direct solver with $O(N)$ complexity for integral equations on one-dimensional domains",
+title="A direct solver with {$O(N)$} complexity for integral equations on one-dimensional domains",
 notes={{\em in review}}
 } 
+
+%%%  Adrianna's references
+@article{m2011_1D_survey,
+    AUTHOR = {Gillman, A. and Young, P. and Martinsson, P.G.},
+     TITLE = {A direct solver with {$O(N)$} complexity for integral equations on one-dimensional domains},
+     JOURNAL= {Frontiers of Mathematics in China},
+    VOLUME = {7},
+    NUMBER = {2},
+     PAGES = {217-247},
+     YEAR = {2012},
+}
+
+@article{hackbusch,
+  author = {W. Hackbusch},
+  title = {A Sparse Matrix Arithmetic Based on {H}-Matrices;
+           {P}art {I}: {I}ntroduction to {H}-Matrices},
+  journal = {Computing},
+  volume = {62},
+  pages = {89--108},
+  year = {1999}
+}
+
+@book{2010_borm,
+AUTHOR = {B\"orm, S.},
+TITLE = {Efficient Numerical Methods for Non-local Operators: $\mathcal{H}^2$-Matrix Compression,
+         Algorithms and Analysis},
+YEAR = {2010},
+PUBLISHER = {European Mathematics Society}
+}
+
+@article {mdirect,
+    AUTHOR = {Martinsson, P.G. and Rokhlin, V.},
+     TITLE = {A fast direct solver for boundary integral equations in two dimensions},
+   JOURNAL = {J. Comp. Phys.},
+    VOLUME = {205},
+    NUMBER = {1},
+      YEAR = {2005},
+     PAGES = {1--23},
+}
+@incollection {BCR,
+    AUTHOR = {Beylkin, G. and Coifman, R. and Rokhlin, V.},
+     TITLE = {Wavelets in numerical analysis},
+ BOOKTITLE = {Wavelets and their applications},
+     PAGES = {181--210},
+ PUBLISHER = {Jones and Bartlett},
+   ADDRESS = {Boston, MA},
+      YEAR = {1992},
+}
+
+@article {1996_mich_elongated,
+    AUTHOR = {Michielssen, E. and Boag, A. and Chew, W. C.},
+     TITLE = {Scattering from elongated objects: direct solution in ${O}({N}\log^{2}{N})$ operations},
+   JOURNAL = {IEE Proc. Microw. Antennas Propag.},
+    VOLUME = {143},
+      YEAR = {1996},
+    NUMBER = {4},
+     PAGES = {277 -- 283},
+}
+
+@article {1994_starr_rokhlin,
+    AUTHOR = {P. Starr and V. Rokhlin},
+     TITLE = {On the numerical solution of two-point boundary value
+              problems. {II}},
+   JOURNAL = {Comm. Pure Appl. Math.},
+  FJOURNAL = {Communications on Pure and Applied Mathematics},
+    VOLUME = {47},
+      YEAR = {1994},
+    NUMBER = {8},
+     PAGES = {1117--1159},
+}
+
+@misc{2011_hao_nystrom,
+AUTHOR = {Hao, S. and Martinsson, P.G. and Young, P.},
+TITLE = {High-order accurate {N}ystr\"om discretization of integral equations with weakly singular kernels on smooth curves in the plane},
+NOTE = {ar{X}iv.org report \#1112.6262},
+YEAR = {2011}
+}
+
+@misc{ho,
+AUTHOR = {Ho, K. L. and Greengard, L. },
+TITLE = {A fast direct solver for structured linear systems by recursive skeletonization},
+NOTE = {To appear in SIAM J. on Scientific Computing},
+YEAR = {2012}
+}
+@book {golub,
+    AUTHOR = {G. Golub and C. Van Loan},
+     TITLE = {Matrix computations},
+    SERIES = {Johns Hopkins Studies in the Mathematical Sciences},
+   EDITION = {Third},
+ PUBLISHER = {Johns Hopkins University Press},
+   ADDRESS = {Baltimore, MD},
+      YEAR = {1996},
+     PAGES = {xxx+698},
+      ISBN = {0-8018-5413-X; 0-8018-5414-8},
+}
+@incollection {2007_shiv_sheng,
+    AUTHOR = {Sheng, Z. and Dewilde, P. and Chandrasekaran, S.},
+     TITLE = {Algorithms to solve hierarchically semi-separable systems},
+ BOOKTITLE = {System theory, the Schur algorithm and multidimensional
+              analysis},
+    SERIES = {Oper. Theory Adv. Appl.},
+    VOLUME = {176},
+     PAGES = {255--294},
+ PUBLISHER = {Birkh\"auser},
+   ADDRESS = {Basel},
+      YEAR = {2007},
+}
+
+@article {gu_divide,
+    AUTHOR = {Chandrasekaran, S. and Gu, M.},
+     TITLE = {A divide-and-conquer algorithm for the eigendecomposition of
+              symmetric block-diagonal plus semiseparable matrices},
+   JOURNAL = {Numer. Math.},
+  FJOURNAL = {Numerische Mathematik},
+    VOLUME = {96},
+      YEAR = {2004},
+    NUMBER = {4},
+     PAGES = {723--731},
+      ISSN = {0029-599X},
+     CODEN = {NUMMA7},
+}
 
 % -------------------------------------------------- PDEs (non-numerical)
 
@@ -4042,11 +4271,11 @@ notes={{\em in review}}
   FJOURNAL = {Mathematische Zeitschrift},
     VOLUME = {46},
       YEAR = {1940},
-     PAGES = {635--636},
-   MRCLASS = {36.0X},
-  MRNUMBER = {MR0002456 (2,56d)},
-MRREVIEWER = {K. Friedrichs},
+     PAGES = {635--636}
 }
+%   MRCLASS = {36.0X},
+%  MRNUMBER = {MR0002456 (2,56d)},
+%MRREVIEWER = {K. Friedrichs},
 
 @book {garab,
     AUTHOR = {Garabedian, P. R.},

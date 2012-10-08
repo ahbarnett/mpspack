@@ -491,6 +491,8 @@ classdef segment < handle & pointset
      % ----------------------- methods in other m-files -----------------
      h = plot(s, pm, o)
      b = addinoutlayerpots(seg, a, opts)
+     gam = QBXgammaconst(seg, t, R)                  % geom const for QBX
+
     end % methods
 
     % --------------------------------------------------------------------
