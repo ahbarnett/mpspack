@@ -2,7 +2,7 @@ function [g] = interptrig(f, N)
 % INTERPTRIG - regular interpolate periodic function w/ trig poly's and FFT
 %
 % [g] = interptrig(f, N)
-%   N is new number of points.
+%   N is new number of points. Cannot be less than numel(f), currently.
 %   Key convention is that points are spaced at the half-integers
 %   ie, t = 2*pi*((1:n)-0.5)/n
 %

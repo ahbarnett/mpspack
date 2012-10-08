@@ -47,12 +47,15 @@ classdef evp < problem & handle
     %
     % [kj] = SOLVESPECTRUM(p, [klo khi]) uses default 'fd' method to find all
     %   eigenwavenumbers kj lying in the wavenumber interval [klo, khi], for the
-    %   eigenvalue problem object p.
+    %   eigenvalue problem object p. Everywhere Dirichlet or Neumann supported
+    %   in all methods apart fron 'ntd'.
     %   Laplacian eigenvalues are simply the squares of the kj.
     %   The problem also stores the kj list as p.kj
     %
-    % [kj err coj ndj] = ... also returns basis coeffcients, normal derivatives,
-    %   and error estimates struct, if possible. Certain methods may return
+    % [kj err coj ndj] = ... also returns basis coeffcients (i.e. the relevant
+    %   layer density function: tau for Dir BCs, sigma for Neu), the boundary
+    %   data (normal derivatives for Dir, values for Neu),
+    %   and an error estimate struct, if possible. Certain methods may return
     %   empty arrays for some of these.
     %
     % [kj err coj ndj dat] = ... also returns NtD spectral sweep data object
@@ -75,7 +78,7 @@ classdef evp < problem & handle
     %   and/or choose options,
     %     opts.verb = 0,1,... : verbosity (0=silent, 1=diagnostic text, ...)
     %     opts.modes = 0,1 : if true, compute modes (storing in p)
-    %                  (note, for ntd khat='o', requesting modes not extra work)
+    %                  (note, for ntd khat='o', requesting modes no extra work)
     %     opts.eps : size of k-window over which meth='ntd' extrapolates
     %                (default is 0.2/(max radius of domain))
     %     opts.khat = 'ntd' k_hat predict method: 'l' linear, 'o' frozen-f ODE.
@@ -84,7 +87,7 @@ classdef evp < problem & handle
     %
     % Notes / issues:
     % * 'fd' and 'ms' require p to have appropriate layerpot basis on domain
-    %   ('ntd' doesn't need this)
+    %   and BCS on segment, already set up ('ntd' doesn't need this)
     % * Still very alpha code! Single domain, but can have multiple segs.
     % * keep more data of all the det evals, pass out?
       if nargin<3 | isempty(meth), meth='fd'; end   % default method
@@ -313,7 +316,7 @@ classdef evp < problem & handle
     % FILLFREDHOLMOP - fill l^2 normed (sqrtwei) layer-potential matrix at k
     %
     % A = FILLFREDHOLMOP(p, k) fills the matrix A = (I - 2D) for Dirichlet BCs
-    %    or (I + 2D^T) for Neumann BCs, at wavenumber k, for evp object p.
+    %    or -(I + 2D^T) for Neumann BCs, at wavenumber k, for evp object p.
     %    The appropriate layerpotential must have been set up in the evp object.
     %
     % This works for Dirichlet (bc='D', lp='d') or Neumann (bc='N', lp='s').
@@ -386,13 +389,16 @@ classdef evp < problem & handle
     %
     % Compute an eigenmode representation (coefficients and boundary data) at
     %   a single eigenfrequency k, or eigenspace at at degenerate cluster of k,
-    %   using the minimum singular value(s) of 1/2-D (for Dirichlet BC case).
+    %   using the minimum singular value(s) of 1/2-D (for Dirichlet BC case)
+    %   or 1/2+D^* (for Neumann case).
     %   Desired eigenspace dimension (dim) is indicated by passing in a list of
     %   (repeated) values for k.
     %   An appropriate layer-potential basis must already exist in p.
     %
     % Outputs: co - (N-by-dim) coeff data, ie columns of density functions
-    %          nd - (N-by-dim) columns of mode normal-derivative funcs
+    %                          (single-layer for Neu, double-layer for Dir).
+    %          nd - (N-by-dim) columns of mode boundary data (normal-derivative
+    %                          for Dir; boundary values for Neu).
     %           e - (dim-by-1) singular value(s) of Fredholm operator - should
     %               be small if k is a good approximate eigenwavenumber.
     %
@@ -403,11 +409,12 @@ classdef evp < problem & handle
     %    opts.iter = 0 use matlab's full svd to get the lowest singular values
     %                  and vectors,
     %                1 use custom iterative method (default), 10x faster.
-    %                  (For degenerate cases, reverts to iter=0 method).
+    %                  (For degenerate cases, reverts to iter=0 method.)
     % Notes/issues:
     % * only Dirichlet BC is normalized correctly, since this uses Rellich
     %   formula. This could be done for general BCs, would need specrowdiff to
-    %   compute tangential derivs.
+    %   compute tangential derivs. However, we don't know how to normalize
+    %   densities anyway, and SLP is used for Neumann eval since better.
     % * Braxton Osting needed domains w/ multiple segments, so that is done.
     %
     % See also: EVP.FILLFREDHOLMOP
@@ -422,23 +429,31 @@ classdef evp < problem & handle
         A = p.fillfredholmop(k);      % eg (I - 2D) in Dirichlet, (I + 2D^T) Neu
         if o.iter && dim==1
           [u e v info] = utils.minsingvalvecs(A);  % iter O(N^3) small const
-          if info.flag, error('info.flag failed from utils.minsingvalvec; try setting opts.iter=0 instead!'); end
+          if info.flag
+            warning('info.flag failed from utils.minsingvalvec, probably due to near-degeneracy: switching to opts.iter=0 instead for this eigenspace');
+            [U S V] = svd(A); u = U(:,end-dim+1:end); v = V(:,end-dim+1:end);
+            s = diag(S); e = s(end-dim+1:end);   % O(N^3) 10x slower method
+          end
         else                                       % O(N^3) 10x slower method
           [U S V] = svd(A); u = U(:,end-dim+1:end); v = V(:,end-dim+1:end);
           s = diag(S); e = s(end-dim+1:end);
         end
-        if p.segs(1).a==0, z = u; u = v; v = z; end % Neu case: swap u,v HACK
-        % todo: correctly normalize Neu case now...(specrowdiff would be needed)
-        % ...
-
-        % co = density, converted from l^2 to value vector
+        % co = density, converted from l^2 to value vector (unnormalized)
         co = v .* repmat(1./p.sqrtwei.', [1 dim]);
         % L sv's are R sv's w/ D^*, so u gives boundary function...
         x = vertcat(p.segs.x); nx = vertcat(p.segs.nx); % allow multiple segs
-        xdn = real(conj(x).*nx); w = sqrt(xdn/2); % sqrt Rellich bdry wei
+        xdn = real(conj(x).*nx); % Rellich bdry wei aka Morawetz multiplier
         for i=1:dim
           u(:,i) = u(:,i)/max(u(:,1)); % make Re-valued (Im part is error est)
-          u(:,i) = k * u(:,i)/norm(w.*u(:,i));         % Rellich-normalize
+          if p.segs(1).a~=0   % assume Dirichlet BC (everywhere)
+            rellichint = sum(xdn.*abs(u(:,i)).^2);      % Rellich integral
+          else                % Neumann BC (assumed everywhere)
+            rellichint = 1;  % TODO: build D matrix on multi segs...
+            % use Barnett generalized inner product identity...
+            %Du = p.sqrtwei.' .* (D*(u(:,i)./p.sqrtwei.')); %tang deriv * sqrtwei
+            %rellichint = sum(xdn.*(k(1)^2*abs(u(:,i)).^2 - abs(Du).^2));
+          end
+          u(:,i) = (sqrt(2) * k(1)) * u(:,i) / sqrt(rellichint);
         end
         nd = u .* repmat(1./p.sqrtwei.', [1 dim]); % convert l^2 to values
       
@@ -503,8 +518,8 @@ classdef evp < problem & handle
     % SHOWMODES(p, opts) allows control of certain options including:
     %   opts.dx, opts.bb, opts.bdry - grid spacing, bounding-box, and whether
     %               to plot boundary, as in problem.showsolution.
-    %   opts.eval - 'basis' uses existing basis for evaluation, 'grf' uses
-    %               Green's rep. formula on p.ndj (Dirichlet BC only) (default)
+    %   opts.eval - 'basis' uses existing basis p.coj to eval (default for Neu)
+    %               'grf' uses Green's rep. formula on p.ndj (default for Dir)
     %   opts.kwin - only computes modes in given wavenumber window
     %   opts.inds - only computes modes in given (unordered) index set
     %   opts.col - 'jet' (default, matlab colorscale), 'bw' (phi^2 in grey)
@@ -514,15 +529,19 @@ classdef evp < problem & handle
     %    correctly L2-normalized over the domain. Phase removal is a bad hack!
     %  * No account taken of non-simply connected domains (needs GRF for
     %    this to be set up...)
-    %  * Neumann, Robin ... ?
+    %  * mixed D-N domains, Robin ... ?
     %  * Close-evaluation (J-expansion projection) for layer-potentials...?
     %
     % See also: EVP, PROBLEM.SHOWSOLUTION
       if nargin<2, o = []; end
-      if ~isfield(o, 'eval'), o.eval='grf'; end, grf = strcmp(o.eval,'grf');
+      neubc = (p.segs(1).a==0);  % assume Neumann BCs everywhere
+      if ~isfield(o, 'eval')
+        if neubc, o.eval='basis'; else, o.eval='grf'; end
+      end
+      grf = strcmp(o.eval,'grf');
       if ~isfield(o, 'kwin'), o.kwin=p.kwin; end
       if ~isfield(o, 'inds'), o.inds=1:numel(p.kj); end
-      if ~isfield(o, 'bdry'), o.bdry = 0; end
+      if ~isfield(o, 'bdry'), o.bdry = 0; end  % unused: future expansion
       if ~isfield(o, 'col'), o.col = 'jet'; end
       wantdata = nargout>0;
       inlist = 0*p.kj; inlist(o.inds) = 1;         % true if in index list
@@ -533,7 +552,8 @@ classdef evp < problem & handle
       if grf
         if isempty(p.ndj), error('GRF method: no ndj bdry func info found!');end
         d = utils.copy(p.doms);  % set up for GRF evaluations in loop...
-        d.clearbases; d.addlayerpot(d.seg, 's');
+        d.clearbases; if neubc, d.addlayerpot(d.seg, 'd'); else
+          d.addlayerpot(d.seg, 's'); end  % correct GRF type for BCs
         pe = bvp(d); pe.setupbasisdofs; % temporary new problem instance
       else
         if isempty(p.coj), error('basis method: no coj coeffs info found!');end
@@ -551,6 +571,10 @@ classdef evp < problem & handle
           u = u * conj(uint/abs(uint));  % unphase u
         end
         u = real(u);                     % saves half the memory (real-valued)
+        dxdy = (gx(2)-gx(1))*(gy(2)-gy(1));
+        if ~grf | neubc       % we don't know how to normalize the basis eval
+          u = u / sqrt(sum(dxdy*abs(u(~isnan(u))).^2)); % grid normalize crudely
+        end
         if wantdata
           if i==1, uj = nan(size(u,1), size(u,2), n); end % allocate output
           uj(:,:,i) = u;                                  % copy data to array
@@ -558,6 +582,7 @@ classdef evp < problem & handle
         tsubplot(ndn, nac, i);
         if strcmp(o.col,'jet')
           imagesc(gx, gy, u, 'alphadata', ~isnan(di)); colormap(jet(256));
+ % contourf(gx, gy, u, [-1:0.2:1]*abs(u(ceil(end/2),ceil(end/2)))); colormap(jet(256)); hold on; p.segs.plot; % debug with known vertical scale
           caxis(3.5*[-1 1]/sqrt(p.doms.area)); % rescale values based on area
         elseif strcmp(o.col,'bw')
           imagesc(gx, gy, u.^2, 'alphadata', ~isnan(di)); colormap(1-gray(256));

@@ -620,6 +620,107 @@ normal derivative. The solution to this problem is shown in Figure
 The accuracy and solution time are comparable to the sound-soft
 scattering case.
 
+
+
+
+
+
+
+
+
+
+
+
+\bfi % ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+\mbox{\ig{width=3in}{ridgeguide.eps}
+\quad
+\ig{width=3in}{ridgeguidegeom.eps}
+}
+\ca{Geometry for the ridge guide eigenvalue problem, and
+the ten segments that represent it in \mpspack.}{f:ridgeguide}
+\efi
+
+\bfi % ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+\mbox{\ig{width=3in}{ridgeguideDlow.eps}
+\quad
+\ig{width=3in}{ridgeguideNlow.eps}
+}
+\ca{The lowest Dirichlet (left) and Neumann (right) eigenmodes for
+the ridge guide eigenvalue problem.}{f:ridgemodes}
+\efi
+
+
+\subsection{Eigenvalues of a rounded ridge waveguide}
+\label{s:ridge}
+
+The TM or TE modes and dispersion curves
+of a perfect electric conductor waveguide can
+be found from the Dirichet or Neumann eigenvalue problem for the
+guide cross-section.
+Fig.~\ref{f:ridgeguide} shows a typical example coming from engineering.
+The first author thanks Dr Peter S. Simon of
+Space Systems/Loral for this nice example problem.
+Since there are corners and jumps in curvature, we will need to use
+quadratures appropriate for layer potentials with corners.
+
+For the solution, we set up ten segments for the boundary,
+using Kress' corner-adapted reparametrization ({\tt 'pc'}) of the Kress
+quadrature rule (make sure you have the latest version of \mpspack\
+for this).
+\begin{verbatim}
+bc = 'D';       % boundary conditions: 'D' or 'N'
+o.kressq=5;     % corner-packing parameter for Kress reparametrization
+
+n = 48;                                    % convergence param
+am = 2; bm = 1; s = 0.5; R = 0.1; g = 0.6; % ridge waveguide params
+h = 1i*(bm-g-R);                           % y-shift of centers
+ss = segment.polyseglist(n, [s/2+h, s/2, am/2, am/2+1i*bm, ...
+  -am/2+1i*bm, -am/2, -s/2, -s/2+h], 'pc', o);
+seg = [ss(1:end-1) segment(n/2,[-s/2+R+h,R,pi,pi/2],'pc',o) ...
+  segment(n,[-s/2+R+h+1i*R, s/2-R+h+1i*R],'pc',o) ...
+  segment(n/2,[s/2-R+h,R,pi/2,0],'pc',o)];
+\end{verbatim}
+Notice that since $n/2$ points are used on the arcs, and Kress is coded
+only for even numbers of points, that 4 must divide $n$.
+
+We then proceed as in Section~\ref{s:evp}. The code is very short.
+\begin{verbatim}
+d = domain(seg, 1);
+seg.setbc(-1, bc);              % BC's applied on inside
+p = evp(d);                     % sets up eigenvalue problem object
+if bc=='D', d.addlayerpot(seg, 'd'); else, d.addlayerpot(seg, 's'); end
+o.modes = 1;
+o.iter = 0;  % can set to 1 if no degeneracies
+o.tol = 1e-4; % make sure to capture even bad ones
+p.solvespectrum([2 8], 'fd', o);
+p.showmodes;
+\end{verbatim}
+The resulting modes for the two boundary conditions D or N are shown
+in Fig.~\ref{f:ridgemodes}.
+The computations take around 30 seconds.
+The Dirichlet case gets 9 digits of accuracy, but Neumann only 4-5 digits.
+
+
+
+
+
+\bfi % ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+\ig{width=\textwidth}{gasket.eps}
+\ca{Lowest 25 Dirichlet eigenmodes of a smooth
+gasket domain, computed to 14 digit accuracy in 20 seconds.}{f:gasket}
+\efi
+
+\subsection{Dirichlet eigenvalues of a multiply-connected domain}
+\label{s:gasket}
+
+We refer the reader to the code {\tt examples/gasketevp.m} which uses
+the Fredholm-determinant method to compute Dirichlet eigenvalues
+of a smooth gasket domain, with results as shown in Fig.~\ref{f:gasket}.
+This was done by the first author during collaboration with Braxton Osting.
+Note that this method is not yet robust, since interior resonances
+of the holes are not prevented.
+
+
 %%% Local Variables: 
 %%% mode: latex
 %%% TeX-master: "tutorial"

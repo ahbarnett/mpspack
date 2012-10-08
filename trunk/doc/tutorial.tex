@@ -14,14 +14,15 @@ University of Reading, Berkshire, RG6 6AX, UK}}
 \maketitle
 \begin{abstract}
 This tutorial shows how a variety of two-dimensional Laplace and Helmholtz
-boundary-value problems
+boundary-value and eigenvalue problems
 may be numerically solved simply and accurately with the \mpspack\ toolbox
 for \matlab. We assume basic familiarity with \matlab\
 and with partial differential equations.
 %concept of particular-solution type numerical methods is assumed.
 \end{abstract}
 
-%\tableofcontents
+\setcounter{tocdepth}{2}
+\tableofcontents
 
 \section{About this tutorial}
 
@@ -45,6 +46,10 @@ figures, is found in the {\tt examples/} directory.
 The codes for Sections \ref{s:lap}--\ref{s:qpsc} are named
 \verb@tut_*.m@ according to the section names in {\tt tutorial.tex}.
 
+Computation times are reported for a single core (mostly what MATLAB
+uses) of an Intel laptop CPU (either Core Duo from 2006, or i7-3720QM
+from 2012).
+
 \input{tut_lap}
 \input{tut_conv}
 \input{tut_ext}
@@ -52,6 +57,7 @@ The codes for Sections \ref{s:lap}--\ref{s:qpsc} are named
 \input{tut_scatt}
 \input{tut_layer}
 \input{tut_qpsc}
+\input{tut_evp}
 \input{tut_exa}
 
 \bibliographystyle{siam} 
