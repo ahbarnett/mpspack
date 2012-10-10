@@ -193,6 +193,8 @@ classdef problem < handle
         % check if s.a~=0, etc...  take from fillbcmatrix
         [u] = b.evalFMM(co, s, o);
         y = u;  % & need to include s.a factors
+      else
+        error('basis is not FMM-able; check your FMM libraries');
       end
       
       % loop over segs, or bases? Bases seems natural since each is FMMable/not
@@ -357,24 +359,30 @@ classdef problem < handle
     %   (integer array of same shape as u). Decisions about which domain a
     %   gridpoint is in are done using domain.inside, which may be approximate.
     %
+    %  opts.dx & opts.bb override the grid spacing and the bounding box.
+    %
     %  Other options in opts are passed to pointsolution; see its doc page.
     %
     % To do: * keep evalbases matrices Ad for later use, multiple RHS's etc.
     % * what if evalbases matrices too big to store, sum basis vals by hand?
     %
     % See also POINTSOLUTION, GRIDBOUNDINGBOX
-      o = pr.gridboundingbox(o);
-      gx = o.bb(1):o.dx:o.bb(2); gy = o.bb(3):o.dx:o.bb(4);  % plotting region
+      o = pr.gridboundingbox(o);            % get dx and bb (allows override)
+      n = floor((o.bb(2)-o.bb(1))/o.dx); gx = o.bb(1) + o.dx*(0:n); % grids
+      n = floor((o.bb(4)-o.bb(3))/o.dx); gy = o.bb(3) + o.dx*(0:n);      
       [xx yy] = meshgrid(gx, gy); zz = xx + 1i*yy;  % keep zz rect array
       [u di] = pr.pointsolution(pointset(zz(:)), o); % make zz a col vec
       u = reshape(u, size(xx));
       di = reshape(di, size(xx));
-    end % func
+    end
     
     function o = gridboundingbox(pr, o)
     % GRIDBOUNDINGBOX - set default options giving grid spacing and bound box
     %
-    %  This code was pulled from gridsolution so scattering class can access it
+    %  Note there is a tiny (1e-12) offset to prevent hitting singularities
+    %  in certian plots. Can be set to zero.
+    %
+    %  This code was moved from gridsolution so scattering class can access it
       if nargin<2, o = []; end
       if ~isfield(o, 'dx'), o.dx = 0.03; end    % default grid spacing
       if o.dx<=0, error('dx must be positive!'); end
@@ -388,7 +396,7 @@ classdef problem < handle
       end
       o.bb(1) = o.dx * floor(o.bb(1)/o.dx);         % quantize to grid through 0
       o.bb(3) = o.dx * floor(o.bb(3)/o.dx);         % ... make this optional?
-      tiny = 1e-12;                      % infinitesimal jog for stability
+      tiny = 1e-12;    % infinitesimal jog for stability: remove if desired
       o.bb(1) = o.bb(1) + tiny; o.bb(3) = o.bb(3) + tiny; % jog grid (inside) 
     end
     

@@ -2,7 +2,7 @@
 % barnett 7/10/08, MFS added 7/20/08, fast hankel and bessel 9/5/08
 % adapted from ~/bdry/inclus/test_evalbasis.m
 % Now creates a `whole plane' domain for each basis to affect.
-% nufbbasis added barnett 7/17/09.
+% nufbbasis added barnett 7/17/09. Changed to linspace 10/9/12
 %
 % To Do:
 % * make the below test eval nargout=2 and =3. (switch by hand line 55)
@@ -11,14 +11,14 @@
 clear all classes
 verb = 1;                            % use verb=0, N=50, for more of a test
 err = 1;                             % false, show vals / true, show errors
-dx = 0.01; g = -1:dx:1;              % plotting region, -1:.01:1 default
-[xx yy] = meshgrid(g, g);
+g = linspace(-1,1,201);              % plotting region, -1:.01:1 default
+[xx yy] = meshgrid(g, g); dx = g(2)-g(1);
 M = numel(xx); o = [];
 p = pointset([xx(:) + 1i*yy(:)], ones(size(xx(:)))); % set up n for x-derivs
 k = 5;                              % wavenumber for tests (may be 0)
 d = domain(); d.k = k;               % create R^2 domain
 
-for type = 4:5              % select the cases you want to test here
+for type = 1:14              % select the cases you want to test here
   switch type
    case {1,2,3}             % ................. Reg FB: real/cmplx, rescl
     N = 10;
@@ -53,7 +53,7 @@ for type = 4:5              % select the cases you want to test here
     fprintf('evaluating {S,D}LP basis... %sLP\n', lp), %o.close = 0.4;
    
    case {12,13,14}          % ................. corner FB, types s,c,cs
-    N = 10; types = {'s', 'c', 'cs'}; opts.type = types{type-10};
+    N = 10; types = {'s', 'c', 'cs'}; opts.type = types{type-11};
     opts.rescale_rad = 0; c = 0.5 + (k==0);
     % here, to check derivs use origin=-1.5-1i, or to see singularity use 0:
     b = nufbbasis(-1.5-1i, 2/3, exp(-2i*pi/8), exp(4i*pi/3), N, opts);

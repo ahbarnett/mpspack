@@ -89,6 +89,7 @@ classdef nufbbasis < handle & basis
         %
         % Also see: POINTSET, NUFBBASIS
 
+        % 10/9/12 Barnett changed matlab besselj calls to not do outer prods
             resc=(nufb.rescale_rad>0); % whether to rescale or not
             N = nufb.N;
             k = nufb.k;                 % NB this is now a method not property
@@ -100,7 +101,8 @@ classdef nufbbasis < handle & basis
             offang=angle(-nufb.offset./nufb.branch);
             % do the expensive evaluation...
             if k==0, bes = repmat(R, [1 N+1]).^repmat((0:N)*nu, [np 1]);
-            else, bes=besselj((0:N)*nu,k*R);
+            else, [nus,zs]=meshgrid((0:N)*nu,k*R); bes=besselj(nus,zs);
+              clear nus zs
             end
             if resc                                    % rescale by orders
               scfac = 1./nufb.Jrescalefactors(0:N);    % uses rescale_arg
@@ -123,8 +125,11 @@ classdef nufbbasis < handle & basis
               if k==0
                 besr = repmat((0:N)*nu, [np 1]).* ...
                        repmat(R, [1 N+1]).^repmat((0:N)*nu-1, [np 1]);;
-              else  % fix this, which involves 2 new besselnu calls...
-                besr=k/2*(besselj(nu*(0:N)-1,k*R)-besselj(nu*(0:N)+1,k*R));
+              else  % fix this (nu rational) since could save besselnu calls...
+                [nus,zs]=meshgrid((0:N)*nu-1,k*R);
+                besr = besselj(nus,zs); [nus,zs]=meshgrid((0:N)*nu+1,k*R);
+                besr = k/2 * (besr - besselj(nus,zs));
+                clear nus zs
               end
               if resc, besr=besr.*repmat(scfac,[np 1]); end  % rescale
               if nufb.type=='s'
