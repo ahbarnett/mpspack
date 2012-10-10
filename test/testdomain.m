@@ -1,5 +1,5 @@
 % test the domain constructor, via plotting and computing area & perim.
-% barnett 7/3/08
+% barnett 7/3/08. tweaked 10/8/12 to add 2 smooth segments making a hole.
 
 clear all classes
 verb = 1;                           % verbosity 0=quiet, 1=figures, 2=more
@@ -81,8 +81,8 @@ if verb, figure; opts.gridinside=0.1;
 
 % ext domain with holes
 sq = segment.polyseglist(10, -1.7-0.5i + 0.5*[0 1i 1+1i 1]);  % CW square
-sc = segment(30, [1+1.5i, 0.5, 0, 2*pi], 'p'); % CCW circle
+sc = [segment(30, [1+1.5i, 0.5, 0, 2*pi/3]) segment(30, [1+1.5i, 0.5, 2*pi/3, 2*pi])]; % CCW circle via 2 segs
 fprintf('exterior w/ 3 holes...\n'), disconnect(sa);
-d = domain([], [], {sa sq sc}, {-1 ones(1,4) -1});
+d = domain([], [], {sa sq sc}, {-1 ones(1,4) [-1 -1]});
 if verb, figure; opts.gridinside=0.1;
   h=plot(d, opts); axis equal; title('test domain: exterior w/ holes'); end

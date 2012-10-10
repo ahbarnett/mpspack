@@ -9,7 +9,7 @@
 
 #rev := $(shell ./getrevisionnumber)
 #pkg := mpspack-r$(rev)
-pkg := mpspack-1.3
+pkg := mpspack-1.31
 
 default: all
 

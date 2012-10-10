@@ -7,7 +7,7 @@ verb = 1;          % verbosity: 0 for no figures, 1 for figures
 passdata = 0;      % 0 passes func handles, 1 passes data vectors
 k = 10;            % overall wavenumber
 
-for prob=8 % ===== loop over test problems ======
+for prob=1:9 % ===== loop over test problems ======
   
   switch prob      % choose segments, domains, basis sets, and exact solutions
    case {1,2,3,9} %    ...... interior polygon D & N (3: DLP, 9: test Greens th)

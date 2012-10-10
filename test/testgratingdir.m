@@ -12,6 +12,7 @@ de = domain([], [], s, -1); de.cloc=0; % hack so (most of) R2 in this domain,
 % in particular the B segment is inside, so fillbraggamplrow can work.
 %de = qpstrip(d, om, struct('seg',s, 'pm', -1)); de.exterior = 1; s.dom{1} = de;
 o.quad = 'a'; o.ord = 16;       % quadrature
+%o.quad = 'm';
 de.addlayerpot(s, [-1i*om 1], o);              % adds CFIE to segment
 s.setbc(1, 'D', []);                           % homog Dirichlet BCs
 p = qpscatt(de, [], d, o);                     % create problem instance
@@ -25,10 +26,11 @@ p.fillquadwei;             % this is only for obstacle mismatch (blocks A,B)
 p.sqrtwei = 1+0*p.sqrtwei; % row scaling: make vectors are plain values on bdry
 p.fillrighthandside;
 tic; p.fillbcmatrix; toc
-tic; p.co = p.linsolve; toc;    % least-squares soln
+tic; o.matname = 'E'; p.co = p.linsolve(o); toc;    % least-squares soln
 z = pointset(0.2+0.5i); tic; p.pointsolution(z), toc
 de.cloc=0; [u d n] = p.braggpowerfracs(struct('table',1)); de.cloc = nan; % hack which returns domain.inside to its original behavior for fillbraggamplrow
 fprintf('up flux err=%.3g\n',1-sum(u))
+% error is bad; only around 1e-3
 
 c = p.co(1:p.N);                     % eta
 if v>1, figure; plot([s.t; 1+s.t], abs([c; c]),  '+-'); % abs(dens) is periodic

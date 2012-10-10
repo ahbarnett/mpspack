@@ -24,7 +24,7 @@ o.modes = 1;
 o.iter = 1;  % can set to 1 if no degeneracies
 o.tol = 1e-4; % make sure to capture even bad ones
 kint = [1 8]; tic; p.solvespectrum(kint, 'fd', o); toc
-tic; p.showmodes; toc
+tic; [u gx gy] = p.showmodes; toc
 
 if verb, if bc=='D', print -depsc2 ../doc/ridgeguideDlow.eps
          else, print -depsc2 ../doc/ridgeguideNlow.eps

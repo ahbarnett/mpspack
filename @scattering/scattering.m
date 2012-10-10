@@ -140,10 +140,12 @@ classdef scattering < bvp & handle
     %   (integer array of same shape as ui). Decisions about which domain a
     %   gridpoint is in are done using domain.inside, which may be approximate.
     %
+    %  opts.dx & opts.bb override the grid spacing and the bounding box.
+    %
     % See also POINTINCIDENTWAVE, GRIDBOUNDINGBOX
-    
-      o = pr.gridboundingbox(o);
-      gx = o.bb(1):o.dx:o.bb(2); gy = o.bb(3):o.dx:o.bb(4);  % plotting region
+      o = pr.gridboundingbox(o);            % get dx and bb (allows override)
+      n = floor((o.bb(2)-o.bb(1))/o.dx); gx = o.bb(1) + o.dx*(0:n); % grids
+      n = floor((o.bb(4)-o.bb(3))/o.dx); gy = o.bb(3) + o.dx*(0:n);      
       [xx yy] = meshgrid(gx, gy); zz = xx(:) + 1i*yy(:);  % keep zz rect array
       [u di] = pr.pointincidentwave(pointset(zz),o);
       u=reshape(u,size(xx,1),size(xx,2));

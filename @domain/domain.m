@@ -118,8 +118,17 @@ classdef domain < handle
         for piece=1:max(d.spiece)         % kill pts from each interior piece
           js = find(d.spiece==piece);
           v = domain.approxpolygon(d.seg(js), d.pm(js));
-          % HACK which extends an excluded strip down/upwards:  
-          if isnan(d.cloc), e=(d.pm(js)+3)/2; v = [d.seg(js).eloc(3-e)+d.pm(js)*10i; v; d.seg(js).eloc(e); d.seg(js).eloc(e)+d.pm(js)*10i]; end
+          % HACK which extends an excluded strip down/upwards: (all pm equal)
+          if isnan(d.cloc)
+            if d.pm(js(1))==-1  % usual way around; exclude domain below
+              x0 = d.seg(js(end)).eloc(1); x1 = d.seg(js(1)).eloc(2);
+              v = [x1-10i; v; x0; x0-10i]; % works for multiple segs
+            else                % exclude domain above (original code)
+              e=(d.pm(js)+3)/2; v = [d.seg(js).eloc(3-e)+d.pm(js)*10i; v; d.seg(js).eloc(e); d.seg(js).eloc(e)+d.pm(js)*10i];              
+%              x0 = d.seg(js(1)).eloc(1); x1 = d.seg(js(end)).eloc(2);
+%              v = [x1+10i; v; x1; x1+10i];
+            end
+          end
           i = i & ~utils.inpolywrapper(p(:), v);
         end
         i = reshape(i, size(p));
@@ -190,14 +199,26 @@ classdef domain < handle
         xc = (bb(1)+bb(2)+1i*bb(3)+1i*bb(4))/2;
       end
       
-      function diam = diam(d) % ..... diameter of interior domain (about center)
-      % DIAM - approximate radius of an interior domain
+      function diam = diam(d) % .."diameter" of interior domain (about center)
+      % DIAM - approximate radius of an interior domain (DEPRECATED)
       %
       %  d = diam(dom) returns the radius of domain dom, defined as the
       %   maximum distance of any of its defining points from its `center'.
       %
-      % See also: DOMAIN.CENTER
+      % Notes: Please use DOMAIN.RADIUS instead.
+      %
+      % See also: DOMAIN.CENTER.
         diam = max(abs(d.x - center(d))); % not quite optimal since uses box
+      end
+      
+      function r = radius(d) % ..... radius interior domain (about center)
+      % RADIUS - approximate radius of an interior domain
+      %
+      %  r = radius(dom) returns the radius of domain dom, defined as the
+      %   maximum distance of any of its defining points from its `center'.
+      %
+      % See also: DOMAIN.CENTER
+        r = max(abs(d.x - center(d))); % not quite optimal since uses box
       end
       
       function [zz ii gx gy] = grid(d, dx, bb) % ......... grid covering domain
@@ -210,12 +231,18 @@ classdef domain < handle
       %
       %  [zz ...] = grid(dom, dx, bb) overrides bounding box
       %
+      %  Note that the evaluation grid in problem, scattering, etc, uses
+      %  problem.gridboundingbox hence has a tiny (1e-12) offset from
+      %  quantized through zero.
+      %
       %  See also: DOMAIN.BOUNDINGBOX
+        if isempty(dx), dx = 0.03; end   % default
         if dx<=0, error('dx must be positive!'); end
         if nargin<3, bb = d.boundingbox; end
         bb(1) = dx * floor(bb(1)/dx);            % quantize to grid through 0
         bb(3) = dx * floor(bb(3)/dx);
-        gx = bb(1):dx:bb(2); gy = bb(3):dx:bb(4);         % plotting region
+        n = floor((bb(2)-bb(1))/dx); gx = bb(1) + dx*(0:n); % grids region
+        n = floor((bb(4)-bb(3))/dx); gy = bb(3) + dx*(0:n);      
         [xx yy] = meshgrid(gx, gy); zz = xx(:) + 1i*yy(:); ii = d.inside(zz);
         zz = zz(ii);                             % keep only inside points
         ii = reshape(ii, size(xx));              % return ii to rect array

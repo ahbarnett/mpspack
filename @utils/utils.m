@@ -25,6 +25,9 @@ classdef utils
     [cn,on] = inpoly(p,node,edge,TOL)
     i = inpolyc(p,v)
     i = inpolywrapper(p, v)
+    i = insidepoly(p1, p2, v1, v2) % this & next 2 are Bruno Luong's insidepoly
+    [in on] = insidepoly_dblengine(x, y, Px1, Py1, Px2, Py2, ontol, first, last)
+    [in on] = insidepoly_sglengine(x, y, Px1, Py1, Px2, Py2, ontol, first, last)
     
     % other helper routines...
     b = copy(a)
