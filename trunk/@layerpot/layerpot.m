@@ -45,7 +45,7 @@ classdef layerpot < handle & basis
         opts.fast = 0;               % downgrade the speed if 103 not available
       end
       b.fast = opts.fast;
-      b.HFMMable = (exist('hfmm2d')==3);  % is Helmholtz FMM MEX available?
+      b.HFMMable = 1;   % is Helmholtz FMM MEX available? (set to 1 if true)
       if ~isfield(opts, 'real'), opts.real = 0; end
       b.real = opts.real;
       if isfield(opts, 'quad'), b.quad = opts.quad; end  % quad=[] is default

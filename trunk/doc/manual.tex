@@ -6,14 +6,14 @@
 \title{\mpspack\ user manual}
 \author{Alex Barnett\footnote{Department of Mathematics, Dartmouth College, Hanover, NH, 03755, USA}
 \ and Timo Betcke\footnote{Department of Mathematics,
-University of Reading, Berkshire, RG6 6AX, UK}}
+University College London, Gower Street, London, WC1E 6BT, UK}}
 \date{\today}   % how pipe from getrevisionnumber + 1?
 
 \maketitle
 \begin{abstract}
 \mpspack\ is a fully object-oriented \matlab\ toolbox for
 solving Laplace, Helmholtz, wave scattering, and related PDE boundary-value
-problems
+and eigenvalue problems
 on piecewise-homogeneous 2D domains, including those with corners.
 The philosophy is to
 %represent solutions using
@@ -145,7 +145,7 @@ Ensure you have subversion ({\tt svn}) installed.
 This is available from {\tt http://subversion.tigris.org}.
 Anonymous check out (download) of \mpspack\ is then via the subversion
 command:
-\co{svn co http://mpspack.googlecode.com/svn/tags/1.0 mpspack}
+\co{svn co http://mpspack.googlecode.com/svn/trunk/ mpspack}
 This creates a directory {\tt mpspack} containing the toolbox.
 
 You might prefer a more user-friendly graphical
@@ -157,7 +157,7 @@ Get a gzip-compressed tar archive from
 \co{http://code.google.com/p/mpspack/downloads/list}
 In a UNIX environment you may now
 unpack this with
-\co{tar zxvf mpspack-1.0.tar.gz}
+\co{tar zxvf mpspack-1.31.tar.gz}
 This creates the directory {\tt mpspack} containing the toolbox.
 
 \item Get a zip-compressed archive from
@@ -176,18 +176,22 @@ as explained in that file
 you will need to remove the lines in {\tt @utils/Makefile} which
 compile codes using GSL before executing {\tt make}).
 
-If, on the other hand, you do not choose (or are unable) to compile the
-above, then you should edit the file {\tt @utils/inpolywrapper.m} as follows:
-comment out the last line, and uncomment the
-first code line labelled "Matlab's native inpolygon". This will give you
-a slower version of checking if points are inside polygons, but will get
-you going.
+As of version 1.31, \mpspack\ uses a point-in-polygon checker by Bruno Luong for which MEX executables are provided.
+If these fail (running {\tt test/testdomain.m} is sufficient),
+then you should edit the file {\tt @utils/inpolywrapper.m}
+to use one of the other available checkers: either those compiled by the
+above {\em make}, or the native \matlab\ {\tt inpolygon} routine
+(which is very slow, but will get you going).
 
-In either case, you should now add the {\tt mpspack}
+See Section~\ref{s:fmm} for linking to fast multipole libraries.
+
+You should now add the {\tt mpspack}
 directory to your \matlab\ path, for instance by adding the line
 \co{addpath 'path/to/mpspack';}
 to your \matlab\ {\tt startup.m} file.
 You are now ready to start \matlab\ and use \mpspack\ !
+
+
 
 
 \subsection{What problems can \mpspack\ solve?}
@@ -258,6 +262,8 @@ is then $u = u_{inc} + u_s$ with $u_{inc}$ the incident wave
 As is standard with integral equation methods,
 this is achieved by choosing basis sets (MFS, layer potentials, etc.)
 satisfying the radiation condition.
+
+Laplace eigenvalue problems are also able to be solved; see the tutorial.
 
 To solve a BVP the flow using \mpspack\ is often as follows
 (look back to the code given in Sec.~\ref{s:overview}):
@@ -774,6 +780,27 @@ and {\tt p.showkyplane} which shows the Sommerfeld quadrature
 nodes used in the complex $y$-direction wavenumber plane, see \cite{qpsc}.
 
 
+
+\subsection{Eigenvalue problem class: {\tt evp}}
+
+This class is a subclass of {\tt problem}.
+It solves Laplace eigenvalue problems by searching along the frequency
+axis for frequencies where a nontrivial homogeneous solution is possible.
+There are three different approaches available to the user
+via the {\tt p.solvespectrum} method:
+\ben
+\item Using Boyd's rootfinding method on a Fredholm determinant.
+\item Using the minimum singular value of a double-layer boundary operator.
+\item The Neumann-to-Dirichlet method of Barnett--Hassell 2012
+\cite{sca}
+\een
+These methods are only coded using layer potentials at this point.
+For now, see the examples in the tutorial.
+Ironically, the MPS approach to eigenvalues is not complete.
+
+
+
+
 % --------------------------------------------------------------------------
 \section{Tweaks and test routines}
 \label{s:tweak}
@@ -797,12 +824,12 @@ version, and robust).
 \item Hankel functions of order 0 and 1, needed for
 {\tt mfsbasis.eval} and {\tt layerpot.eval}. Both these basis objects
 have a property {\tt fast} which may be 0 (\matlab\ implementation),
-or 1 or 2 (a MEX interface to Greengard-Rokhlin's Fortran code,
+or 1 or 2 (a MEX interface to Rokhlin's Fortran code,
 roughly 5 times faster than \matlab).
 The user may change this property for each relevant basis object.
 
 \item Point-in-polygon checking is implemented by a MEX interface
-to a C code which was found to be about 70 times faster than
+to a C code which was found to be about 100 times faster than
 \matlab. The implementation
 may be switched only by uncommenting lines
 in {\tt @utils/inpolywrapper.m}
@@ -830,6 +857,56 @@ which each affect {\em two} domains.
 \ei
 There are several other more specific test routines in the directory
 that we do not list here.
+
+
+
+
+
+\subsection{Installation and use of fast multipole libraries}
+\label{s:fmm}
+
+\mpspack\ can make use of the Helmholtz FMM library
+which is part of {\tt fmmlib2d} from Greengard-Gimbutas 2011, available here:
+\begin{verbatim}
+http://www.cims.nyu.edu/cmcl/fmm2dlib/fmm2dlib.html
+\end{verbatim}
+We have tested against their version 1.2.
+
+{\bf Potential evaluation:}
+The simplest use is for potential evaluations once a solution vector is known.
+This can easily increase the speed by a factor of 100 or more,
+if $N$ is large and a fine evaluation grid is required.
+To set this up, install {\tt fmmlib2d}, including compiling its
+libraries and \matlab\ MEX interfaces. This may require:
+tweaking your {\tt mexopts.sh} file in your \matlab\ distribution
+to include extra library flags such as {\tt -fopenmp}.
+Let {\tt fmmlib2d} now signify its
+location.
+Add {\tt fmmlib2d/matlab} to your \matlab\ path.
+In {\tt mpspack/@utils/} execute
+\co{ln -s fmmlib2d/matlab/hfmm2dpart.m hfmm2dparttarg.m \\
+ln -s fmmlib2d/matlab/hfmm2dpart.m}
+Finally, check the first method in {\tt mpspack/@layerpot/layerpot.m}
+has the line {\tt b.HFMMable = 1;}
+You may now try \verb+test/testbvp_fmm.m+
+which can test the FMM for potential evaluations,
+and should run in a fraction of a second.
+
+{\bf Iterative solutions:}
+To use FMM for iterative solution (this is an independent task),
+you'll need the fast Alpert quadrature correction codes of Barnett, from
+\begin{verbatim}
+http://www.math.dartmouth.edu/~ahb/software/#lp2d
+\end{verbatim}
+Install LP2D according to its instructions.
+You should then be able to set {\tt o.FMM=1} in the solution
+section of \verb+test/testbvp_fmm.m+
+and see an iterative solution. $N=10^4$ will take less than 10 seconds
+to solve, and 0.3 sec to evaluate, on a modern CPU.
+
+
+
+
 
 \section{Known bugs and limitations}
 
@@ -922,13 +999,19 @@ to join the project!
 
 \section{Acknowledgments and credits}
 
-Almost all the code in \mpspack\ is written by 
-Alex Barnett and Timo Betcke.
+\mpspack\ started as a joint project conceived by
+Alex Barnett and Timo Betcke, who did the early coding for
+BVPs together in 2008-2009.
+Alex Barnett has been the sole developer since 2010,
+and has focused on periodic and eigenvalue problems.
 The computational methods built into the code includes
 work of Barnett--Betcke \cite{mfs,mush,polygonscatt},
-and Barnett--Greengard \cite{qplp,qpsc},
+Barnett--Greengard \cite{qplp,qpsc},
+and Barnett--Hassell \cite{sca},
 as well as quadrature schemes of Kress \cite{coltonkress},
-Kapur-Rokhlin \cite{kapur}, and Alpert \cite{alpert}.
+Kapur-Rokhlin \cite{kapur}, and Alpert \cite{alpert},
+and interfaces to the fast multipole method of Greengard--Rokhlin
+as implemented by Greengard--Gimbutas.
 The concept and need for the package came out of our work in eigenvalue
 and scattering problems, using global basis methods.
 In terms of code design, we
@@ -938,14 +1021,14 @@ the {\tt FMMToolbox} by MadMax Optics, Inc.,
 and the {\tt chebfun} system
 by L. N. Trefethen, Z. Battles, T. Driscoll, R. Pach\'{o}n, and R. Platte.
 Alex Barnett's work is supported by National Science Foundation
-grants DMS-0507614, DMS-0811005, and the Class of '62 Fellowship at
+grants DMS-0507614, DMS-0811005, DMS-1216656, and the Class of '62 Fellowship at
 Dartmouth College.
 Timo Betcke's work is supported
 by Engineering and Physical Sciences Research Council Grant EP/F06795X/1.
 
 \mpspack\ is released under the GNU Public License, as follows:
 \begin{verbatim}
-Copyright (C) 2008 - 2010, Timo Betcke, Alex Barnett
+Copyright (C) 2008 - 2012, Timo Betcke, Alex Barnett
 
 MPSpack is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -973,6 +1056,8 @@ by Z.~Gimbutas.
 by L.~N.~Trefethen \cite{tref}.
 \item {\tt QuadLogExtraPtNodes.m} for Alpert endpoint correction
 quadrature nodes and weights, by Andras Pataki.
+\item {\tt insidepoly.c} algorithm to check if a point is in a polygon,
+Bruno Luong, 2010. (Thanks to Peter Simon.)
 \item {\tt polypn.c} algorithm to check if a point is in a polygon,
 Copyright (C) 1970-2003, Wm.~Randolph Franklin.
 \item {\tt inpoly.m} algorithm to check if a point is in a polygon,
