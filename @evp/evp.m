@@ -523,6 +523,7 @@ classdef evp < problem & handle
     %   opts.kwin - only computes modes in given wavenumber window
     %   opts.inds - only computes modes in given (unordered) index set
     %   opts.col - 'jet' (default, matlab colorscale), 'bw' (phi^2 in grey)
+    %   opts.nac - override number of subplots across
     %
     % Notes/issues:
     %  * Normalization hasn't been considered much. For GRF case, they are
@@ -560,7 +561,8 @@ classdef evp < problem & handle
         pe = p;                  % just use existing problem
       end
       n = numel(js);
-      figure; nac = ceil(sqrt(n)); ndn = ceil(n/nac); % # subplots across & down
+      figure; nac = ceil(sqrt(n)); if isfield(o,'nac'), nac = o.nac; end
+      ndn = ceil(n/nac); % # subplots across & down
 
       for i=1:n, j = js(i);      % ---- loop over selected eigenvalues
         pe.setoverallwavenumber(p.kj(j));                         % get this k
