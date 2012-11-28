@@ -369,8 +369,8 @@ classdef layerpot < handle & basis
     [A Sker] = S(k, s, t, o)                      % Phi kernel matrix
     [A Dker_noang cosker] = D(k, s, t, o)         % dPhi/dny or dPhi/dny matrix
     [A Sker Dker_noang] = T(k, s, t, o)           % d^2Phi/dnxdny matrix    
-    A = localfromSLP(k, s, M, o)                  % Jfilter: S2L for SLP
-    A = localfromDLP(k, s, M, o)                  % Jfilter: S2L for DLP
+    A = localfromSLP(s, b, o)                     % Jfilter: S2L for SLP
+    A = localfromDLP(s, b, o)                     % Jfilter: S2L for DLP
     A = fundsol(r, k)                             % to replace w/ utils.fundsol
     [B radderivs] = fundsol_deriv(r, cosphi, k, radderivs)
     u = Skernel(k, x, nx, y, ny)                  % plain kernel functions...

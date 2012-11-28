@@ -220,24 +220,19 @@ classdef regfbbasis < handle & basis
         % Interface to J-Bessel special function libraries (see opts in
         % regfbbasis). Returns matrix of J_0 through J_N evaluated at the
         % argument list in r. Matrix size is M-by-N+1, where M=numel(r).
-            switch regfb.besselcode
-             case 'r'
-              ret=utils.recurrencebesselJ(N,r);    % Alex's recurrence code
-              err=0; % No error checking implemented for utils.recurrencebesselJ
-             case 'g'
-              if exist('@utils/gslbesselj.mexglx')==3
-                [ret,err]=utils.gslbesselj(0,N,r); % Timo's MEX interface to GSL
-              else
-                warning('besselwrapper: @utils/gslbesselj not compiled to MEX')
-                ret = bsxfun(@besselj, 0:N, r(:)); % built-in, does outer prod
-                err = 0;   % >2012a releases have no err output.
-              end
-             case 'm'
-              ret = bsxfun(@besselj, 0:N, r(:)); % built-in, does outer prod
-              err = 0;   % >2012a releases have no err output.
-             otherwise
-              error('regfbbasis: invalid besselcode property!');
-            end
+          switch regfb.besselcode
+           case 'r'
+            ret=utils.recurrencebesselJ(N,r);    % Alex's recurrence code
+            err=0; % No error checking implemented for utils.recurrencebesselJ
+           case 'g'
+            [ret,err]=utils.gslbesselj(0,N,r); % Timo's MEX interface to GSL
+           case 'm'
+            ret = besselj(repmat(0:N, [numel(r) 1]), repmat(r(:), [1 N+1]));
+            %ret = bsxfun(@besselj, 0:N, r(:)); % slow, calls besschk loads
+            err = 0;   % >2012a releases have no err output.
+           otherwise
+            error('regfbbasis: invalid besselcode property!');
+          end
         end % end func
     end % private methods
 end

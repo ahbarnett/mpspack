@@ -4,10 +4,10 @@
 clear all classes
 if 1 % test small argument problems .............
 x = [0 1e-18 1e-16 1.1e-16 1e-15 1e-10 1e-5 1 200]';   % note 100 makes nst>100
-M = 2; %M = max(x);
-Jex = besselJ(0:M, x);
+M = 30; %M = max(x);
+Jex = besselj(repmat(0:M, size(x)), repmat(x, size(0:M)));
 J = utils.recurrencebesselJ(M, x);
-J-Jex
+max(abs(J(:)-Jex(:))./Jex(:))
 end
 
 % test speed ...............

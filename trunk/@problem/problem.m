@@ -322,6 +322,7 @@ classdef problem < handle
         end                                % Do nothing if there are no elements
         di(ii) = n;
         u(ii) = 0;                           % accumulate contribs to u in dom
+        opts = o;   % passes in stuff like o.close... 10/31/12
         opts.dom = d;                        % b.eval might need know which dom
         for i=1:numel(pr.bas)                % loop over all bases...
           b = pr.bas{i};

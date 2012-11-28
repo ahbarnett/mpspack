@@ -63,8 +63,8 @@ fprintf('\tL2 bdry error norm = %g, coeff norm = %g\n', ...
 o.bb=[-1.5 1.5 -1.5 1.5];
 o.dx=0.02;
 
-[ui gx gy] = pr.gridincidentwave(o);
-u = pr.gridsolution(o);
+tic; [ui gx gy] = pr.gridincidentwave(o);
+u = pr.gridsolution(o); toc
 
 figure;
 imagesc(gx, gy, real(ui+u)); title('Full Field (Real Part)');

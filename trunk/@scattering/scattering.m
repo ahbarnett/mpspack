@@ -199,13 +199,13 @@ classdef scattering < bvp & handle
       set(gca,'ydir','normal'); hold on; if o.bdry, pr.showbdry; end
     end % func
     
-    function showfullfield(pr, o)
+    function [u gx gy di] = showfullfield(pr, o)
     % SHOWFULLFIELD - plot u_t = u_i+u on the grid
     %
     %   opts.imag = true, plots imag instead of real part
     %   opts.bdry = true, shows boundary too
 
-    % Notes: Timo's idea.
+    % Notes: Timo's idea. Alex added extra outputs 11/1/12
       if nargin<2, o = []; end
       if ~isfield(o, 'imag'), o.imag = 0; end
       if ~isfield(o, 'bdry'), o.bdry = 0; end
