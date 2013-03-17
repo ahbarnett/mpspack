@@ -2,7 +2,7 @@
 % Note: adapted from polesftlyp.m code (Dirichlet example)
 
 clear; v = 1;        % verbosity: 0 no pics, 1 final pic, 2 diagnostics
-ob = 't'; d = 1.0;   % type of obstacle: 'd', 't', etc; problem x-periodicity 
+ob = 'd'; d = 1.0;   % type of obstacle: 'd', 't', etc; problem x-periodicity 
 N = 80; s = scale(segment.smoothstar(N, 0.3, 3), 0.35); % .25 closed curve
 o.quad='a'; o.ord=8; % LP quadrature
 om = 10;             % incident wavenumber
@@ -30,7 +30,7 @@ p.setincidentwave(-pi/5);%-acos(1 - 2*pi/om));%-1e-14);%-pi/5;% 'single' Wood's 
 if v>1, p.showkyplane; end
 p.fillquadwei;             % this is only for obstacle mismatch (blocks A,B)
 p.sqrtwei = 1+0*p.sqrtwei; % row scaling: make vectors are plain values on bdry
-o.FMM = 0; o.meth = 'iter';
+%o.FMM = 0; o.meth = 'iter';
 tic; p.solvecoeffs(o); toc,      % (fill and) least-squares soln
 
 if isnumeric(p.E), fprintf('cond(E) = %.3g\n', cond(p.E))

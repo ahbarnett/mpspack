@@ -2,8 +2,8 @@
 % Barnett 10/5/12 for Peter Simon.
 
 clear; verb = 0;  % set verb = 1 for output plots
-bc = 'D'; % boundary conditions: 'D' or 'N' - D gets 8 digits, N 4 digits
-o.kressq=5; % corner-packing parameter for Kress reparametrization
+bc = 'D'; % boundary conditions: 'D' or 'N' - D gets 8 digits, N 4-5 digits
+o.kressq=5; %<9, corner-packing parameter for Kress reparametrization
 
 %seg=segment.smoothstar(50,0.3,3); % warm-up shapes
 %seg=segment.polyseglist(50, [1, exp(3i*pi/8), exp(5i*pi/4)], 'pc', o); % triang
