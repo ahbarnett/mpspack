@@ -13,7 +13,9 @@ function h = plot(s, pm, o)
 %
 % See also: pointset/PLOT, domain/SHOWSEGMENTS
 
-% Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
+% 3/16/13 Arrow changed to not use complexification of Z(t)
+
+% Copyright (C) 2008 - 2013, Alex Barnett, Timo Betcke
 
 if nargin<2, pm = 1; end                       % default sense is positive
 if nargin<3, o = []; end
@@ -40,8 +42,9 @@ else                                % just one seg, plot it!
   end
     
   if o.arrow
-    t = 0.5 + pm * 0.04 * [-1+1i, 1, -1-1i].';   % t values of arrow, with direc
-    h = [h; plot(s.Z(t), '-')];
+    t = 0.54; z = s.Z(t); zp = s.Zp(t);
+    z = z + zp*pm*(0.02*[-2+1i, 0, -2-1i].');
+    h = [h; plot(z, '-')];  % avoids complex arguments for s.Z param
   end
 end
 axis equal;

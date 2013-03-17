@@ -5,7 +5,8 @@ function A = alpertizeselfmatrix(A, k, s, kerfun, o)
 %  quadrature weights 2pi/N), with diag(A)=0. k is omega wavenumber, kerfun is a
 %  kernel function of the form val = kerfun(k, x, nx, y, ny)
 %  returning k(s,t) without the speed |z'(t)| factor.
-%  s is the segment whose self-interaction is needed.
+%  s is the segment whose self-interaction is needed. Must have periodic trap
+%  rule quadrature with 1/2-integer grid offset.
 %  opts.ord controls Alpert quadrature order; other options ignored.
 %  Now vectorized for speed! (Most time is spent on kernel evaluation, good)
 %
@@ -20,7 +21,7 @@ function A = alpertizeselfmatrix(A, k, s, kerfun, o)
 %
 % Also see: LAYERPOT.S, LAYERPOT.D, LAYERPOT.T, TEST/TESTLPQUAD
 
-% 1/30/11. Copyright (C) 2011 Alex Barnett
+% 1/30/11. Copyright (C) 2011 Alex Barnett. Fixed 3/14/13 1/2-integer pt offset!
 M = size(A,1); N = size(A,2);
 if M~=N, warning('Alpert quadr will fail unless matrix square!'); end
 qp = ~isempty(s.qpblocha); if qp, a = s.qpblocha; end  % handle grating segs
@@ -39,14 +40,14 @@ ninterp = o.ord + 3;   % # local regular Lagrange interpolation pts (O'Neil=+2)
 if qp  % gratings: kill skipped j's near diag, but *not* SW and NE corners...
   for i=1:N, A(i, [max(i-nskip+1,1):min(i+nskip-1,N)]) = 0; end
   % Now kill SW,NE corner contrib from neighbors that'll be trapezoid summed...
-  t = (-nskip+2:0)/N;        % NE corner: t<0 values beyond end of seg
+  t = ((-nskip+2:0)-0.5)/N;        % NE corner: t<0 values beyond end of seg
   y = s.Z(t); ny = s.Zn(t); sp = abs(s.Zp(t)); % loc, nor, sp for these src pts
   for i=1:nskip-1
     K = sp(i:end) .* kerfun(k, s.x(i), s.nx(i), y(i:end), ny(i:end));
     jj = (-nskip+1+i:0) + N;  % for this row i, indices j in NE corner
     A(i,jj) = A(i,jj) - a*K/N;   % cancel bloch phase, & weights are all 1/N
   end
-  t = 1 + (1:nskip-1)/N;        % SW corner: t>1 values beyond end of seg
+  t = 1 + ((1:nskip-1)-0.5)/N;        % SW corner: t>1 values beyond end of seg
   y = s.Z(t); ny = s.Zn(t); sp = abs(s.Zp(t)); % loc, nor, sp for these src pts
   for i=N-nskip+2:N
     jj = 1:i-N+nskip-1; % j inds in SW, also indices in the little t,y, etc list

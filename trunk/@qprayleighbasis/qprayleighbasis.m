@@ -8,6 +8,8 @@ classdef qprayleighbasis < handle & basis
 %   (there are 2N+1 functions).
 
 % (C) 2010 Alex Barnett
+% 12/30/12: removed the derivative-scaling factor & horiz origin offset
+%  from defn in eval()
 
   properties
     yo                               % y-value where unit-normalized
@@ -58,16 +60,19 @@ classdef qprayleighbasis < handle & basis
         %    derivatives in the x- and y-directions. That is, Ax has ij'th
         %    entry d/dx Phi_j(z_i) while Ay has ij'th entry d/dy Phi_j(z_i)
         %
+        % Note: phase and deriv-ampl-rescaling definition was changed 12/30/12
+        %
         % Also see: POINTSET, QPSTRIP
       N = r.N; ns = -N:N;            % Fourier series indices (row vec)
       M = length(p.x);               % Number of eval points
-      x = real(p.x) - r.Lo;          % x-displacements from left end origin
+      %x = real(p.x) - r.Lo;          % x-displacements from left end origin
+      x = real(p.x);                 % x-values
       y = imag(p.x) - r.yo;          % y-displacements from origin
       om = r.k;                      % inherits wavenumber from domain
       kx = (real(log(r.a)/1i) + 2*pi*ns) / r.d; % x-wavenumbers (shift by Bloch)
       ky = r.up * sqrt(om^2 - kx.^2);     % y-wavenumbers (w/o i, also row vec)
       A = exp(1i*(x*kx + y*ky));     % outer prods to eval
-      A = A .* repmat(1./max(abs(ky),1), [M 1]);     % rescale using deriv
+      %A = A .* repmat(1./max(abs(ky),1), [M 1]);     % rescale using deriv
       if nargout==2
         A1 = A .* ((1i*real(p.nx))*kx + ((1i*imag(p.nx))*ky)); % n-deriv
       elseif nargout==3

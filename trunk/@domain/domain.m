@@ -118,15 +118,17 @@ classdef domain < handle
         for piece=1:max(d.spiece)         % kill pts from each interior piece
           js = find(d.spiece==piece);
           v = domain.approxpolygon(d.seg(js), d.pm(js));
-          % HACK which extends an excluded strip down/upwards: (all pm equal)
+          % HACKs which extend an excluded strip down/upwards: (all pm equal)
+          % (this is used in quasi-periodic scattering situations)
           if isnan(d.cloc)
             if d.pm(js(1))==-1  % usual way around; exclude domain below
               x0 = d.seg(js(end)).eloc(1); x1 = d.seg(js(1)).eloc(2);
               v = [x1-10i; v; x0; x0-10i]; % works for multiple segs
             else                % exclude domain above (original code)
-              e=(d.pm(js)+3)/2; v = [d.seg(js).eloc(3-e)+d.pm(js)*10i; v; d.seg(js).eloc(e); d.seg(js).eloc(e)+d.pm(js)*10i];              
-%              x0 = d.seg(js(1)).eloc(1); x1 = d.seg(js(end)).eloc(2);
-%              v = [x1+10i; v; x1; x1+10i];
+%              e=(d.pm(js)+3)/2; v = [d.seg(js).eloc(3-e)+d.pm(js)*10i; v; d.seg(js).eloc(e); d.seg(js).eloc(e)+d.pm(js)*10i];
+              x0 = d.seg(js(1)).eloc(1); x1 = d.seg(js(end)).eloc(2);
+              v = [x0+10i; v; x1; x1+10i];  % new code 3/16/13, multiple segs
+%              figure; plot([v;v(1)], 'k--'); % debug excluded region
             end
           end
           i = i & ~utils.inpolywrapper(p(:), v);
