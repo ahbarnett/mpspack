@@ -532,6 +532,7 @@ classdef evp < problem & handle
     %    this to be set up...)
     %  * mixed D-N domains, Robin ... ?
     %  * Close-evaluation (J-expansion projection) for layer-potentials...?
+    %  * There is a hack to use an interior pt for phase normalization - fix.
     %
     % See also: EVP, PROBLEM.SHOWSOLUTION
       if nargin<2, o = []; end
@@ -568,10 +569,10 @@ classdef evp < problem & handle
         pe.setoverallwavenumber(p.kj(j));                         % get this k
         if grf, pe.co = p.ndj(:,j); else, pe.co = p.coj(:,j); end % get coeffs
         [u gx gy di] = pe.gridsolution(o); % either conventional or GRF evalu
-        if ~grf  % rotate phase of u (est at int pt) so that essentially real
-          uint = u(floor(numel(gx)/2),floor(numel(gy)/2)); % HACK guess int pt!
-          u = u * conj(uint/abs(uint));  % unphase u
-        end
+        %if ~grf  % rotate phase of u (est at int pt) so that essentially real
+        %  uint = u(floor(numel(gx)/2),floor(numel(gy)/2)) % HACK guess int pt!
+        %  u = u * conj(uint/abs(uint));  % unphase u
+        %end
         u = real(u);                     % saves half the memory (real-valued)
         dxdy = (gx(2)-gx(1))*(gy(2)-gy(1));
         if ~grf | neubc       % we don't know how to normalize the basis eval

@@ -150,6 +150,7 @@ classdef problem < handle
         end
         m = ms(end);                    % update counter in either case
       end % ================ loop over segs
+      A(find(isnan(A))) = 0;           % kill nans since would fail anyway
       if nargout==0, pr.A = A; end     % this only stores internally if no outp
     end % func
 

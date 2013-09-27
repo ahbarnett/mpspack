@@ -51,7 +51,7 @@ classdef basis < handle
     end
 
     
-% ======= Below are methods needed only for quasi-periodic (QPLP) features =====
+% ======= Below are methods needed only for quasi-periodic features =====
     
     function d = copiesdata(b, p, transl, nargs, opts) %.......eval copies data
     % COPIESDATA - data struct of basis func evals on many copies of pointset

@@ -58,7 +58,9 @@ classdef qpstrip < handle & domain
     end
 
     function setbloch(st, a)
+      % SETBLOCH - set Bloch phase including of all bases in this domain
       st.a = a;
+      for i=1:numel(st.bas), if isfield('a',st.bas{i}), st.bas{i}.a = a; end,end
     end
     
     function [N noff] = setupbasisdofs(uc) % .................................
