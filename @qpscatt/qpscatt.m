@@ -87,7 +87,7 @@ classdef qpscatt < scattering & handle
       pr.t.k = k;                            % set the qpstrip
     end
     
-    function setincidentwave(pr, t)
+    function setincidentwave(pr, t, o)
     % SETINCIDENTWAVE - set inc. plane wave direction, Bloch, k-fix, QP bases
     %
     %  setincidentwave(pr, t) sets up the Bloch alpha and BCs required in
@@ -95,51 +95,68 @@ classdef qpscatt < scattering & handle
     %   Wavenumber must already be set in the problem. FTyLPs are adjusted
     %   based on nearsing, and Wood's correction bases are chosen and set up.
     %
+    %  setincidentwave(pr, t, o) allows options such as:
+    %   o.a - instead sets alpha and chooses some incident angle t consistent
+    %          with this alpha, even if it is complex. Useful for choosing an
+    %   (alpha,omega) pair that is impossible to reach using any real theta,
+    %   as happens below the light cone. 2nd argument is then ignored.
+    %   o.disp - if disp=0, silent else print info about pole shifts (default)
+    %
     %  Careful: calling this routine overwrites all inhomogeneity functions or
     %   data f, g stored on any of the problem's segments. However it preserves
     %   existing a, b BC or matching coeffs (which must be set up on entry).
-      if nargin==2
-        if isempty(pr.k), error('qpscatt problem needs wavenumber set'); end
+      if nargin<3, o = []; end
+      if ~isfield(o,'disp'), o.disp = 1; end
+      if isempty(pr.k), error('qpscatt problem needs wavenumber set'); end
+      om = pr.k;
+      
+      if ~isfield(o,'a')   % theta set, derive alpha from it
         if isreal(t), t = mod(t,2*pi);  % complex angles allowed to do anything
           if t<pi, error('upwards incident angle (use downwards)!');end
         end
-        setincidentwave@scattering(pr, t); % call superclass method
-        om = pr.k; kvec = om*exp(1i*t); pr.a = exp(1i*real(conj(kvec) * pr.d));
-        pr.t.setbloch(exp(1i*real(conj(kvec) * pr.t.e))); % set Bloch alpha
-        % set the k-poles list in pr object...
-        n = 2 * ceil(om*pr.d/2/pi) + 5; kpn = -n:n; % hack # diffraction orders?
-        kpx = om*cos(t)+kpn*2*pi/pr.d; kpy = sqrt(om^2-kpx.^2); % kp y-compt
-        [dum i] = sort(abs(kpy),'ascend');       % note +ve sqrt key here
-        pr.kpx = kpx(i); pr.kpy = kpy(i); pr.kpn = kpn(i); % sorted lists
-        pr.ikpfix = []; shift = 0;
-        toonear = 1.4 * min(om/10,1); % dist scale for Wood anom.
-        k1 = abs(pr.kpy(1)); k2 = abs(pr.kpy(2)); % two poles closest to origin
-        if k1<toonear                % polefix decision regions for (k1,k2)
-          pr.ikpfix = 1;
-          if k2<3*toonear
-            shift = max(2*toonear, k2+toonear); pr.ikpfix(2) = 2;
-          else, shift = 2*toonear; end
-        end
-        %shift = -shift;     % HACK TO SHIFT<0
-        %pr.ikpfix = [];  % EXPT TO KILL THE FIX
-        kde = min(abs(shift-abs(pr.kpy)))/sqrt(2); % estimate closest approach
-        pr.t.bas = pr.t.bas(1:2); % reset QP FTyLP bases, then add new ones...
-        for i=1:2, pr.t.bas{i}.requadrature(pr.t.bas{i}.lp.N, ...
-                      struct('omega',om, 'shift', shift, 'nearsing', 2.0*kde));
-        end
-        N = pr.t.bas{1}.lp.Nf; % now measure dist(shifted contour, poles)...
-        kd = min(min(abs(repmat(pr.kpy.', [1 N]) - ...
-                         repmat(pr.t.bas{1}.lp.kj,[numel(pr.kpy) 1]))));
-        fprintf('# poles fixed = %d, shift = %.3g, est dist = %.3g, dist = %.3g\n', numel(pr.ikpfix), shift, kde, kd)
+        kvec = om*exp(1i*t); pr.a = exp(1i*real(conj(kvec) * pr.d));
+        kx0 = om*cos(t);  % zero-order x-wavenumber from which kpx derived
+      else                 % alpha set, choose some consistent theta
+        a = o.a; pr.a = a;
+        kx0 = log(a)/(1i*pr.d);  % choose a zero-order x-wavenumber
+        t = acos(kx0/om);       % override t
+      end
+      setincidentwave@scattering(pr, t); % call superclass method
+      pr.t.setbloch(pr.a);               % set Bloch alpha for strip
+      % set the k-poles list in pr object...
+      n = 2 * ceil(om*pr.d/2/pi) + 5; kpn = -n:n; % hack # diffraction orders?
+      kpx = kx0 + kpn*2*pi/pr.d; kpy = sqrt(om^2-kpx.^2); % kp y-compt
+      [dum i] = sort(abs(kpy),'ascend');       % note +ve sqrt key here
+      pr.kpx = kpx(i); pr.kpy = kpy(i); pr.kpn = kpn(i); % sorted lists
+      pr.ikpfix = []; shift = 0;
+      toonear = 1.4 * min(om/10,1); % dist scale for Wood anom.
+      k1 = abs(pr.kpy(1)); k2 = abs(pr.kpy(2)); % two poles closest to origin
+      if k1<toonear                % polefix decision regions for (k1,k2)
+        pr.ikpfix = 1;
+        if k2<3*toonear
+          shift = max(2*toonear, k2+toonear); pr.ikpfix(2) = 2;
+        else, shift = 2*toonear; end
+      end
+      %shift = -shift;     % HACK TO SHIFT<0
+      %pr.ikpfix = [];  % EXPT TO KILL THE FIX
+      kde = min(abs(shift-abs(pr.kpy)))/sqrt(2); % estimate closest approach
+      pr.t.bas = pr.t.bas(1:2); % reset QP FTyLP bases, then add new ones...
+      for i=1:2, pr.t.bas{i}.requadrature(pr.t.bas{i}.lp.N, ...
+                     struct('omega',om, 'shift', shift, 'nearsing', 2.0*kde));
+      end
+      N = pr.t.bas{1}.lp.Nf; % now measure dist(shifted contour, poles)...
+      kd = min(min(abs(repmat(pr.kpy.', [1 N]) - ...
+                       repmat(pr.t.bas{1}.lp.kj,[numel(pr.kpy) 1]))));
+      if o.disp, fprintf('# poles fixed = %d, shift = %.3g, est dist = %.3g, dist = %.3g\n', numel(pr.ikpfix), shift, kde, kd)
         if kd<toonear, warning('dist(shifted contour, poles) = %.3g\n', kd);end
-        if numel(pr.ikpfix)>0 % add any Wood's anomaly fix bases...
-          pr.t.addepwbasis(1, struct('real',0,'half',0)); % ky signs crucial:
-          pr.t.bas{3}.dirs=(pr.kpx(pr.ikpfix(1))+1i*sign(shift)*pr.kpy(pr.ikpfix(1)))/om;
-        end
-        if numel(pr.ikpfix)>1
-          pr.t.addepwbasis(1, struct('real',0,'half',0));
-          pr.t.bas{4}.dirs=(pr.kpx(pr.ikpfix(2))+1i*sign(shift)*pr.kpy(pr.ikpfix(2)))/om;
-        end
+      end
+      if numel(pr.ikpfix)>0 % add any Wood's anomaly fix bases...
+        pr.t.addepwbasis(1, struct('real',0,'half',0)); % ky signs crucial:
+        pr.t.bas{3}.dirs=(pr.kpx(pr.ikpfix(1))+1i*sign(shift)*pr.kpy(pr.ikpfix(1)))/om;
+      end
+      if numel(pr.ikpfix)>1
+        pr.t.addepwbasis(1, struct('real',0,'half',0));
+        pr.t.bas{4}.dirs=(pr.kpx(pr.ikpfix(2))+1i*sign(shift)*pr.kpy(pr.ikpfix(2)))/om;
       end
     end
     

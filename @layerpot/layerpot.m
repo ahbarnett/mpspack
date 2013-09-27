@@ -105,10 +105,20 @@ classdef layerpot < handle & basis
 %       (optional) Jfilter.rescale_rad = radius to rescale J-exp to be O(1) at
 %       (optional) Jfilter.origin = center of J-expansion
 %
-%  To do: make it handle a segment list, with correct accounting of self-eval.
-%
 % See also: LAYERPOT.FMMEVAL
       if nargin<3, o = []; end
+      if numel(p)>1    % call itself looping over mulitple target segs/ptsets:
+        A = []; Ax = []; Ay = []; % dynamic reallocation slow for numel(p) big!
+        for j=1:numel(p)
+          if nargout==1, [Aj] = b.eval(p(j),o); A = [A;Aj];
+          elseif nargout==2, [Aj Axj] = b.eval(p(j),o);
+            A = [A;Aj]; Ax = [Ax;Axj];
+          else, [Aj Axj Ayj] = b.eval(p(j),o);
+            A = [A;Aj]; Ax = [Ax;Axj]; Ay = [Ay;Ayj];
+          end
+        end
+        return
+      end
       if ~isfield(o, 'fast'), o.fast = b.fast; end    % default given in b obj
       if ~isempty(b.quad), o.quad = b.quad; end % pass quadr type to S,D,T eval
       if ~isempty(b.ord), o.ord = b.ord; end % pass quadr order to S,D,T eval
@@ -202,6 +212,8 @@ classdef layerpot < handle & basis
         end
         
       elseif nargout==2 %------------------------------- values + normal derivs
+        if ~isempty(p) && isempty(p.nx)
+          error('need normals in target pointset for An!'); end
         if b.a(2)==0             % only SLP
           A = layerpot.S(k, b.seg, p, o);
           o.derivSLP = 1;
