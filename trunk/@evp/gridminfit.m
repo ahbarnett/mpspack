@@ -55,7 +55,7 @@ yg = nan(m,n); yg(:,1) = sort(y(:));  % preallocate and put in 1st col
 for i=2:n, y = f(g(i)); if o.verb, fprintf('f(%.15g)=%.15g\n',g(i),min(y)); end
   yg(:,i) = sort(y(:)); end    % stack into array
 % note, if RAM issue, could keep only lowest 2 values of f at each x ?
-info = []; info.ys = yg(1:2,:); info.xs = g; % keep lowest two sing vals
+info = []; info.ys = yg(1:min(2,m),:); info.xs = g; % keep lowest two sing vals
 
 if o.verb>2, figure; plot(g, yg(1,:), '+-'); % plot lowest
   if m>1, hold on; plot(g, yg(2,:), 'g+'); end, end % plot 2nd lowest
@@ -88,9 +88,13 @@ for i=1:n
         p = o; p.maxit = 10;        % for para fit on square of function
         if o.verb, fprintf('%.15g ', [g(ii), yg(1,ii)]); fprintf('\n'); end
         [x y in] = evp.iterparabolafit(@(x) f(x).^2, g(ii), yg(:,ii), p); % get one acc min
+        %x,y,in.xs,in.ys,in
         y = sqrt(y); fe = fe + in.fevals; info.xs=[info.xs in.xs];
         info.ys=[info.ys sqrt(in.ys)];% note: sqrt(ys) is kept since sees f^2
-        ndeg = numel(find(y-y(1) < o.xtol*ms)); % estimate degeneracy, crude
+        if isempty(y), ndeg=0;
+        else
+          ndeg = numel(find(y-y(1) < o.xtol*ms)); % estimate degeneracy, crude
+        end
         if ndeg>1, x = repmat(x,[1 ndeg]); y = repmat(y,[1 ndeg]); end % dupli!
       end
       if o.verb, fprintf('found %d min(s): ', numel(x));  % plot all pairs...

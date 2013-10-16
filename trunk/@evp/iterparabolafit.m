@@ -50,7 +50,8 @@ for i=1:o.maxit
   [a,b,c] = evp.para_fit(x, y(1,:));
   if o.verb, fprintf('para_fit a,b,c = %.15g  %.15g %.15g\n',a,b,c); end
   if abs(b-bold)<o.xtol, yb = sort(f(b + xoff)); yb = yb(:); % col vec
-    fe = fe + 1; info.xs=[info.xs,b+xoff]; info.ys=[info.ys yb(1:2)];
+    fe = fe + 1; info.xs=[info.xs,b+xoff];
+    info.ys=[info.ys yb(1:min(2,numel(yb)))];
     break; end % two close b's, done
   if b<xlo, if o.verb, fprintf('b fell off left\n', b); end
     if nresc<o.maxresc
@@ -64,7 +65,8 @@ for i=1:o.maxit
   if min(abs(b-x))<o.xtol/2, b = b + o.xtol/2; end  % jiggle if too close
   bold = b;
   yb = sort(f(b + xoff)); yb = yb(:); % col vec
-  fe = fe + 1; info.xs=[info.xs,b+xoff]; info.ys=[info.ys yb(1:2)];
+  fe = fe + 1; info.xs=[info.xs,b+xoff];
+  info.ys=[info.ys yb(1:min(2,numel(yb)))];
   if o.verb, fprintf('f_1(%.15g)=%.15g\n',b,yb(1)); end
   [dummy j] = sort(abs(x-b)); j = j(1:2); % indices of two old x's closest to b
   x = [x(j) b]; y = [y(:,j) yb];  % add the new point
