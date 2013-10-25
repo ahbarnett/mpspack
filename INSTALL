@@ -1,26 +1,11 @@
-INSTALLATION INSTRUCTIONS FOR MPSPACK - version 1.31 of 10/9/12
+INSTALLATION INSTRUCTIONS FOR MPSPACK - version 1.33 of 10/24/13
 
 The project is hosted at the repository http://code.google.com/p/mpspack
 
 Requirements: Matlab version 7.6 (2008a) or newer is needed, since we
 make heavy use of recent object-oriented programming features.  No
-other Matlab toolboxes are needed.  If you wish to use faster regular
-Bessel functions you may want to install the GNU Scientific Library.
-
-There are also some optional fast basis and other math libraries (C
-and Fortran with MEX interfaces) included in MPSPACK, that you might
-want to benefit from. These should be compiled in a UNIX environment
-as follows: Edit the file "make.inc" in the MPSPACK directory,
-changing the locations of GSL and BLAS librares to match those on your
-system.  Then from this directory type "make".
-
-As of version 1.31, MPSpack now comes with Bruno Luong's inpolygon
-checking, and his MEX files are supplied for a64 (linux), w32 and w64
-(windows) environments. If for some reason this fails (eg test with
-test/testdomain.m), edit the file @utils/inpolywrapper.m as follows:
-comment out the last line and uncomment the first code line labelled
-"Matlab's native inpolygon". This will give you a 100x slower version
-of checking if points are inside polygons, but will get you going.
+other Matlab toolboxes are needed.  The package should work out of the
+box, although some aspects may be unnecessarily slow; see below.
 
 You should now add the MPSPACK directory to your MATLAB path, for
 instance by adding the line
@@ -29,6 +14,26 @@ instance by adding the line
 
 to your MATLAB startup.m file. You are now ready to use MPSPACK !
 
+Tweaks & speedups:
+
+1) If you want to use faster inside-polygon checking, and you
+have a 64-bit linux or 32/64-bit Windows environment, try the following:
+edit the file @utils/inpolywrapper.m as follows:
+comment out the first code line labelled "Matlab's native inpolygon",
+and uncomment the last line. This will use Bruno Luong's inpolygon
+MEX files (which are 100x faster than MATLAB 2012a or earlier).
+You may test it works by running test/testdomain.m without errors.
+
+2) If you wish to use faster regular Bessel functions you may want to
+install the GNU Scientific Library.  http://www.gnu.org/software/gsl/
+There are also some optional fast basis and other math libraries (C
+and Fortran with MEX interfaces) included in MPSPACK, that you might
+want to benefit from. These should be compiled in a UNIX environment
+as follows: Edit the file "make.inc" in the MPSPACK directory,
+changing the locations of GSL and BLAS librares to match those on your
+system.  Then from this directory type "make".
+
 For further info see the documentation and tutorial in MPSPACK/doc/
 
-(C) 2008 - 2012.  Alex Barnett and Timo Betcke
+(C) 2008 - 2013 Alex Barnett.
+(C) 2008 - 2009 Alex Barnett and Timo Betcke.
