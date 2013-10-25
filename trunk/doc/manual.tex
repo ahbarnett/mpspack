@@ -131,10 +131,11 @@ by the command name at the \matlab\ prompt.
 \subsection{Installation}
 
 Requirements: \matlab\ version 7.6 (2008a) or newer is needed,
-since we make heavy use of recent object-oriented programming features.
+since we make heavy use of object-oriented programming features.
 No other \matlab\ toolboxes are needed.
-If you wish to use faster regular Bessel functions you may want to
-install the GNU Scientific Library \cite{GSL}.
+The package should work out of the box, although
+some aspects (such as checking if points are in are polygons)
+may be unnecessarily slow; more about that shortly.
 
 The project is hosted at the repository
 \co{http://code.google.com/p/mpspack}
@@ -157,13 +158,19 @@ Get a gzip-compressed tar archive from
 \co{http://code.google.com/p/mpspack/downloads/list}
 In a UNIX environment you may now
 unpack this with
-\co{tar zxvf mpspack-1.31.tar.gz}
+\co{tar zxvf mpspack-1.33.tar.gz}
 This creates the directory {\tt mpspack} containing the toolbox.
 
 \item Get a zip-compressed archive from
 \co{http://code.google.com/p/mpspack/downloads/list}
 
 \een
+You should now add the {\tt mpspack}
+directory to your \matlab\ path, for instance by adding the line
+\co{addpath 'path/to/mpspack';}
+to your \matlab\ {\tt startup.m} file.
+You are now ready to start \matlab\ and use \mpspack\ !
+
 There are some optional fast basis and other math libraries
 (C and Fortran with MEX interfaces), which although not needed for
 \mpspack\ to work, should improve efficiency (see Section \ref{s:tweak}).
@@ -171,27 +178,25 @@ These can be compiled in a UNIX environment as follows
 (we have not yet tried them in other operating systems):
 from the {\tt mpspack} directory type {\tt make}.
 You may first need to adjust the library locations in {\tt make.inc},
-as explained in that file
+as explained in that file.
+If you wish to use faster regular Bessel functions you may want first to
+install the GNU Scientific Library \cite{GSL}.
 (If GNU Scientific Library \cite{GSL} is not installed,
 you will need to remove the lines in {\tt @utils/Makefile} which
 compile codes using GSL before executing {\tt make}).
 
-As of version 1.31, \mpspack\ uses a point-in-polygon checker by Bruno Luong for which MEX executables are provided.
-If these fail (running {\tt test/testdomain.m} is sufficient),
-then you should edit the file {\tt @utils/inpolywrapper.m}
-to use one of the other available checkers: either those compiled by the
-above {\em make}, or the native \matlab\ {\tt inpolygon} routine
-(which is very slow, but will get you going).
+As of version 1.33 we have switched to \matlab\ native in-polygon checking
+by default, but you might want to experiment with switching to
+Bruno Luong's MEX files which are included for
+64-bit linux or 32/64-bit Windows environments. (These are 100x faster
+than 2012a or earlier \matlab).
+To do this, edit the file @utils/inpolywrapper.m as follows:
+comment out the first code line labelled "Matlab's native inpolygon",
+and uncomment the last line. This will use Bruno Luong's inpolygon
+MEX files (which are 100x faster than MATLAB 2012a or earlier).
+You may test it works by running test/testdomain.m without errors.
 
 See Section~\ref{s:fmm} for linking to fast multipole libraries.
-
-You should now add the {\tt mpspack}
-directory to your \matlab\ path, for instance by adding the line
-\co{addpath 'path/to/mpspack';}
-to your \matlab\ {\tt startup.m} file.
-You are now ready to start \matlab\ and use \mpspack\ !
-
-
 
 
 \subsection{What problems can \mpspack\ solve?}

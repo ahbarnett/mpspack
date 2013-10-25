@@ -23,6 +23,7 @@ function i = inpolywrapper(p, v)
 % Copyright (C) 2008 - 2012, Timo Betcke, Alex Barnett.
 % With code by Peter Simon, 10/4/2012 to use Bruno Luong's
 %   insidepoly MEX implementation
+% Barnett changed to MATLAB's native inpolgon by default 10/24/13
 
 % trivial cases
 if isempty(v) | numel(v)==1, i = 0*p; return; end   % otherwise bb=[], crashes
@@ -36,7 +37,7 @@ i = (real(p)>=bb(1) & real(p)<=bb(2) & imag(p)>=bb(3) & imag(p)<=bb(4));
 % Please uncomment one of the following 4 calls... (note p(i) is pts in bb)
 
 %   Matlab's native inpolygon (use if no MEX files work)
-%i(i) = inpolygon(real(p(i)), imag(p(i)), real(v), imag(v));
+i(i) = inpolygon(real(p(i)), imag(p(i)), real(v), imag(v));
 
 %   Darren Engwirda's inpoly
 %i(i) = utils.inpoly([real(p(i(:))),imag(p(i(:)))], [real(v),imag(v)]);
@@ -45,4 +46,4 @@ i = (real(p)>=bb(1) & real(p)<=bb(2) & imag(p)>=bb(3) & imag(p)<=bb(4));
 %i(i) = logical(utils.inpolyc(p(i), v));   % converts int to logical
 
 %   MEX interface to Bruno Luong's C code: (recommended)
-i(i) = utils.insidepoly(real(p(i)), imag(p(i)), real(v), imag(v));
+%i(i) = utils.insidepoly(real(p(i)), imag(p(i)), real(v), imag(v));
