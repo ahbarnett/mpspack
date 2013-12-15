@@ -64,7 +64,8 @@ properties
           b.realflag=opts.real;
           b.eta=opts.eta;
           b.nmultiplier=opts.nmultiplier;
-          b.HFMMable = (exist('hfmm2d')==3);  % is Helmholtz FMM MEX available?
+          'hello'
+          b.HFMMable = 1;  % is Helmholtz FMM MEX available?
 
           % Evaluate the input arguments
           if isa(varargin{1},'segment')      % must come before pointset since
