@@ -64,7 +64,6 @@ properties
           b.realflag=opts.real;
           b.eta=opts.eta;
           b.nmultiplier=opts.nmultiplier;
-          'hello'
           b.HFMMable = 1;  % is Helmholtz FMM MEX available?
 
           % Evaluate the input arguments
