@@ -9,6 +9,9 @@ function [ExtraNodes, ExtraWeights, NodesToSkip] = QuadLogExtraPtNodes(order)
 %	NodesToSkip:	Number of nodes around the singularity to skip (0*h .. (NodesToSkip-1)*h nodes)
 % Deps:			-
 % MatlabDeps:		-
+%
+% Edited Barnett to add Alpert's new 2013 band-limited nodes ("order pi")
+% 12/16/13
 
     if (order == 2)
 
@@ -140,8 +143,30 @@ function [ExtraNodes, ExtraWeights, NodesToSkip] = QuadLogExtraPtNodes(order)
 		8.999998754306120E+00  1.000007149422537E+00
 	];
 	NodesToSkip = 10;
+        
+    elseif (order == pi)
+	M = [
+       0.1001017919849876E-02 0.3855156111030767E-02
+       0.1547927245597785E-01 0.3092653102489186E-01
+       0.7759862802914257E-01 0.1016660804454295E+00
+       0.2353428808371396E+00 0.2212483541723430E+00
+       0.5313778286303336E+00 0.3742708828331500E+00
+       0.9860522499889081E+00 0.5339562868200986E+00
+       0.1593656014048848E+01 0.6771622243238485E+00
+       0.2330857870688265E+01 0.7921431108587873E+00
+       0.3167794996250213E+01 0.8768432234349217E+00
+       0.4075442999202180E+01 0.9342981809137300E+00
+       0.5028981084850956E+01 0.9695441423223279E+00
+       0.6009047244830998E+01 0.9883431595654529E+00
+       0.7002147952635876E+01 0.9965589345613159E+00
+       0.8000354827049883E+01 0.9992832232003528E+00
+       0.9000035834266430E+01 0.9999068169642388E+00
+       0.1000000176574551E+02 0.9999938235631056E+00
+       0.1100000002444375E+02 0.9999998688848477E+00
+	];
+	NodesToSkip = 12;
     else
-	error(sprintf('QuadLogExtraPtNodes: Only orders 2,3,4,5,6,8,10,12,14,16 are supported, %d is not', order));
+	error(sprintf('QuadLogExtraPtNodes: Only orders 2,3,4,5,6,8,10,12,14,16, and pi are supported, %d is not', order));
     end
 
     ExtraNodes = M(:,1);

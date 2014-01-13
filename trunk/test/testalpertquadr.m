@@ -1,7 +1,7 @@
 % test Alpert log-quadratures on periodic log singularity's Fourier coeffs
-% barnett 1/29/11
+% barnett 1/29/11, added Alpert's osc*log quadr 12/16/13
 clear
-ords = [2,3,4,5,6,8,10,12,14,16,Inf];
+ords = [2,3,4,5,6,8,10,12,14,16,pi,Inf];   % order "pi" is 2013 new quadr
 P = 2*pi;     % period
 m = 10;   % Kress periodized log * m^th Fourier mode (incr m for more challenge)
 f = @(t) log(4*sin(t/2).^2) .* cos(2*pi*m*t/P)/P;
