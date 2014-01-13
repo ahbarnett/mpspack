@@ -46,9 +46,9 @@ if verb, figure; imagesc(real(D)); colorbar; figure; show_bdry(bd); end
 end
 
 if 1 % ==================== Test Greens Thm for combined SLP/DLP, k>=0
-k = 50;                      % wavenumber (may be 0 or >0)
-ords = [2 6 10 Inf 2 6 10 16]; % orders (Inf for Kress)
-schemes = 'kkkmaaaa'; co = 'bgrkcymb';         % quad schemes & plot colors
+k = 10;                      % wavenumber (may be 0 or >0)
+ords = [2 6 10 Inf 2 6 10 16 pi]; % orders (Inf for Kress)
+schemes = 'kkkmaaaaa'; co = 'bgrkcymbg';         % quad schemes & plot colors
 
 figure;
 for o = 1:numel(ords) % -------------------------- loop over orders
@@ -74,9 +74,11 @@ for o = 1:numel(ords) % -------------------------- loop over orders
   end
   toc
   loglog(Ns, err, ['+-' co(o)]); axis([min(Ns) max(Ns) 1e-16 1]);
-  hold on; plot(Ns, 1e-2*(Ns/1e2).^-opts.ord, ['--' co(o)]); drawnow
+  hold on; %plot(Ns, 1e-2*(Ns/1e2).^-opts.ord, ['--' co(o)]);
+  drawnow
 end % -----------------------------------------
-axis tight; legend(num2cellstr(kron(ords, [1 1])),'location','southwest');
+%axis tight; legend(num2cellstr(kron(ords, [1 1])),'location','southwest');
+axis tight; legend(num2cellstr(ords),'location','southwest');
 xlabel('N'); ylabel('L_2 err')
 title([sprintf('k=%g inside Greens Rep convergence at orders: ',k) ...
        sprintf('%d ', ords)]);

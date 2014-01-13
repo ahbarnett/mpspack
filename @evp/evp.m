@@ -104,6 +104,7 @@ classdef evp < problem & handle
       klo = kwin(1); khi = kwin(2); p.kwin = kwin;
       p.fillquadwei; M = numel(p.sqrtwei);   % total # boundary pts
       if v, fprintf('mean M ppw @ khi = %.3g\n', 2*pi*M/khi/d1.perim); end
+      neu = (d1.seg(1).a==0); if neu, 'neu', end % is 1 seg Neumann BCs?
       
       if strcmp(meth,'fd') % ....... Fredholm det Boyd rootfind method..........
         k = klo; kj = []; ej = []; N = M;  % square system
@@ -139,24 +140,34 @@ classdef evp < problem & handle
         ixnip = @(f,g) sum(ww.*conj(f).*g);    % 1/(x.n)-weighted inner prod
         ixnrm = @(g) sqrt(real(ixnip(g,g)));   % 1/(x.n)-weighted bdry norm
         xt = real(conj(sx).*1i.*snx);
-        size(sp)
         if wantmodes | ~strcmp(o.khat,'l') % todo: replace D by FFT application
           D = 2*pi*repmat(1./sp,[1 M]) .* circulant(quadr.perispecdiffrow(M));
           xnt = D*xn; xtt = D*xt; m = (xn.*xtt-xt.*xnt)./xn;  % Andrew's m func
         end  % note avoided storing and computing V matrix
-        k = klo; kj = []; err.imbej = []; err.koj = []; p.ndj = []; % prealloc?
+        kbot = klo; % starting value for bottom of interval - what's looped over
+        clear filteredDtNspectrum  % since persistent filter mats used in it
+        kj = []; err.imbej = []; err.koj = []; p.ndj = []; % prealloc?
         n = 1;    % index to write to or read out of, in dat obj
-        while k<khi      % ==== loop over windows (kstart is called just k)
-          ktop = min(k + o.eps, khi); % top of current k window
-          if v, fprintf('NtD k* = %.15g ...\t', k); end
+        while kbot<khi      % ==== loop over windows (kstart is called just k)
+          ktop = min(kbot + o.eps, khi); % top of current k window
           if ~datavail     % compute NtD spec and possibly eigenvectors
-            if ~wantmodes & strcmp(o.khat,'l') % eigenvectors not needed
+            if ~neu
+              k = kbot; if v, fprintf('NtD k* = %.15g ...\t', k); end
+              if ~wantmodes & strcmp(o.khat,'l') % Dir; evecs not needed
               clear U; d = p.NtDspectrum(k, o);
-            else, [d U] = p.NtDspectrum(k, o); end
+                    else, [d U] = p.NtDspectrum(k, o); end
             betamin = -1.1*o.eps/k;  % dat RAM penalty for excess factor here
+            else, k = ktop;  % predict from top of interval
+              if v, fprintf('DtN k* = %.15g ...\t', k); end
+              if ~wantmodes % Neu; eigenvectors not needed
+              clear U; d = p.filteredDtNspectrum(k, o); % use k=ktop
+                  else, [d U] = p.filteredDtNspectrum(k, o); end
+            betamin = -1.1*o.eps*k;  % since beta_dot is roughly -k
+            end
             % loop over all negative eigvals and keep those khats in window...
             rd = real(d)';
-            ii = find(rd>betamin & rd<=0);   % NtD-eigvals to keep
+            if ~neu, ii = find(rd>betamin & rd<=0);   % NtD-eigvals to keep
+            else, ii = find(rd>betamin & rd<0); end % ** DtN-eigvals to keep
             bes = d(ii); if exist('U','var'), fs = U(:,ii); end   % keep
             if outdat, dat.bes(n,1:numel(bes)) = bes;   % save to dat object
               dat.nes(n) = numel(bes);       % number of eigenvalues kept
@@ -164,12 +175,18 @@ classdef evp < problem & handle
             end
           else    % instead get bes, fs, from n'th spectral data object
             ne = dat.nes(n); bes = dat.bes(n,1:ne);
+            if ~neu, k = kbot; else, k = ktop; end % recover the k* used
             if isfield(dat,'fs'), fs = reshape(dat.fs(n,:,1:ne),M,ne); end
           end
           kl = []; imbel = []; ndl = []; kol = [];
           for i=1:numel(bes), be = real(bes(i));  % only use real part for comp
             if exist('fs','var'), f = fs(:,i); f = f/ixnrm(f); end % f at kstar
-            khat = k/(1+be);  % basic linear eigenfreq approximation
+            if ~neu          % Dir case
+              khat = k/(1+be);  % basic linear eigenfreq approximation
+            else
+              khat = k + 1.000*be/k;  % basic linear eigenfreq approx
+  %            khat = (k + sqrt(k^2+4*be))/2;  % basic linear eigenfreq approx
+            end
             if strcmp(o.khat, 'r')   % Ricatti exact (Andrew)
               Df = D*f; mf = m.*f; % compute ODE constants...
               kavg = (khat+k)/2;  % kavg=k; % average k to use for Ricatti
@@ -182,6 +199,24 @@ classdef evp < problem & handle
               %khat = evp.solvebetaode(k, be, A, -B); % frozen A,B
               A = ixnrm(xn.*Df)^2; B = real(ixnip(f,mf)); C = ixnrm(xn.*f)^2;
               khat = evp.solvebetaode(k, be, A, B, C); % frozen A,B,C
+              
+            elseif strcmp(o.khat, 'n')  % Neumann slope expt fix
+              ns = -M/4:M/4;  % code segment for iF from filteredDtNspectrum:
+              L = sum(d1.w);
+              arcl = real(ifft(-1i*fft(sp).*[0 1./(1:M/2-1) 0 -1./(M/2-1:-1:1)]')); % spectral approx to sampled cumulative arclength
+              arcl = arcl'/2/pi + L*d1.seg(1).t'; % add growing component
+              P = exp((-2i*pi/L)*ns'*arcl); % ns=freqs. Dense DFT mat
+              Pt = P'; PW = P.*repmat(d1.w/L,[numel(ns) 1]);
+              kfilt = k; xin = 2*pi/L/kfilt*ns;  % freq xi grid
+              Fk = max(real(sqrt(1-xin.^2)),0.1*kfilt^(-1/3)); % match prefac !!
+              iF = Pt*(diag(Fk.^-1)*PW); % note no high freq cutoff
+              u = iF * (f./xn); % get neu bdry data from efunc
+%              figure; plot(arcl, real([f u]), '+-'); % check iF does sensible
+              dbe = sum(d1.w' .* xn .* u.^2);  % form for beta-dot...
+              dbe = dbe - sum(d1.w' .* xn .* (D*u).^2)/k^2;
+              dbe = -dbe*k; %dbe = -k*(1 + 0.03*rand(1)); % jiggle them
+              khat = k - be/dbe;  % use as estimator
+            
             end
             if wantmodes                     % recon boundary efunc...
               if strcmp(o.fhat, 'f'), fhat = f;
@@ -202,17 +237,17 @@ classdef evp < problem & handle
               fhat = fhat / ixnrm(fhat);   % normalize (avoids needing c)
               nd = sqrt(2) * khat * fhat ./ xn; % normal-deriv function 
             else nd = []; end
-            if khat>=k & khat<ktop   % if in window, keep it
+            if khat>=kbot & khat<ktop   % if in window, keep it
               kl = [kl; khat]; imbel = [imbel; imag(bes(i))]; % keep Im(beta)
               ndl = [ndl nd]; kol = [kol; k];
             end
           end
-          if v, fprintf('found %d eigvals in [%g,%g]\n', numel(kl),k,ktop); end
+          if v, fprintf('found %d eigvals in [%g,%g]\n',numel(kl),kbot,ktop);end
           [dummy i] = sort(kl); % reorder all the l-arrays when append to lists
           kj = [kj; kl(i)]; err.imbej = [err.imbej; imbel(i)];
           err.koj = [err.koj; kol(i)];
           if wantmodes, p.ndj = [p.ndj ndl(:,i)]; end
-          k = ktop;                        % increment k and repeat
+          kbot = ktop;                        % increment k and repeat
           n = n+1;  % increment data obj counter
         end            % ==== end window loop
         p.kj = kj; p.err = err; p.coj = [];
