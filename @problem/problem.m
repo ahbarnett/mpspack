@@ -125,6 +125,7 @@ classdef problem < handle
         elseif s.bcside==1 | s.bcside==-1  % BC (M segment dofs, natural order)
           ind = (1-s.bcside)/2+1; % index 1,2 for which side the BC on (+,-)
           d = s.dom{ind};         % handle of domain on the revelant side
+          if isempty(d), error('there is no domain on the side of segment you specified boundary conditions! Check your setbc signs'); end
           ms = m+(1:size(s.x,1)); % colloc indices for this block row
           if isempty(opts.doms) | utils.isin(d, opts.doms) %restrict to domains?
             o = []; o.dom = d;      % b.eval may need to know in which domain

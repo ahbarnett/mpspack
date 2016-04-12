@@ -1,31 +1,40 @@
-# GNU Makefile for fortran/MEX compilation for MPSpack MATLAB toolbox
+# GNU Makefile for MPSpack setup.
+# Compiles fortran/MEX codes, FMM interface, etc.
+# Note that MPSpack can work without them.
 #
-# Currently linux OS (glnx86) only.
-#
-# Barnett 9/5/08, updated creation of archive & getrevisionnumber 1/21/09
-# simplified 8/5/09
+# Tested on linux only.
+# Simplified to single makefile for git 4/12/16
+# (C) 2008 - 2016 Alex Barnett
 
-# (C) 2008 - 2012 Alex Barnett and Timo Betcke
+CC = gcc
+FLIBS = -fPIC -O3          # PIC needed for MEX to link against .o
+FC = gfortran
+U = @utils                 # our utils directory
 
-#rev := $(shell ./getrevisionnumber)
-#pkg := mpspack-r$(rev)
-pkg := mpspack-1.32
+######## library locations: adjust as necessary (shown for ubuntu 14.04 linux)
+BLAS = -lblas
+GSL = -lgsl                      # GNU Scientific Library
+FMM2D = /usr/local/fmmlib2d/     # point to your FMM installation
+# (get from http://www.cims.nyu.edu/cmcl/fmm2dlib/fmm2dlib.html )
+LP2D = /home/alex/physics/leslie/gimbutas/lp2d   # your LP2D installation
+# (get from https://math.dartmouth.edu/~ahb/software/lp2d.tgz )
 
-default: all
+# decide if Rokhlin's hank106 available...
+ifneq ("$(wildcard $(U)/hank106.f)","")
+HANKELS = $(U)/hank103.o
+else
+HAVEHANK106 = 0
+endif
 
-all:
-	(cd @utils; make)
+# ***** finish this up!
+
+all: hankel bessel inpolyc
+.PHONY: all
+
+hankel:
+
 special:
 	(cd @utils; make special)
-
-.PHONY: all special clean
-
-tar:
-#	echo $(rev); echo $(pkg)
-#       note sequential here to avoid race conditions...
-	(cd ..; svn export mpspack $(pkg); tar zcvf $(pkg).tar.gz $(pkg))
-	(cd ..; zip -r $(pkg).zip $(pkg))
-	rm -Rf ../$(pkg)
 
 clean:
 	(cd @utils; make clean)

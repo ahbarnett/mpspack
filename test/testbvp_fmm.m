@@ -10,8 +10,8 @@ f = @(z) besselh(0,k*abs(z-2-3i));  % solution function giving bdry data
 s.setbc(-1, 'd', [], @(t) f(s.Z(t)));
 p = bvp(d); p.setoverallwavenumber(k);
 
-%o.FMM = 0; o.meth='direct'; % 0 for dense solve (1 requires LP2D Alpert codes)
-o.FMM = 1; o.meth = 'iter'; % FMM w/ GMRES for iterative soln, for large N
+o.FMM = 0; o.meth='direct'; % 0 for dense solve (1 requires LP2D Alpert codes)
+%o.FMM = 1; o.meth = 'iter'; % FMM w/ GMRES for iterative soln, for large N
 fprintf('testing N=%d; please wait about %g min...\n', N, N/60000); 
 tic; p.solvecoeffs(o); fprintf('solve done in %.3g sec\n', toc)
 

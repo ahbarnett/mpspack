@@ -62,3 +62,13 @@ fprintf('worst size of 100 mins found: %.3g\n',max(y(1,:)))
 % with maxslope correct, about 17 evals per min
 % maxslope 1/2 it's true size: misses around 10% of mins
 % maxslope 2x correct, 21 evals per min (init grid 5x mean spacing)
+
+
+% Lin's test case:
+f = @(x) sqrt((x-2).^2 + 1e-15.^2); g = 2 + 1e-9*(-10:10);
+o.verb = 1; o.xtol = 1e-14; o.maxslope = @(x) 1;
+[x y i] = evp.gridminfit(f, g, o);
+x, y
+fprintf('fevals = %d  (%g per min found)\n', i.fevals, i.fevals/numel(x))
+figure; plot(i.xs, i.ys, 'k+');
+

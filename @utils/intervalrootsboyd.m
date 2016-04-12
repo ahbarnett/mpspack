@@ -17,7 +17,6 @@ function [x derr y u ier] = intervalrootsboyd(f, int, o)
 %   opts.disp : 0,1,... verbosity
 % Other opts are passed to trigpolyzeros
 %
-
 % [x derr y u ier] = intervalrootsboyd(f, [a b], ...) also returns estimated
 %   errors in the form of distances of roots from the real axis, the final set
 %   of ordinates y, and function values u used, and error flag (0 if success,

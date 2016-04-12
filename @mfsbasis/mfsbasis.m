@@ -216,7 +216,8 @@ properties
       k = b.k; eta = b.eta; N = b.N; M = numel(x);
       if k>0 && ~b.HFMMable, error('not able to use Helmholtz FMM!'); end
       if k==0, error('Laplace FMM not implemented!'); end
-      if isreal(co), co = complex(co); end % for MEX input compatibility
+      if ~isnumeric(co), error('co vector must be numeric!'); end
+      if isreal(co), coisreal = 1; co = complex(co); else, coisreal=0; end % for MEX input compatibility
       ifcharge = (eta~=0);
       ifdipole = (eta~=Inf);
       if eta==Inf, charge = co.'; else, charge = 1i*eta*co.'; end
@@ -225,18 +226,20 @@ properties
       target = [real(x) imag(x)].';    % since x is col vecs, but want 2-by-N
       iffldtarg = (nargout>1);
       iprec=4;                    % digits precision - should be an opts
-      if ~b.realflag || isreal(co)  % usual complex fundamental solutions
+      if ~b.realflag || coisreal  % usual complex fundamental solutions
         U = utils.hfmm2dparttarg(iprec,k,N,source,ifcharge,charge,ifdipole,...
                                  co.',dipvec,0,0,0,M,target,1,iffldtarg,0);
         % note the dipole strengths vector has sign change!
         u = U.pottarg.';
+        if b.realflag, u=real(u); end        
         if nargout==2
           u1 = (real(p.nx).'.*U.gradtarg(1,:) + ...
                     imag(p.nx).'.*U.gradtarg(2,:)).';
+          if b.realflag,  u1=real(u1); end
         elseif nargout==3
           u1 = U.gradtarg(1,:).'; u2 = U.gradtarg(2,:).';
+          if b.realflag,  u1=real(u1); u2=real(u2); end
         end
-        if b.realflag, u=real(u); u1=real(u1); u2=real(u2); end;
       else                        % real part of (monopole + i.eta.dipole)
         error('real=1 not implemented for complex coeff vector!');
         % ... do 2 FMMs on the real and imag parts of coefficents, lame

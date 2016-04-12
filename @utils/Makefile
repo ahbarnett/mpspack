@@ -1,9 +1,11 @@
-# GNU Makefile for MEX compilation for MPSPack MATLAB toolbox's @utils directory
+# GNU Makefile for MEX compilation for MPSpack MATLAB toolbox's @utils directory
 #
-# Currently linux OS only. Needs GNU Scientific Library (gsl) installed
+# Tested on linux only.
 #
+# Dependencies: GNU Scientific Library (gsl)
 #
 # Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
+# (C) 2009-2016 Alex Barnett
 
 include ../make.inc
 
