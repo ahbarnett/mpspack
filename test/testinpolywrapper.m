@@ -1,4 +1,6 @@
 % test code for inpolygon wrapper routine, validating against matlab's native.
+% This is OBSOLETE since switched to MATLAB's native inpoly in around 2013.
+% It is retained for amusement only.
 
 % Copyright (C) 2008 - 2012, Timo Betcke, Alex Barnett
 

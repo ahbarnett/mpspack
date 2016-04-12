@@ -3,24 +3,31 @@
 ### Alex Barnett 4/12/16.  Version 1.4
 
 MPSpack is a user-friendly and fully object-oriented MATLAB toolbox
-that implements the method of particular solutions, nonpolynomial FEM,
-the method of fundamental solutions, and integral equation methods,
-for the efficient and highly accurate solution of Laplace eigenvalue
-problems, interior/exterior Helmholtz boundary-value problems
-(e.g. wave scattering), periodic diffraction problems, and related PDE
-problems, on piecewise-homogeneous 2D domains.
+that implements the method of particular solutions (aka Trefftz or
+nonpolynomial FEM, including the method of fundamental solutions,
+Fourier--Bessel local expansions, singular corner expansions), and
+integral equation methods (including some basic corner handling), for
+the efficient and often spectrally-accurate solution of Laplace
+eigenvalue problems, interior/exterior Helmholtz boundary-value
+problems (e.g. wave scattering), periodic diffraction problems, and
+related PDE problems, on piecewise-homogeneous 2D domains.
 
-Version 1.0 was released in 2009. Since then it has settled into a
-repository for a variety of new numerical methods developed for corner
-domains, periodic problems, and high-frequency Dirichlet and Neumann
-eigenvalue problems.  It is stable and will not have much future
-development. Instead I expect to release a replacement package for integral
-equations.
+Version 1.0 was released in 2009, and co-authored with Timo
+Betcke. Since then I have been the main developer; it has settled
+into a repository for a variety of new numerical methods developed for
+corner domains, periodic problems, and high-frequency Dirichlet and
+Neumann eigenvalue problems, enabling this research to be *reproducible*.
+It is stable and will not have much
+future development. Instead I and colleagues expect to release a
+replacement package for integral equations.
 
-*This work was supported by the National Science Foundation under
-grants DMS-0811005 and DMS-1216656, and Engineering and Physical
-Sciences Research Council Grant EP/H00409/1. It includes codes by
-V. Rokhlin, A. Pataki, Z. Gimbutas, S. Hawkins, and several others.*
+*I am grateful for the support of the National Science Foundation
+under grants DMS-0811005 and DMS-1216656; and Betcke for support of
+the Engineering and Physical Sciences Research Council Grant
+EP/H00409/1. We also are thankful for the inclusion of codes by
+V. Rokhlin, L. N. Trefethen,
+A. Pataki, Z. Gimbutas, D. M. Schwarz, S. Hawkins, B. Gustavsson,
+and several others.*
 
 ## Requirements
 
@@ -30,6 +37,9 @@ V. Rokhlin, A. Pataki, Z. Gimbutas, S. Hawkins, and several others.*
 ..* [FMMLIB2D](http://www.cims.nyu.edu/cmcl/fmm2dlib/fmm2dlib.html)
 ..* [LP2D](https://math.dartmouth.edu/~ahb/software/lp2d.tgz)
 ..* GNU Scientific Library [GSL](http://www.gnu.org/software/gsl)
+
+* MPSpack is released under GPL v.3; please contact me for other license
+options.
 
 ## Installation
 
@@ -45,9 +55,7 @@ Add the above `addpath` command to your MATLAB `startup.m` file if you
 want the MPSpack toolbox available by default.
 
 *Note a [snapshot](https://code.google.com/archive/p/mpspack/)
-of version 1.33 from 2014 remains archived on the sadly-defunct `googlecode`.
-*
-
+of version 1.33 from 2014 remains archived on the sadly-defunct `googlecode`.*
 
 ## Usage
 

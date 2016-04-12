@@ -723,7 +723,9 @@ via the {\tt p.solvespectrum} method:
 \ben
 \item Using Boyd's rootfinding method on a Fredholm determinant.
 \item Using the minimum singular value of a double-layer boundary operator.
-\item The Neumann-to-Dirichlet method of Barnett--Hassell 2012
+\item The Neumann-to-Dirichlet method for Dirichlet BCs of Barnett--Hassell, 2012.
+\item The spectrally-weighed Dirichlet-to-Neumann method for Neumann BCs
+of Barnett--Hassell--Tacy, 2015.
 \cite{sca}
 \een
 These methods are only coded using layer potentials at this point.
@@ -741,8 +743,6 @@ By default \mpspack\ uses robust rather than fast math libraries.
 It is simple to switch to the following
 faster alternatives, but the user should be careful
 to check that the answers agree to their accuracy requirements.
-%  \footnote{We give approximate runtimes below based on a
-%    Intel Core Duo 2GHz laptop running Fedora 8 linux.}
 \ben
 \item Regular ($J$-type) Bessel functions, needed for {\tt regfbbasis.eval}.
 Each {\tt regfbbasis} object contains a property {\tt besselcode}
@@ -759,16 +759,10 @@ have a property {\tt fast} which may be 0 (\matlab\ implementation),
 or 1 or 2 (a MEX interface to Rokhlin's Fortran code,
 roughly 5 times faster than \matlab).
 The user may change this property for each relevant basis object.
-
-\item Point-in-polygon checking is implemented by a MEX interface
-to a C code which was found to be about 100 times faster than
-\matlab. The implementation
-may be switched only by uncommenting lines
-in {\tt @utils/inpolywrapper.m}
 \een
 
 In the {\tt test/} directory you will find some routines that
-we use to validate \mpspack. These are of variable quality,
+I use to validate low-level pieces of \mpspack. These are of variable quality,
 but contain coding examples that you may find useful, in particular,
 \bi
 \item {\tt testsegment.m} builds and plots line, arc, and analytic function
@@ -925,11 +919,11 @@ multipole-to-local matrix of $J$-Bessel functions.
 \ei
 
 
-\section{Acknowledgments and credits}
+\section{History, acknowledgments, and license}
 
 \mpspack\ started as a joint project conceived by
 Alex Barnett and Timo Betcke, who did the early coding for
-BVPs together in 2008-2009.
+BVPs together in 2008--2009.
 Alex Barnett has been the sole developer since 2010,
 and has focused on periodic and eigenvalue problems.
 The computational methods built into the code includes
@@ -979,7 +973,7 @@ we include codes written by others, as follows:
 \bi
 \item {\tt hank103.f} fast Hankel function computation, by
 V.~Rokhlin and L.~Greengard.
-\item {\tt kapurtrap.m} Kapur-Rokhlin periodic quadrature weights,
+\item {\tt kapurtrap.m} Kapur--Rokhlin periodic quadrature weights,
 by Z.~Gimbutas.
 \item {\tt clencurt.m} and {\tt gauss.m}, quadrature nodes and weights,
 by L.~N.~Trefethen \cite{tref}.

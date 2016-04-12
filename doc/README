@@ -1,0 +1,9 @@
+Docs for MPSpack
+
+The tex files here can be compiled but require EPS figures in the figs/
+directory. Some of these can be created by running examples/*.m codes.
+However, since the full set of EPS files is over 60 MB, I have not
+included them in this repo. Thus if you chose to try latex compilation
+you would get a ton of errors and a figure-free manual and tutorial.
+
+Alex Barnett 4/12/16
