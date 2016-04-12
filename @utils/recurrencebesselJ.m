@@ -13,9 +13,9 @@ function J = recurrencebesselJ(M,x)
 %   a column vector before using.
 %
 % Issues/notes:
-%  * originally by barnett 2/28/08
+%  * originally by Barnett 2/28/08
 %  * Modified for inclusion in mpspack by Timo Betcke 13/07/08 [J size differs]
-%  * debugged nst check at end, barnett 7/27/08.
+%  * debugged nst check at end, Barnett 7/27/08.
 %  * The choice of eps, nst, and ncutoff are sensitive and if changed may cause
 %    overflow for very small x values. (repeated multiplication by n/x).
 %

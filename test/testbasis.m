@@ -18,12 +18,12 @@ p = pointset([xx(:) + 1i*yy(:)], ones(size(xx(:)))); % set up n for x-derivs
 k = 5;                              % wavenumber for tests (may be 0)
 d = domain(); d.k = k;               % create R^2 domain
 
-for type = 1:14              % select the cases you want to test here
+for type = 1:14              % select the cases you want to test here :)
   switch type
    case {1,2,3}             % ................. Reg FB: real/cmplx, rescl
     N = 10;
     opts.real = (type~=2); opts.rescale_rad = 1.4*(type==3);
-    opts.besselcode = 'r';                  % try 'r' 'g' or 'm' here
+    opts.besselcode = 'm';                  % try 'r' 'g' or 'm' here
     b = regfbbasis(0, N, opts); b.doms = d;  % attach basis to R^2 domain
     c = 0.5 + (k==0);             % set caxis scale for this basis type
     js = 1:b.Nf;             % indices to plot, here all of them
@@ -39,7 +39,8 @@ for type = 1:14              % select the cases you want to test here
    case {6,7,8}              % ................. MFS: SLP, DLP, SLP+DLP
     N = 10;
     etas = [inf, 0, -k]; opts.eta = etas(type-5); % -k wave beams outwards
-    opts.fast = 2;       % about 10x faster than o.fast=0 (matlab hankel)!
+    o.fast = 2;       % about 2x faster than o.fast=0 (post-R2014 matlab hankel)
+    % and about 10x faster than pre-R2014 matlab hankel.
     a=1.6; b = mfsbasis({@(t)a*exp(2i*pi*t),@(t)2i*pi*a*exp(2i*pi*t)}, N, opts);
     b.doms = d; c = 0.2*(1+(k-1)*(opts.eta<inf)); js = 1:b.Nf;
     fprintf('evaluating MFS basis... eta=%g\n', opts.eta)
@@ -47,7 +48,8 @@ for type = 1:14              % select the cases you want to test here
    case {9,10,11}            % ................. layerpot: SLP, DLP, SLP+DLP
     N = 10; s = segment(N, [-1.5+.5i, .5i]); c = 0.03;
     lp = 'S'; if type==9, lp = 'D'; c=c*k; elseif type==10, lp = [1 1i]; end
-    o.fast = 2;       % about 5x faster than o.fast=0 (matlab hankel)!
+    o.fast = 2;       % about 2x faster than o.fast=0 (post-R2014 matlab hankel)
+    % and about 10x faster than pre-R2014 matlab hankel.
     b = layerpot(s, lp, o); if type==10, lp = 'SLP+D'; end % hack for text
     b.doms = d; js = 1; %b.Nf; % 1 is off the region, b.Nf is in the region
     fprintf('evaluating {S,D}LP basis... %sLP\n', lp), %o.close = 0.4;

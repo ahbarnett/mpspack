@@ -27,6 +27,8 @@ classdef nufbbasis < handle & basis
 %   is a factor of 2 in speed: the set of Bessel evaluations is reused.
 %
 % See also: DOMAIN/ADDNUFBBASIS
+%
+% To do: * speed this up via GSL interface?
 
 % Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
 

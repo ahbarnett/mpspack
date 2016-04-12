@@ -33,10 +33,11 @@ and several others.*
 
 * MATLAB 2008a or newer (in particular, no toolboxes needed)
 
-* Optional requirements for advanced features (see `doc/manual.pdf`):
+* Optional requirements for tweaks and fast algorithms (see `doc/manual.pdf`):
+..* C and Fortran compilers such as gcc and gfortran.
+..* GNU Scientific Library [GSL](http://www.gnu.org/software/gsl)
 ..* [FMMLIB2D](http://www.cims.nyu.edu/cmcl/fmm2dlib/fmm2dlib.html)
 ..* [LP2D](https://math.dartmouth.edu/~ahb/software/lp2d.tgz)
-..* GNU Scientific Library [GSL](http://www.gnu.org/software/gsl)
 
 * MPSpack is released under GPL v.3; please contact me for other license
 options.
@@ -54,16 +55,31 @@ installation.
 Add the above `addpath` command to your MATLAB `startup.m` file if you
 want the MPSpack toolbox available by default.
 
+To install tweaks (MEX interfaces to Bessel/Hankel/inpoly), which are
+tested only in a linux environment, from a shell in the directory
+`mpspack` type `make`. If you have trouble, edit the library locations
+in `make.inc`.
+
+See `doc/manual.pdf` for linking to fast algorithms (FMM).
+
 *Note a [snapshot](https://code.google.com/archive/p/mpspack/)
 of version 1.33 from 2014 remains archived on the sadly-defunct `googlecode`.*
 
 ## Usage
 
-To test your installation:
+To test your basic installation:
 in MATLAB make sure you're in the `mpspack` top directory and type
 `run test/testdielscatrokh` which should take about 1 second to run
 and produce a wave scattering figure from a smooth dielectric domain,
 along with a pointwise error, which should be small (ie less than 1e-14).
+
+To test whether your tweaks installation worked:
+
+* `run test/testbasis` which should give around 0.2 us per eval for MFS,
+SLP, and DLP bases. Older versions of MATLAB will give only 2 us per eval.
+
+* `run test/testinpolywrapper` which should compare the slow MATLAB
+against the fast Luong code.
 
 See `doc/tutorial.pdf` and `doc/manual.pdf` for detailed examples and usage.
 
@@ -73,4 +89,3 @@ See `doc/tutorial.pdf` and `doc/manual.pdf` for detailed examples and usage.
 * Extract the best quadrature schemes for a new BIE2D package
 
 * Interpolation to replace Zp, Zpp for convenience but losing digits
-

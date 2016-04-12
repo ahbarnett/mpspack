@@ -1,10 +1,9 @@
-% test code for inpolygon wrapper routine, validating against matlab's native.
-% This is OBSOLETE since switched to MATLAB's native inpoly in around 2013.
-% It is retained for amusement only.
+% test code for inpolygon wrapper routine, validating against MATLAB's native.
+% It's quite entertaining to see something beat modern MATLAB by factor 100.
 
-% Copyright (C) 2008 - 2012, Timo Betcke, Alex Barnett
+% Copyright (C) 2008 - 2012, Alex Barnett
 
-wrapperusesmatlab = 0;             % flag, set to 0 if you edit inpolywrapper
+wrapperusesmatlab = 0;             % flag: set to 0 if you edit inpolywrapper
                                    % to use much faster MEX file.
 % pathological examples
 i = utils.inpolywrapper([], [0; 1; 1+1i; 1i])
@@ -43,7 +42,7 @@ if nwrong==0, disp('ok'); else warning(sprintf('nwrong=%d\n',nwrong)); end
 if wrapperusesmatlab, disp('above timings will be the same, redundant'); end
 
 % big example (timings on i7-3720QM, w/ bb test in inpolywrapper):
-% matlab 7-9s, Engwirda 0.33s, Franklin 0.2s, Luong 0.08s
+% matlab 7-9s, Engwirda 0.33s, Franklin 0.2s, Luong 0.08s !
 nv = 1000;
 N = 1e6;
 v = rand(nv,1).*exp(2i*pi*(1:nv)'/nv);    % random nv-gon 

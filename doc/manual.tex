@@ -38,7 +38,8 @@ Right: total solution field.}{f:hard}
 \subsection{Installation}
 
 See the file {\tt README.md} in the top directory of this package for
-basic installation.
+basic installation and tweaks. Also see Sec.~\ref{s:tweak}
+below for tweak details.
 
 See Section~\ref{s:fmm} for linking to fast multipole libraries
 for faster evaluation and iterative solution in the layer-potential
@@ -730,7 +731,8 @@ of Barnett--Hassell--Tacy, 2015.
 \een
 These methods are only coded using layer potentials at this point.
 For now, see the examples in the tutorial.
-Ironically, the MPS approach to eigenvalues is not complete.
+Ironically, due to shifts in research direction,
+the MPS approach to eigenvalues is not yet complete.
 
 
 
@@ -741,24 +743,41 @@ Ironically, the MPS approach to eigenvalues is not complete.
 
 By default \mpspack\ uses robust rather than fast math libraries.
 It is simple to switch to the following
-faster alternatives, but the user should be careful
+alternatives, which can be faster, but the user should be careful
 to check that the answers agree to their accuracy requirements.
+
 \ben
 \item Regular ($J$-type) Bessel functions, needed for {\tt regfbbasis.eval}.
 Each {\tt regfbbasis} object contains a property {\tt besselcode}
 that may be changed to {\tt 'r'} for Barnett's recurrence-relation
-implementation (2-3 times faster the \matlab\ but
+implementation (2-3 times faster than pre-R2014 \matlab\ but
 not guaranteed relative accuracy in
 the deep evanescent region),
 or {\tt 'g'} for MEX interface to GSL (nearly as fast as the recurrence
 version, and robust).
+Speed tests are in {\tt test/testbasis.m} cases 1 to 3.
+In modern (post-R2014) \matlab\ it seems the differences between the
+above are slight; hence, don't bother with this one.
 
 \item Hankel functions of order 0 and 1, needed for
 {\tt mfsbasis.eval} and {\tt layerpot.eval}. Both these basis objects
 have a property {\tt fast} which may be 0 (\matlab\ implementation),
 or 1 or 2 (a MEX interface to Rokhlin's Fortran code,
-roughly 5 times faster than \matlab).
+roughly 2 times faster than post-R2014 \matlab).
 The user may change this property for each relevant basis object.
+Speed tests are in {\tt test/testbasis.m} cases 6 to 11.
+
+\item Point-in-polygon checking can be sped up via Bruno Luong's
+excellent M-file with shipped MEX executables,
+which is about 100 times faster than native
+\matlab, even using a modern post-R2015 version,
+bringing the speed from of order $10^7$ point-vertices/sec
+to $10^9$. This can have effect if the domain has a smooth boundary
+and a fine evaluation grid.
+The gateway
+{\tt @utils/inpolywrapper.m} checks if Luong's MEX files are available
+and uses them if so, otherwise reverting to \matlab.
+Ie there is nothing for the user to do to enable this tweak.
 \een
 
 In the {\tt test/} directory you will find some routines that
@@ -776,7 +795,7 @@ a variety of domains.
 \item {\tt testscattering.m} shows the main steps for solution of a 
 scattering problem on a variety of domains.
 \item {\tt testinpolywrapper.m} validates the MEX interface to point-in-polygon
-checking.
+checking against the \matlab\ version.
 \item {\tt testdielscatrokh.m} calculates a transmission scattering problem
 using Rokhlin's hyper-singular cancelling scheme, via setting up layer potentials
 which each affect {\em two} domains.

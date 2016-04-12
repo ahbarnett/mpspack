@@ -1,20 +1,18 @@
 # GNU Makefile for MEX compilation for MPSpack MATLAB toolbox's @utils directory
 #
-# Tested on linux only.
+# These are only needed for tweaks to accelerate math libraries; MPSpack
+# will run without them. Tested on linux only.
 #
-# Dependencies: GNU Scientific Library (gsl)
-#
-# Copyright (C) 2008, 2009, Alex Barnett, Timo Betcke
-# (C) 2009-2016 Alex Barnett
+# Simplified version 4/12/16.
+# (C) 2008-2016 Alex Barnett
 
 include ../make.inc
 
 default: all
 
-all: gslbesselj gslbesseljnu greengardrokhlinhank103 inpolyc
-special: greengardrokhlinhank106
+all: gslbesselj gslbesseljnu greengardrokhlinhank103 greengardrokhlinhank106 inpolyc
 
-.PHONY: all special clean
+.PHONY: all clean
 
 gslbesselj: gslbesselj.c
 	mex gslbesselj.c $(GSL) $(BLAS)
@@ -29,13 +27,14 @@ greengardrokhlinhank106: greengardrokhlinhank106.c hank103.o hank106.o
 	mex greengardrokhlinhank106.c hank103.o hank106.o LD=$(FC)
 
 hank103.o: hank103.f
-	$(FC) -fPIC -c hank103.f -O3
+	$(FC) $(FFLAGS) -c hank103.f
 
 hank106.o: hank106.f
-	$(FC) -fPIC -c hank106.f -O3
+	$(FC) $(FFLAGS) -c hank106.f
 
 inpolyc: inpolyc.c
 	mex inpolyc.c
 
+# remember not to delete the shipped Luong MEX executables (!):
 clean:
-	rm -f *.o *.mexglx *.mexa64
+	rm -f *.o greengardrokhlinhank103.mex* greengardrokhlinhank106.mex* gslbesseljnu.mex* gslbesselj.mex* inpolyc.mex*
