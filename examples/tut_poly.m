@@ -8,7 +8,7 @@ s = segment.polyseglist([], [1, exp(3i*pi/8), exp(5i*pi/4)]);
 tri = domain(s, 1);
 if verb  % generate f:doms b
   figure; opts.gridinside=0.05; tri.plot(opts); axis off;
-  print -depsc2 ../doc/tri.eps
+  print -depsc2 ../doc/figs/tri.eps
 end
 
 s.disconnect;                      % play with some domains
@@ -17,7 +17,7 @@ s.disconnect;
 ss = s.translate(2);
 exttwotri = domain([], [], {s(end:-1:1), ss(end:-1:1)}, {-1, -1});
 %if verb  % generate f:doms c
-%  figure; exttwotri.plot(opts); axis off; print -depsc2 ../doc/exttwotri.eps
+%  figure; exttwotri.plot(opts); axis off; print -depsc2 ../doc/figs/exttwotri.eps
 %end
 end
 
@@ -40,7 +40,7 @@ if verb  % generate f:triconv a
   g = gcf;
   f = figure; fb = loglog(2*Ns, r, '+-'); set(gca,'fontsize', 20); axis tight;
   xlabel('# degrees of freedom'); ylabel('bdry err norm');
-  print -depsc2 ../doc/triFB.eps
+  print -depsc2 ../doc/figs/triFB.eps
   figure(g);
 end
 
@@ -61,9 +61,9 @@ if verb, % generate f:triconv a and b
   figure(f); hold on; nufb = loglog(nn, r, 'r+-'); axis([4 100 1e-12 10]);
   legend([fb nufb], {'regular FB at origin', '3 corner nu-FB'},...
          'location', 'southwest');
-  print -depsc2 ../doc/triFB.eps
+  print -depsc2 ../doc/figs/triFB.eps
   figure; p.showsolution; axis off; h=colorbar; set(h,'fontsize',20);
-  print -depsc2 -painters ../doc/triu.eps
+  print -depsc2 -painters ../doc/figs/triu.eps
 end
 
 %figure; tri.plot; tri.showbasesgeom;   % check corner bases correct

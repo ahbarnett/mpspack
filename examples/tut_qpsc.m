@@ -20,7 +20,7 @@ p.pointsolution(pointset(0.3+0.7i))                 % eval full field at a point
 
 if verb, set(gcf,'paperposition', [0 0 4 3]); axis off; colorbar off; title('');
   p.showbdry(struct('arrow',0,'normals',0,'label',0,'blobs',0));
-  print -depsc2 ../doc/qpsc.eps; end
+  print -depsc2 ../doc/figs/qpsc.eps; end
 
 % More complicated case of dielectric-coated Dirichlet obstacle with
 % nearby Dirichlet disc obstacle which wraps around unit cell bdry (13 digits)
@@ -41,4 +41,5 @@ p.showfullfield(struct('ymax', 1.2));
 
 if verb, axis off; colorbar off; title('');
   p.showbdry(struct('arrow',0,'normals',0,'label',0,'blobs',0));
-  set(gcf,'paperposition', [0 0 4 3]); print -depsc2 ../doc/qpsc_coated.eps; end
+  set(gcf,'paperposition', [0 0 4 3]);
+  print -depsc2 ../doc/figs/qpsc_coated.eps; end

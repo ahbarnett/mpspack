@@ -72,6 +72,9 @@ classdef evp < problem & handle
     %     meth = 'ntd' : weighted-Neumann-to-Dirichlet scaling method
     %                   (star-shaped domains with single segment only)
     %                   coj is returned empty since all bdry data is in ndj.
+    %     meth = 'int' : interpolating wNtD or spectrally-weighted DtN
+    %                   (star-shaped domains with single segment only)
+    %                   coj is returned empty since all bdry data is in ndj.
     %     meth = 'ms' : iterative search for minimum singular value of Id+-2D.
     %                   (considered state-of-art in literature).
     %
@@ -82,8 +85,11 @@ classdef evp < problem & handle
     %     opts.eps : size of k-window over which meth='ntd' extrapolates
     %                (default is 0.2/(max radius of domain))
     %     opts.khat = 'ntd' k_hat predict method: 'l' linear, 'o' frozen-f ODE.
+    %                 'n' Neumann linear, 'p' Neumann frozen ODE.
+    %     opts.p    = 2,4,.. Lagrange interpolation order for meth='int'.
+    %     opts.itype = 'l' Lagrange, 'h' Hermite, for beta(k) and f(k), etc.
     %     opts.fhat = 'ntd' f_hat predict method: 'f' use f*, 'l' lin, 's' 2nd-o
-    %     opts.dat : if nonempty, use as NtD spectral sweep data object.
+    %     opts.dat : if nonempty, reuse as 'ntd' or 'int' spectral sweep data.
     %
     % Notes / issues:
     % * 'fd' and 'ms' require p to have appropriate layerpot basis on domain
@@ -99,18 +105,27 @@ classdef evp < problem & handle
       outdat = nargout>4;       % want saving of spectral data?
       if numel(p.doms)~=1, warning('problem has more than one domain...'); end
       d = p.doms;                            % the domain(s)
-      d1 = d(1);            % the first, and we hope only, domain
+      d1 = d(1);            % the first, and for some methds only, domain
+      sx = d1.x; snx = d1.nx; sp = d1.speed; % quad info for the one domain
+      ip = @(f,g) sum(p.sqrtwei(:).^2.*conj(f(:)).*g(:));  % unwei inner prod
+      xn = real(conj(sx).*snx);                  % x.n
+      if strcmp(meth,'int') || strcmp(meth,'ntd')
+        ww = p.sqrtwei.'.^2./xn; % 1/x.n bdry func w/ weights
+        ixnip = @(f,g) sum(ww(:).*conj(f(:)).*g(:)); % 1/(x.n)-wei inner prod
+        ixnrm = @(g) sqrt(real(ixnip(g,g)));   % 1/(x.n)-weighted bdry norm
+      end
       if v, fprintf('solvespectrum: wantmodes = %d\n', wantmodes); end
       klo = kwin(1); khi = kwin(2); p.kwin = kwin;
       p.fillquadwei; M = numel(p.sqrtwei);   % total # boundary pts
       if v, fprintf('mean M ppw @ khi = %.3g\n', 2*pi*M/khi/d1.perim); end
-      neu = (d1.seg(1).a==0); if neu, 'neu', end % is 1 seg Neumann BCs?
+      neu = (d1.seg(1).a==0);                % is 1 seg Neumann BCs?
       
       if strcmp(meth,'fd') % ....... Fredholm det Boyd rootfind method..........
         k = klo; kj = []; ej = []; N = M;  % square system
         kscale = 70/d1.diam;             % est k at which level density ~ 20
         io.Ftol = 1e-10; io.tol = o.tol;   % allows leeway in collecting roots
         io.disp = v;                       % opts for interval search
+        y = []; u = [];         % keep fred det eval data
         while k<khi
           ktop = min(k + kscale*min(1/k,0.2), khi); % top of current k window
           % option to reset N here, requadrature all segs (in proportion?)
@@ -118,28 +133,99 @@ classdef evp < problem & handle
           %f = @(k) det(eye(N) - 2*layerpot.D(k, s)); % for one closed segment
           f = @(k) det(p.fillfredholmop(k)); % function to rootfind on
           if v, fprintf('rootfind in [%.16g, %.16g], N=%d:\n', k, ktop, N); end
-          [kl el y u] = utils.intervalrootsboyd(f, [k ktop], io);
+          [kl el yl ul] = utils.intervalrootsboyd(f, [k ktop], io);
           [kl i] = sort(kl); el = el(i);
           if v, fprintf('found %d eigenvalues w/ %d fredholm det evals (ratio %.3g)\n', numel(kl), numel(y), numel(y)/numel(kl)); end
           kj = [kj; kl]; ej = [ej; el];
+          y = [y yl(end:-1:1)]; u = [u ul(end:-1:1)]; % make in incr k order
           k = ktop;                        % increment k and repeat
         end
         p.err.ej = ej;  % rootfinding error estimates (imaginary parts)
+        p.err.y = y; p.err.u = u;  % output fd data
         p.kj = kj;
         
         if wantmodes
           if v, disp('computing eigenmodes at each eigenwavenumber...'); end
           p.solvemodescoeffs('ms', o); end  % compute all eigenfuncs via ms
         
-      elseif strcmp(meth,'ntd') % ............... NtD scaling method...........
+      elseif strcmp(meth,'int') % ......... interpolate wNtD or wDtN flow.......
+        % Note the f-inner-prod matching will fail for multiple EVs - ** fix.
         if ~isfield(o, 'eps'), o.eps = 0.2/d1.diam; end % defaults
-        if ~isfield(o, 'khat'), o.khat = 'r'; end         % (most acc)
+        if ~isfield(o, 'p'), o.p = 2; end % default interpolation order
+        if ~isfield(o,'itype'), o.itype = 'l'; end
+        nspill = ceil(o.p/2)-1; % how many extra k samples over the ends
+        clear filteredDtNspectrum  % since persistent filter mats used in it
+        nw = ceil((khi-klo)/o.eps); o.eps = (khi-klo)/nw;       % # windows
+        if ~datavail  % fill whole spectral dat... (the expensive part)
+          dat.nos = -nspill:nw+nspill;    % indices of k slices spectral data
+          if v, fprintf('meth=int make dat: nw=%d nspill=%d eps=%g\n',nw,nspill,o.eps); end
+          dat.kos = klo + o.eps * dat.nos;      % k's where spectra computed
+          for n=1:numel(dat.nos), k = dat.kos(n); % ----- dat loop over windows
+            if v, fprintf('wDtN int dat k* = %.15g ...    \t', k); end
+            [d U] = p.filteredDtNspectrum(k, o);
+            betakeep = 1.3*o.eps*k;  % since beta_dot is roughly -k
+            ii = find(abs(real(d))<=betakeep*o.p/2);      % indices to keep
+            [~,j] = sort(real(d(ii)));        % beta's in incr real part
+            if v, fprintf('%d EVs of wDtN kept\n', numel(ii)); end
+            bes = d(ii(j)); fs = U(:,ii(j)); % beta's (assume ascending), f's
+            dat.bes(n,1:numel(bes)) = bes;   % save to dat
+            dat.nes(n) = numel(bes);         % number of eigenvalues kept
+            for i=1:numel(bes), dat.fs(n,:,i) = fs(:,i)/ixnrm(fs(:,i)); end
+          end                                     % -------
+        end
+        kj = []; err.imbej = []; err.koj = []; p.ndj = []; p.coj = []; % koj will store nearest slice to each kpred
+        if datavail % now use dat to do the prediction...
+        i = find(dat.nos==0);          % moving index into dat objects
+        for n=0:nw-1                             % ----- pred loop over windows
+          k0 = dat.kos(i);           % bottom end of k window
+          %plot(k0, real(dat.bes(i,:))./(dat.bes(i,:)~=0), 'k.'); hold on; %dat.bes(i,:), dat.bes(i+1,:)
+          betakeep = 1.1*o.eps*k0;   % smaller fudge factor in central window
+          jj=find(dat.bes(i,:)>0 & dat.bes(i,:)<betakeep);   % indices of beta's which flow could give kpred in this window [k0,k0+eps] (beta=0 is bogus)
+          if numel(jj)>0     % if no beta>0 then nothing to predict in window
+            q(1+nspill) = jj(1);     % index in current slice of smallest beta>0
+            fj = dat.fs(i,:,q(1+nspill));
+            for l=[-nspill:-1, 1:nspill+1];  % loop over lower & upper k slices
+              %plot(dat.kos(i+l), real(dat.bes(i+l,:))./(dat.bes(i+l,:)~=0), 'b.');
+              m = dat.nes(i+l);   % how many beta's to check at this slice
+              ips = nan(m,1);   % inner-products
+              for j=1:m, ips(j) = ixnip(fj,dat.fs(i+l,:,j)); end
+              jyes = find(abs(ips)>0.9);   % indices which match efunc well
+              if numel(jyes)~=1, warning(sprintf('j match prob! k=%g l=%d numel(jyes)=%d',k0,l,numel(jyes))); ips, end
+              if ips(jyes)<0, dat.fs(i+l,:,jyes) = -dat.fs(i+l,:,jyes); end
+              q(1+nspill+l) = jyes;  % which associates w/ jj(1) in this slice
+            end  % now each index q(1:2*(nspill+1)) should have been assigned
+            for j=jj
+              x = -nspill:1+nspill; % poly fit ordinates (in local window-lens)
+              y = []; for l=1:2*(nspill+1)      % poly fit data
+                y(l) = real(dat.bes(i+l-1-nspill,q(l))); end
+              pp = polyfit(x,y,o.p-1); x0 = fzero(@(x) polyval(pp,x),0.5);
+              kpred = k0 + x0*o.eps;
+              if kpred>k0 && kpred<=k0+o.eps  % collect the eigenpair
+                plot(k0+o.eps*x,y,'-'); plot(real(kpred),0,'r+');
+                
+                t = x0;   % fix up f interp to use lagrange??? *******
+                fpred = t*dat.fs(i+1,:,q(1+nspill)) + (1-t)*dat.fs(i,:,q(2+nspill)); % NB f's signs were fixed earlier so interp makes sense
+                
+                kj = [kj;kpred]; p.ndj = [p.ndj fpred]; % *** convert f to u!
+                if t<0.5; err.koj = [err.koj;k0];  % save nearest kstar as koj
+                else err.koj = [err.koj;k0+o.eps]; end
+              end
+              q = q + 1;   % increment all indices in fitting slices together
+              if j~=jj(end) && dat.bes(i+1,q(2+nspill))>0, break, end  % not in window
+            end            
+            %          for l=2+nspill:o.p     % find starting indices q at larger k slices
+          end
+          i = i+1;
+        end                                      % ------
+        p.kj = kj; p.err = err;
+        end % pred step
+        
+        
+      elseif strcmp(meth,'ntd') % .......... NtD "scaling" type method..........
+        if ~isfield(o, 'eps'), o.eps = 0.2/d1.diam; end % defaults
+        if ~isfield(o, 'khat'), if neu, o.khat = 'p'; else, o.khat = 'r'; end, end        % (most acc)
         if ~isfield(o, 'fhat'), o.fhat = 's'; end         % (")
-        sx = d1.x; snx = d1.nx; sp = d1.speed; % quad info for the one domain
-        xn = real(conj(sx).*snx); ww = p.sqrtwei.'.^2./xn; % x.n bdry func
-        ixnip = @(f,g) sum(ww.*conj(f).*g);    % 1/(x.n)-weighted inner prod
-        ixnrm = @(g) sqrt(real(ixnip(g,g)));   % 1/(x.n)-weighted bdry norm
-        xt = real(conj(sx).*1i.*snx);
+        xt = real(conj(sx).*1i.*snx); % build geom funcs upon xn, etc
         if wantmodes | ~strcmp(o.khat,'l') % todo: replace D by FFT application
           D = 2*pi*repmat(1./sp,[1 M]) .* circulant(quadr.perispecdiffrow(M));
           xnt = D*xn; xtt = D*xt; m = (xn.*xtt-xt.*xnt)./xn;  % Andrew's m func
@@ -152,22 +238,21 @@ classdef evp < problem & handle
           ktop = min(kbot + o.eps, khi); % top of current k window
           if ~datavail     % compute NtD spec and possibly eigenvectors
             if ~neu
-              k = kbot; if v, fprintf('NtD k* = %.15g ...\t', k); end
+              k = kbot; if v, fprintf('NtD k* = %.15g ...    \t', k); end
               if ~wantmodes & strcmp(o.khat,'l') % Dir; evecs not needed
               clear U; d = p.NtDspectrum(k, o);
                     else, [d U] = p.NtDspectrum(k, o); end
-            betamin = -1.1*o.eps/k;  % dat RAM penalty for excess factor here
+              betakeep = 1.1*o.eps/k;  % beta range to keep in dat (RAM hog)
             else, k = ktop;  % predict from top of interval
               if v, fprintf('DtN k* = %.15g ...\t', k); end
               if ~wantmodes % Neu; eigenvectors not needed
-              clear U; d = p.filteredDtNspectrum(k, o); % use k=ktop
-                  else, [d U] = p.filteredDtNspectrum(k, o); end
-            betamin = -1.1*o.eps*k;  % since beta_dot is roughly -k
+                clear U; d = p.filteredDtNspectrum(k, o); % use k=ktop
+              else, [d U] = p.filteredDtNspectrum(k, o); end
+              betakeep = 1.1*o.eps*k;  % since beta_dot is roughly -k
             end
             % loop over all negative eigvals and keep those khats in window...
             rd = real(d)';
-            if ~neu, ii = find(rd>betamin & rd<=0);   % NtD-eigvals to keep
-            else, ii = find(rd>betamin & rd<0); end % ** DtN-eigvals to keep
+            ii = find(rd>-betakeep & rd<=0);              % std eigvals to keep
             bes = d(ii); if exist('U','var'), fs = U(:,ii); end   % keep
             if outdat, dat.bes(n,1:numel(bes)) = bes;   % save to dat object
               dat.nes(n) = numel(bes);       % number of eigenvalues kept
@@ -200,7 +285,7 @@ classdef evp < problem & handle
               A = ixnrm(xn.*Df)^2; B = real(ixnip(f,mf)); C = ixnrm(xn.*f)^2;
               khat = evp.solvebetaode(k, be, A, B, C); % frozen A,B,C
               
-            elseif strcmp(o.khat, 'n')  % Neumann slope expt fix
+            elseif strcmp(o.khat, 'n')  % Neumann slope expt fix 1/13/14
               ns = -M/4:M/4;  % code segment for iF from filteredDtNspectrum:
               L = sum(d1.w);
               arcl = real(ifft(-1i*fft(sp).*[0 1./(1:M/2-1) 0 -1./(M/2-1:-1:1)]')); % spectral approx to sampled cumulative arclength
@@ -217,6 +302,22 @@ classdef evp < problem & handle
               dbe = -dbe*k; %dbe = -k*(1 + 0.03*rand(1)); % jiggle them
               khat = k - be/dbe;  % use as estimator
             
+            elseif strcmp(o.khat, 'p')  % Neu ODE numerical expt 1/14/14
+              ns = -M/4:M/4;  % code segment for iF from filteredDtNspectrum:
+              L = sum(d1.w);
+              arcl = real(ifft(-1i*fft(sp).*[0 1./(1:M/2-1) 0 -1./(M/2-1:-1:1)]')); % spectral approx to sampled cumulative arclength
+              arcl = arcl'/2/pi + L*d1.seg(1).t'; % add growing component
+              P = exp((-2i*pi/L)*ns'*arcl); % ns=freqs. Dense DFT mat
+              Pt = P'; PW = P.*repmat(d1.w/L,[numel(ns) 1]);
+              kfilt = k; xin = 2*pi/L/kfilt*ns;  % freq xi grid
+              Fk = max(real(sqrt(1-xin.^2)),0.1*kfilt^(-1/3)); % match prefac !!
+              iF = Pt*(diag(Fk.^-1)*PW); % note no high freq cutoff,  = A^-1
+              F = Pt*(diag(Fk)*PW); Ff = F*f; % F = A, kill high freq by design
+              u = iF * (f./xn); Du = D*u; % get neu bdry data from efunc
+              A = ixnrm(xn.*u)^2; B = ixnrm(xn.*Du)^2; % get ODE consts
+              C = 2*real(ip(Ff,xt.*Du)); E = ixnrm(xn.*Ff)^2;
+              khat = evp.solvebetaodeneu(k, be, A, B, C, E); % frozen A,B,C,E
+              
             end
             if wantmodes                     % recon boundary efunc...
               if strcmp(o.fhat, 'f'), fhat = f;
@@ -639,15 +740,17 @@ classdef evp < problem & handle
     
     % methods needing an EVP object, but defined by separate files...
     [d V] = NtDspectrum(p, kstar, opts)
+    [d V] = filteredDtNspectrum(p, kstar, opts)
    end % methods
   
   % --------------------------------------------------------------------
   methods(Static)    % these don't need EVP obj to exist to call them...
     [k_weyl] = weylcountcheck(k_lo, k, perim, area, dkfig)   % old Weyl routine
     kh = solvebetaode(kstar, beo, A, B, C, Ap, Bp, Cp)  % NtD scaling helper
+    kh = solvebetaodeneu(kstar, beo, A, B, C, E)  % DtN scaling helper
     [xm ym info] = gridminfit(f, g, o)   % gridded vectorial minimizer
     [xm fm info] = iterparabolafit(f, x, y, opts)   % minimization helper
     [A,B,C] = para_fit(e, f)        % parabolic helper
-    [t V F G] = tensionsq(d, E, opts)  % domain eigenvalue solver helper
+    [t V F G A B] = tensionsq(d, E, opts)  % domain eigenvalue solver helper
   end
 end

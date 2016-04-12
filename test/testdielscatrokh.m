@@ -8,7 +8,8 @@ n = 1.4;                                          % interior refractive index
 M = 110; s = segment.smoothstar(M, 0.2, 3);       % smooth closed segment
 di = domain(s, 1); di.setrefractiveindex(n);      % interior
 de = domain([], [], s, -1);                       % exterior
-o.quad = 'a'; o.ord=16;                           % quadr scheme and order
+%o.quad = 'a'; o.ord=16;                          % Alpert quadr scheme & order
+o.quad = 'm';                                     % ..or Kress quadr scheme
 s.addinoutlayerpots('d', o);                      % new double-sided layerpot
 s.addinoutlayerpots('s', o);                      % "
 setmatch(s, 'diel', 'TM');

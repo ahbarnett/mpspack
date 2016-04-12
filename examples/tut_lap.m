@@ -20,16 +20,16 @@ figure; opts.comparefunc = f; p.showsolution(opts);
 
 if verb, % generate f:sd
   figure; set(gca,'fontsize', 14); s.plot;
-  print -depsc2 ../doc/seg.eps
+  print -depsc2 ../doc/figs/seg.eps
   figure; set(gca,'fontsize', 14); opts.gridinside=0.05; d.plot(opts); axis off
-  print -depsc2 ../doc/dom.eps
+  print -depsc2 ../doc/figs/dom.eps
   % generate f:u
   figure; set(gca,'fontsize', 14); p.showsolution; axis off;
   h=colorbar; set(h,'fontsize',20);
-  print -depsc2 -painters ../doc/u.eps
+  print -depsc2 -painters ../doc/figs/u.eps
   figure; set(gca,'fontsize', 14); p.showsolution(opts); axis off
   h=colorbar; set(h,'fontsize',20);
-  print -depsc2 -painters ../doc/uerr.eps
+  print -depsc2 -painters ../doc/figs/uerr.eps
   % problem: -painters stops the transparency being correctly rendered.
   close all
 end

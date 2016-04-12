@@ -1,4 +1,4 @@
-function [t V F G] = tensionsq(d, E, opts)
+function [t V F G A B] = tensionsq(d, E, opts)
 % TENSIONSQ - return tension eigen/singular values for domain at given frequency
 %
 % t = tensionsq(d, E, opts) finds tension squared for domain d,
@@ -40,38 +40,55 @@ wei = 1+0*xn; if opts.tensstar, wei = 1./xn; end % weighting function for A, F
 
 if opts.meth(1)=='g'| opts.meth(1)=='i'   % GSVD: Timo's. overrides gep method
   if opts.meth(1)=='i'          % interior pts
+    if neu, error('neu GSVD interior pts not implemented!'); end
     A = repmat(sqrt(s.w.'),[1 N]) .* d.evalbases(s);
     B = sqrt(opts.a) * d.evalbases(opts.i);
-  else                      % Dirichlet-interior norm approx
+  else                
     [A An] = d.evalbases(s);
-    A = repmat(sqrt(s.w.'.*wei),[1 N]) .* A;           % bdry norm
-    B = repmat(sqrt(xn .* s.w.' / (2*E)),[1 N]) .* An; % n-deriv approx int norm
+    if ~neu                          % Dirichlet-interior norm approx
+      A = repmat(sqrt(s.w.'.*wei),[1 N]) .* A;          % bdry norm
+      B = repmat(sqrt(xn .* s.w.'/(2*E)),[1 N]) .* An;  % Dir-case int norm
+    elseif neu==1                             % Neumann BC case, val-part only
+      B = repmat(sqrt(xn .* s.w.'/2),[1 N]) .* A; % UB part of Neu-case int norm
+      A = repmat(sqrt(s.w.'),[1 N]) .* An;        % bdry norm
+    elseif neu==2                             % Neumann BC case, try sqrt(G)
+      [G A An] = intnormmatrix(d);   % helper in bdry/has
+      eig(G)
+      B = chol(G);                           % now R'*R = G
+      A = repmat(sqrt(s.w.'),[1 N]) .* An;        % bdry norm
+    end
   end
   if opts.meth(2)=='g'                 % don't regularize
     if wantvecs
-      [UU VV V C S] = gsvd(A,B);  % V gives eigvecs
+      [UU VV V C S] = gsvd(A,B);
+      V = inv(V'); % convert back to usual GSVD X notation; gives eigvecs
       t = sqrt(diag(C'*C)./diag(S'*S));
     else, t = gsvd(A,B); end
     
   elseif opts.meth(2)=='t'    % Timo's code; uses QR since faster than tall SVD
-    [Q,R]=qr([A;B],0); [U,S,V]=svd(R); S=diag(S);
-    ii = abs(S)>opts.eps*max(abs(S));   % note I scaled it to max(sig val)
+    [Q,R]=qr([A;B],0); [U,S,V]=svd(R); s=diag(S);
+    ii = abs(s)>opts.eps*max(abs(s));   % note I scaled it to max(sig val)
     Q=Q*U(:,ii);  % cols of Q now onb for Col[A;B] at numerical rank.
     if wantvecs
+      fprintf('rank = %d\n',sum(ii))
       [UU VV X C S] = gsvd(Q(1:size(A,1),:),Q(size(A,1)+1:end,:));
-      V = V(:,ii) * X;          % rotate eigvecs back (no R needed! weird)
+      X = inv(X');   % to convert to usual gsvd X notation. 12/8/15
+      V = V(:,ii) * (diag(1./s(ii)) * X);  % rotate eigvecs back (no R needed!)
       t = sqrt(diag(C'*C)./diag(S'*S));
     else, t = gsvd(Q(1:size(A,1),:),Q(size(A,1)+1:end,:)); end
-    
+      
   elseif opts.meth(2)=='s'      % use SVD to get numerical col space, slower
-    [Q S V] = svd([A;B], 'econ'); S=diag(S);
-    ii = abs(S)>opts.eps*max(abs(S)); Q=Q(:,ii);
+    [Q S V] = svd([A;B], 'econ'); s=diag(S);
+    ii = abs(s)>opts.eps*max(abs(s)); Q=Q(:,ii);
     if wantvecs
+      fprintf('rank = %d\n',sum(ii))
       [UU VV X C S] = gsvd(Q(1:size(A,1),:),Q(size(A,1)+1:end,:));
-      V = V(:,ii) * X;             % rotate eigvecs back
-      t = sqrt(diag(C'*C)./diag(S'*S));
+      X = inv(X');   % to convert to usual gsvd X notation.
+      V = V(:,ii) * (diag(1./s(ii)) * X);             % rotate eigvecs back
+    t = sqrt(diag(C'*C)./diag(S'*S));
     else, t = gsvd(Q(1:size(A,1),:),Q(size(A,1)+1:end,:)); end
   end
+  F = []; G = [];  % dummy
   t = t.^2;  % square the gsingvals to match the GEP version
   return
   

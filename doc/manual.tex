@@ -4,31 +4,20 @@
 
 \begin{document}
 \title{\mpspack\ user manual}
-\author{Alex Barnett\footnote{Department of Mathematics, Dartmouth College, Hanover, NH, 03755, USA}
-\ and Timo Betcke\footnote{Department of Mathematics,
-University College London, Gower Street, London, WC1E 6BT, UK}}
-\date{\today}   % how pipe from getrevisionnumber + 1?
+\author{Alex Barnett\footnote{Department of Mathematics, Dartmouth College, Hanover, NH, 03755, USA; and Simons Center for Data Analysis, Simons Foundation, NY, NY, 10011} \footnote{Timo Betcke co-conceived, and co-authored in the period 2008--2009.}}
+\date{\today}
 
 \maketitle
 \begin{abstract}
 \mpspack\ is a fully object-oriented \matlab\ toolbox for
 solving Laplace, Helmholtz, wave scattering, and related PDE boundary-value
 and eigenvalue problems
-on piecewise-homogeneous 2D domains, including those with corners.
-The philosophy is to
-%represent solutions using
-use basis functions
-which are particular solutions to the
-PDE in some region; solving is thus reduced to matching on
-the boundary (or on boundaries of subregions).
-This idea is known as the Method of Particular Solutions, or as Trefftz,
-ultra-weak, or non-polynomial 
-methods in the FEM community.
-Basis functions include plane-wave, Fourier-Bessel,
-corner-adapted expansions, and
-fundamental solutions.
-Layer potential representations and associated
-singular quadrature schemes are also available.
+on piecewise-homogeneous 2D domains, including those with corners
+and periodicity.
+The representations are i) particular solution basis functions (Trefftz or non-polynomial FEM, eg plane waves, Fourier--Bessel local expansions, fundamental solutions, corner-adapted expansions), and ii) layer potentials on interfaces
+(with associated singular quadrature schemes).
+In all cases the problem is reduced to a linear system on
+discretized boundaries (interfaces).
 It is designed to
 be simple to use, and to enable highly-accurate solutions.  This is
 the user manual; for a more hands-on approach and worked examples
@@ -37,13 +26,23 @@ see the accompanying tutorial.
 
 
 \bfi % ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-\ig{width=\textwidth}{hard.eps}
+\ig{width=\textwidth}{figs/hard.eps}
 \ca{Sound-hard (homogeneous Neumann boundary condition) scattering from a smooth
 obstacle using a fundamental solutions basis in \mpspack.
 Left: incident wave. Center: scattered wave.
 Right: total solution field.}{f:hard}
 \efi
 
+
+
+\subsection{Installation}
+
+See the file {\tt README.md} in the top directory of this package for
+basic installation.
+
+See Section~\ref{s:fmm} for linking to fast multipole libraries
+for faster evaluation and iterative solution in the layer-potential
+setting.
 
 \section{Overview}
 \label{s:overview}
@@ -126,78 +125,6 @@ our data structures and design choices, limitations, and acknowledgments.
 As usual you
 may also get help on any \mpspack\ command by typing {\tt help} followed
 by the command name at the \matlab\ prompt.
-
-
-\subsection{Installation}
-
-Requirements: \matlab\ version 7.6 (2008a) or newer is needed,
-since we make heavy use of object-oriented programming features.
-No other \matlab\ toolboxes are needed.
-The package should work out of the box, although
-some aspects (such as checking if points are in are polygons)
-may be unnecessarily slow; more about that shortly.
-
-The project is hosted at the repository
-\co{http://code.google.com/p/mpspack}
-There are three alternative methods to download and unpack:
-\ben
-\item
-Ensure you have subversion ({\tt svn}) installed.
-This is available from {\tt http://subversion.tigris.org}.
-Anonymous check out (download) of \mpspack\ is then via the subversion
-command:
-\co{svn co http://mpspack.googlecode.com/svn/trunk/ mpspack}
-This creates a directory {\tt mpspack} containing the toolbox.
-
-You might prefer a more user-friendly graphical
-subversion client such as those listed at {\tt
-http://subversion.tigris.org/links.html\#clients}
-
-\item
-Get a gzip-compressed tar archive from
-\co{http://code.google.com/p/mpspack/downloads/list}
-In a UNIX environment you may now
-unpack this with
-\co{tar zxvf mpspack-1.33.tar.gz}
-This creates the directory {\tt mpspack} containing the toolbox.
-
-\item Get a zip-compressed archive from
-\co{http://code.google.com/p/mpspack/downloads/list}
-
-\een
-You should now add the {\tt mpspack}
-directory to your \matlab\ path, for instance by adding the line
-\co{addpath 'path/to/mpspack';}
-to your \matlab\ {\tt startup.m} file.
-You are now ready to start \matlab\ and use \mpspack\ !
-
-There are some optional fast basis and other math libraries
-(C and Fortran with MEX interfaces), which although not needed for
-\mpspack\ to work, should improve efficiency (see Section \ref{s:tweak}).
-These can be compiled in a UNIX environment as follows
-(we have not yet tried them in other operating systems):
-from the {\tt mpspack} directory type {\tt make}.
-You may first need to adjust the library locations in {\tt make.inc},
-as explained in that file.
-If you wish to use faster regular Bessel functions you may want first to
-install the GNU Scientific Library \cite{GSL}.
-(If GNU Scientific Library \cite{GSL} is not installed,
-you will need to remove the lines in {\tt @utils/Makefile} which
-compile codes using GSL before executing {\tt make}).
-
-As of version 1.33 we have switched to \matlab\ native in-polygon checking
-by default, but you might want to experiment with switching to
-Bruno Luong's MEX files which are included for
-64-bit linux or 32/64-bit Windows environments. (These are 100x faster
-than 2012a or earlier \matlab).
-To do this, edit the file @utils/inpolywrapper.m as follows:
-comment out the first code line labelled "Matlab's native inpolygon",
-and uncomment the last line. This will use Bruno Luong's inpolygon
-MEX files (which are 100x faster than MATLAB 2012a or earlier).
-You may test it works by running test/testdomain.m without errors.
-
-See Section~\ref{s:fmm} for linking to fast multipole libraries.
-
 
 \subsection{What problems can \mpspack\ solve?}
 \label{s:bvp}
@@ -290,7 +217,7 @@ We now discuss how software data structures represent the above objects.
 
 
 \bfi % fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-\ig{width=\textwidth}{relat.eps}
+\ig{width=\textwidth}{figs/relat.eps}
 \ca{Relationship between segments, domains,
 and basis sets in a simple example.
 The physical geometry is shown on the left. There is a regular
@@ -871,7 +798,7 @@ that we do not list here.
 \label{s:fmm}
 
 \mpspack\ can make use of the Helmholtz FMM library
-which is part of {\tt fmmlib2d} from Greengard-Gimbutas 2011, available here:
+which is part of {\tt fmmlib2d} from Greengard--Gimbutas, available here:
 \begin{verbatim}
 http://www.cims.nyu.edu/cmcl/fmm2dlib/fmm2dlib.html
 \end{verbatim}
@@ -898,7 +825,8 @@ which can test the FMM for potential evaluations,
 and should run in a fraction of a second.
 
 {\bf Iterative solutions:}
-To use FMM for iterative solution (this is an independent task),
+To use FMM for iterative solution (this is an independent task from the
+evaluation tested above),
 you'll need the fast Alpert quadrature correction codes of Barnett, from
 \begin{verbatim}
 http://www.math.dartmouth.edu/~ahb/software/#lp2d
@@ -917,17 +845,16 @@ to solve, and 0.3 sec to evaluate, on a modern CPU.
 
 Current bugs and issues are listed at the repository site,
 
-{\tt http://code.google.com/p/mpspack/issues/list}
+{\tt https://github.com/ahbarnett/mpspack/issues}
 
-Please alert the authors to any new
+Please alert me to any new
 bugs that you discover, including a description
 of how to reproduce the behavior, using this interface.
 
-You may also contact the authors with suggestions
-via their email addresses
-given on the source page {\tt http://code.google.com/p/mpspack}
+However please note that \mpspack\ will not have much future
+work invested in it. Contact me if you want to contribute.
 
-Limitations of, and planned future improvements to, the software include:
+Here is an old list of limitations and future ideas, from back in 2010:
 
 \bi
 \item Two dimensions. Quadrature, decomposition into subdomains, and
@@ -997,10 +924,6 @@ representation of a radiating solution. This needs a variant of a
 multipole-to-local matrix of $J$-Bessel functions.
 \ei
 
-Please contact the authors if you implement any of these and/or want
-to join the project!
-
-
 
 \section{Acknowledgments and credits}
 
@@ -1014,7 +937,7 @@ work of Barnett--Betcke \cite{mfs,mush,polygonscatt},
 Barnett--Greengard \cite{qplp,qpsc},
 and Barnett--Hassell \cite{sca},
 as well as quadrature schemes of Kress \cite{coltonkress},
-Kapur-Rokhlin \cite{kapur}, and Alpert \cite{alpert},
+Kapur--Rokhlin \cite{kapur}, and Alpert \cite{alpert},
 far-field evaluation by Hawkins,
 and interfaces to the fast multipole method of Greengard--Rokhlin
 as implemented by Greengard--Gimbutas.
@@ -1022,19 +945,19 @@ The concept and need for the package came out of our work in eigenvalue
 and scattering problems, using global basis methods.
 In terms of code design, we
 have been influenced by, and learned useful tricks from,
-the Schwarz-Christoffel toolbox by Toby Driscoll,
+the Schwarz--Christoffel toolbox by Toby Driscoll,
 the {\tt FMMToolbox} by MadMax Optics, Inc.,
 and the {\tt chebfun} system
 by L. N. Trefethen, Z. Battles, T. Driscoll, R. Pach\'{o}n, and R. Platte.
-Alex Barnett's work is supported by National Science Foundation
+Alex Barnett's work was supported by National Science Foundation
 grants DMS-0507614, DMS-0811005, DMS-1216656, and the Class of '62 Fellowship at
 Dartmouth College.
-Timo Betcke's work is supported
+Timo Betcke's work was supported
 by Engineering and Physical Sciences Research Council Grant EP/F06795X/1.
 
 \mpspack\ is released under the GNU Public License, as follows:
 \begin{verbatim}
-Copyright (C) 2008 - 2012, Timo Betcke, Alex Barnett
+Copyright (C) 2008 - 2016, Timo Betcke, Alex Barnett
 
 MPSpack is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -1072,7 +995,7 @@ Darren Engwirda, 2005-2007.
 Doug M.~Schwarz, 6/16/08.
 \item {\tt utils/goodcaxis.m} includes code of B. Gustavsson 2005-02-09
 \item {\tt *farfield.m} routines for far-field scattering evaluation
-and {\tt example/farfield\_hawkins.m}, by Stuart Hawkins, 2014.
+for MFS and {\tt example/farfield\_hawkins.m}, by Stuart Hawkins, 2014.
 \ei
 
 \include{appendix}

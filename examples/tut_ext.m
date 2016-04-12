@@ -22,10 +22,10 @@ opts.comparefunc = f; figure; p.showsolution(opts);
 if verb
   figure; set(gca,'fontsize', 20);
   semilogy(r, '+-'); xlabel('N'); ylabel('bdry err norm');
-  print -depsc2 ../doc/extconv.eps
+  print -depsc2 ../doc/figs/extconv.eps
   figure; set(gca,'fontsize', 20);
   d.plot; p.showbasesgeom; p.showsolution; axis off;
-  print -depsc2 ../doc/extgeom.eps
+  print -depsc2 ../doc/figs/extgeom.eps
 end
 
 % multiply-connected domains. 1 hole...
@@ -39,7 +39,7 @@ smtref.translate(-0.3+0.5i);             % move the segment smtref
 d = domain(tref, 1, {c smtref}, {-1 -1});
 if verb  % generate f:doms a
   figure; set(gca, 'fontsize', 14); opts.gridinside=0.05; d.plot(opts);axis off;
-  print -depsc2 ../doc/twoholes.eps
+  print -depsc2 ../doc/figs/twoholes.eps
 end
   
 % maybe solve MFS in multiply-connected case? Timo...

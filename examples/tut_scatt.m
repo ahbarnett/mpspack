@@ -17,7 +17,7 @@ p.showthreefields;
 if verb   %   generate f:soft
   figure; o.dx=0.01; o.bb = 2*[-1 1 -1 1];
   p.showthreefields(o); %set(gca,'fontsize',20);
-  print -depsc2 ../doc/soft.eps
+  print -depsc2 ../doc/figs/soft.eps
 end
 
 tref.setbc(1, 'N', []);       % homogeneous Neumann: sound-hard
@@ -34,5 +34,5 @@ p.solvecoeffs; p.bcresidualnorm, p.showthreefields;
 if verb   %   generate f:diel
   figure; o.dx=0.01; o.bb = 2*[-1 1 -1 1];
   p.showthreefields(o); %set(gca,'fontsize',20);
-  print -depsc2 ../doc/diel.eps
+  print -depsc2 ../doc/figs/diel.eps
 end

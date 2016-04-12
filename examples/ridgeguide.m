@@ -16,7 +16,7 @@ ss = segment.polyseglist(n, [s/2+h, s/2, am/2, am/2+1i*bm, -am/2+1i*bm, -am/2, -
 seg = [ss(1:end-1) segment(n/2,[-s/2+R+h,R,pi,pi/2],'pc',o) segment(n,[-s/2+R+h+1i*R, s/2-R+h+1i*R],'pc',o) segment(n/2,[s/2-R+h,R,pi/2,0],'pc',o)];
 
 d = domain(seg, 1);
-if verb, figure; d.plot; print -depsc2 ../doc/ridgeguidegeom.eps; end
+if verb, figure; d.plot; print -depsc2 ../doc/figs/ridgeguidegeom.eps; end
 seg.setbc(-1, bc);               % BC's applied on inside: note -1
 p = evp(d);                     % sets up eigenvalue problem object
 if bc=='D', d.addlayerpot(seg, 'd'); else, d.addlayerpot(seg, 's'); end
@@ -26,6 +26,6 @@ o.tol = 1e-4; % make sure to capture even bad ones
 kint = [1 8]; tic; p.solvespectrum(kint, 'fd', o); toc
 tic; [u gx gy] = p.showmodes; toc
 
-if verb, if bc=='D', print -depsc2 ../doc/ridgeguideDlow.eps
-         else, print -depsc2 ../doc/ridgeguideNlow.eps
+if verb, if bc=='D', print -depsc2 ../doc/figs/ridgeguideDlow.eps
+         else, print -depsc2 ../doc/figs/ridgeguideNlow.eps
   end, end

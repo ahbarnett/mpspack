@@ -2,11 +2,13 @@ function [xm ym info] = gridminfit(f, g, o)
 % GRIDMINFIT - use grid to find all minima of min-sing-val-like 1D vector func
 %
 % This is a global 1d minimizer optimized for vector functions such as the
-%   list of  singular or tension values vs k in a MPS-style eigenvalue
-%   solver. Zero is special, ie, it is expected minima close to zero in value.
+%   (constant-length) list of singular or tension values vs k in a MPS-style
+%   eigenvalue solver. Zero is special, ie, it is expected minima close to
+%   zero in value.
 %
 % [xm ym] = gridminfit(f, xgrid), where f is handle of a func
-%   with interface [ys] = f(x) returning a *vector* of m values (m>=1), and
+%   with interface [ys] = f(x) returning a *vector* of m values (m>=1 and
+%   constant), and
 %   xgrid is a grid, finds all minima of the minimum of the
 %   entries in the vector lying in the interval, using an initial search on
 %   the grid. iterparabolafit is called on triples of grid samples at local grid
@@ -36,7 +38,10 @@ function [xm ym info] = gridminfit(f, g, o)
 %
 % See also: EVP.ITERPARABOLAFIT, EVP.SOLVESPECTRUM
 
+% 12/6/15 emph m const otherwise crashes
+
 % Copyright (C) 2011, Alex Barnett
+
 
 if nargin<3 | isempty(o), o = []; end    % process options, defaults...
 if ~isfield(o, 'xtol'), o.xtol = 1e-8; end  % default returned arg tolerance

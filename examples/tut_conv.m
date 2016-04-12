@@ -23,7 +23,7 @@ figure; semilogy(r, '+-'); xlabel('N'); ylabel('bdry err norm');
 
 if verb, % generate f:conv
   figure; set(gca,'fontsize', 20); semilogy(r, '+-');
-  xlabel('N'); ylabel('bdry err norm'); print -depsc2 ../doc/N.eps
+  xlabel('N'); ylabel('bdry err norm'); print -depsc2 ../doc/figs/N.eps
 end
 
 % radial function star-shaped domain
@@ -38,7 +38,7 @@ p.solvecoeffs; p.bcresidualnorm
 figure; opts.comparefunc = f; p.showsolution(opts);
 if verb % generate f:radfunc
   h=colorbar; set(h,'fontsize',20); hold on; s.plot; axis off;
-  print -depsc2 -painters ../doc/radfunc.eps
+  print -depsc2 -painters ../doc/figs/radfunc.eps
 end
 
 % general analytic domain: crescent

@@ -12,7 +12,7 @@ p.solvespectrum([2 10], 'fd');  % Fredholm det method, no modes
 p.weylcountcheck(p.kj(1),p.kj,d.perim,d.area);
 o.modes = 1; p.solvespectrum([2 10], 'fd', o);  % want modes too
 p.showmodes;
-if verb, print -depsc2 ../doc/rfnDlow.eps
+if verb, print -depsc2 ../doc/figs/rfnDlow.eps
 end
 
 % check L2 norm roughly right: (default is grf)
@@ -31,7 +31,7 @@ o.modes = 1; p.solvespectrum([1 7.8], 'fd', o);
 figure;
 p.weylcountcheck(p.kj(1),p.kj,-d.perim,d.area); % flip sign of perim for Neu BCs
 p.showmodes;
-if verb, print -depsc2 ../doc/rfnNlow.eps
+if verb, print -depsc2 ../doc/figs/rfnNlow.eps
 end
 
 % check L2 norm roughly right: (default is basis; should be grid-norm'ed)
@@ -51,7 +51,7 @@ tic; o.eps = 0.1; o.khat = 'r'; o.fhat = 's'; o.modes = 1;
 p.solvespectrum([30 31], 'ntd', o);
 p.showmodes;
 toc
-if verb, print -depsc2 ../doc/rfnDk30.eps
+if verb, print -depsc2 ../doc/figs/rfnDk30.eps
 end
 
 % Dirichlet triangle
@@ -64,5 +64,5 @@ d.addlayerpot(s, 'd');          % DLP basis set appropriate for Dir BC
 o.modes = 1; tic; p.solvespectrum([4 20], 'fd', o); toc
 p.weylcountcheck(p.kj(1),p.kj,d.perim,d.area);
 tic; p.showmodes; toc
-if verb, print -depsc2 ../doc/triDlow.eps
+if verb, print -depsc2 ../doc/figs/triDlow.eps
 end

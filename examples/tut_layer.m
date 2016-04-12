@@ -19,13 +19,13 @@ if verb,       % generate f.lp a,b
   g=figure; set(gca,'fontsize', 20); semilogy(N, e, '+-'); axis tight;
   xlabel('N'); ylabel('abs error in u(2)');
   set(gcf,'paperposition', [.25 .25 6 8]);
-  print -depsc2 ../doc/lpconv.eps
+  print -depsc2 ../doc/figs/lpconv.eps
   figure; plot(eig(diag(1./p.sqrtwei)*p.A), '+'); set(gca,'fontsize', 20);
   axis([-.1 1.1 -.6 .6]); axis equal;
   hold on; t=0:0.01:2*pi; plot(0.5 + 0.5*exp(1i*t), 'r-');
   xlabel('Re[\lambda(1/2+D)]'); ylabel('Im[\lambda(1/2+D)]');
   set(gcf,'paperposition', [.25 .25 6 8]);
-  print -depsc2 ../doc/lpeig.eps
+  print -depsc2 ../doc/figs/lpeig.eps
 end
 
 % Demo BWLP combined-field... (note I changed -ikS sign on Timo's suggestion)
@@ -38,11 +38,11 @@ if verb,       % regenerate f.lp a, and generate f.lp c
     e(i) = abs(f(2) - p.pointsolution(pointset(2)));
   end
   figure(g); hold on; semilogy(N, e, 'go--'); axis tight;
-  print -depsc2 ../doc/lpconv.eps
+  print -depsc2 ../doc/figs/lpconv.eps
   figure; plot(eig(diag(1./p.sqrtwei)*p.A), '+'); set(gca,'fontsize', 20);
   hold on; t=0:0.01:2*pi; plot(0.5 + 0.5*exp(1i*t), 'r-');
   axis equal tight; axis(1.05*axis);
   xlabel('Re[\lambda(1/2+D-ikS)]'); ylabel('Im[\lambda(1/2+D-ikS)]');
   set(gcf,'paperposition', [.25 .25 6 8]);
-  print -depsc2 ../doc/lpeig_bwlp.eps
+  print -depsc2 ../doc/figs/lpeig_bwlp.eps
 end

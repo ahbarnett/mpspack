@@ -35,9 +35,9 @@ pr.pointsolution(pointset(0))               % solution u value at origin
 
 if 0          % output the figure used in the tutorial PDF file
   opts.dx = 0.02; opts.bb = [-4 4 -4 4]; pr.showthreefields(opts);
-  print -depsc2 ../doc/dielhole.eps
+  print -depsc2 ../doc/figs/dielhole.eps
   figure; pr.plot; pr.showbasesgeom; axis tight;
-  print -depsc2 ../doc/dielholegeom.eps
+  print -depsc2 ../doc/figs/dielholegeom.eps
 end
 
 % SET UP CONVERGENCE STUDY...
