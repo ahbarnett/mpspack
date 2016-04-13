@@ -73,7 +73,7 @@ To test your basic installation:
 in MATLAB make sure you're in the `mpspack` top directory and type
 `run test/testdielscatrokh` which should take about 1 second to run
 and produce a wave scattering figure from a smooth dielectric domain,
-along with a pointwise error, which should be small (ie less than 1e-14).
+along with a pointwise error, which should be small (ie around 1e-14).
 
 To test whether your tweaks installation worked:
 
@@ -87,15 +87,15 @@ See [tutorial](doc/tutorial.pdf) and [manual](doc/manual.pdf) for detailed examp
 
 ## Examples
 
-1. Frequency-domain scattering from a square, accurate to 10 digits, computed in a few seconds on a laptop. Spectral convergence is achieved using the following ingredients: decomposition into subdomains (nonpolynomial FEM), fractional-order Fourier-Bessel expansions around corners, and an exterior fundamental solutions representation. In MPSpack this only 20 lines of code for Dirichlet or Neumann cases:
+1. Frequency-domain scattering from a square, accurate to 10 digits, computed in a few seconds on a laptop. Spectral convergence is achieved using the following ingredients: decomposition into subdomains (nonpolynomial FEM), fractional-order Fourier-Bessel expansions around corners, and an exterior fundamental solutions representation. In MPSpack this only 20 lines of code for Dirichlet or Neumann cases (see `examples/tut_square.m`):
 
   ![see examples/tut_square.m](gallery/sqscatt2_cut.png)
 
-1. The first 45 Dirichlet eigenmodes of a smooth planar domain, computed to 12 digit accuracy and evaluated on a grid of 3600 points, in around 1 second per mode. Convergence is again spectral, using a layer potential, Kress quadratures, and analytic root-finding on a Fredholm determinant. 9 lines of  MPSpack code:
+1. The first 45 Dirichlet eigenmodes of a smooth planar domain, computed to 12 digit accuracy and evaluated on a grid of 3600 points, in around 1 second per mode. Convergence is again spectral, using a layer potential, Kress quadratures, and analytic root-finding on a Fredholm determinant. 9 lines of  MPSpack code (see `examples/tut_evp.m`):
 
   ![see examples/tut_evp.m](gallery/rf_45modes.png)
 
-1. Finally, an entertaining example of acoustic (sound-hard) scattering from some digitized letter shapes, computed to 10 digit accuracy by Perrin Meyer. The wave is incident from about 4 o'clock:
+1. Finally, an entertaining example of acoustic (sound-hard) scattering from some smoothly digitized letter shapes, computed to 10 digit accuracy by Perrin Meyer (contact him for code). The wave is incident from about 4 o'clock:
 
   ![contact Perrin Meyer for code](gallery/hny2014_perrin_cut.png)
 
