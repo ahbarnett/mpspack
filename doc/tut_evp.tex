@@ -195,7 +195,8 @@ results in ill-conditioned and/or rectangular matrices.
 Ironically, despite the name of this package,
 code for the MPS approach to eigenproblems is in a less complete state.
 
-New high-frequency Neumann inclusion bounds (Barnett--Hassell--Tacy 2015)
+New high-frequency Neumann inclusion bounds
+\cite{ninc}
 are implemented in the codes in \verb+examples/neumann_inclusion+;
 see the {\tt README}. This produces for example, Fig.~\ref{f:neuhigh},
 with 15 digits of eigenvalue accuracy.
@@ -203,8 +204,8 @@ This is computed by the code \verb+examples/neumann_inclusion/tbl_mfsgsvdincl.m+
 An MFS basis is used, with imaginary displacement for the source point choice.
 
 Work is needed to bring in the various Dirichlet methods into the
-{\tt evp.gsvdtension.m} code which is the optimal implementation for
-the Neumann case.
+{\tt evp.gsvdtension} code which is the cleanest and most accuracte
+implementation for the Neumann case.
 
 There are also MPS methods such as {\tt evp.crudempssolvespectrum}
 that are incomplete, orphaned, or in development.

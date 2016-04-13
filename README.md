@@ -5,7 +5,7 @@
 MPSpack is a user-friendly and fully object-oriented MATLAB toolbox
 that implements the method of particular solutions (aka Trefftz or
 nonpolynomial FEM, including the method of fundamental solutions,
-Fourier--Bessel local expansions, singular corner expansions), and
+Fourier-Bessel local expansions, singular corner expansions), and
 integral equation methods (including some basic corner handling), for
 the efficient and often spectrally-accurate solution of Laplace
 eigenvalue problems, interior/exterior Helmholtz boundary-value
@@ -87,17 +87,31 @@ See `doc/tutorial.pdf` and `doc/manual.pdf` for detailed examples and usage.
 
 ## Examples
 
-1. Frequency-domain scattering from a square, accurate to 10 digits, computed in a few seconds on a laptop. Spectral convergence is achieved using the following ingredients: decomposition into subdomains (nonpolynomial FEM), fractional-order Fourier-Bessel expansions around corners, and an exterior fundamental solutions representation. In MPSpack this only 20 lines of code.
+1. Frequency-domain scattering from a square, accurate to 10 digits, computed in a few seconds on a laptop. Spectral convergence is achieved using the following ingredients: decomposition into subdomains (nonpolynomial FEM), fractional-order Fourier-Bessel expansions around corners, and an exterior fundamental solutions representation. In MPSpack this only 20 lines of code for Dirichlet or Neumann cases:
 
-![square scattering](gallery/sqscatt2.png)
+  ![see examples/tut_square.m](gallery/sqscatt2_cut.png)
 
-2.
+1. The first 45 Dirichlet eigenmodes of a smooth planar domain, computed to 12 digit accuracy and evaluated on a grid of 3600 points, in around 1 second per mode. Convergence is again spectral, using a layer potential, Kress quadratures, and analytic root-finding on a Fredholm determinant. 9 lines of  MPSpack code:
+
+  ![see examples/tut_evp.m](gallery/rf_45modes.png)
+
+1. Finally, an entertaining example of acoustic (sound-hard) scattering from some digitized letter shapes, computed to 10 digit accuracy by Perrin Meyer. The wave is incident from about 4 o'clock:
+
+  ![contact Perrin Meyer for code](gallery/hny2014_perrin.png)
+
+There are other pictures in `gallery` and plenty in the tutorial.
 
 ## References
 
+[Comparable upper and lower bounds for boundary values of Neumann eigenfunctions and tight inclusion of eigenvalues](http://arxiv.org/abs/1512.04165), Alex Barnett, Andrew Hassell, and Melissa Tacy, submitted, Duke Math. J (2015).
+
 [An exponentially convergent nonpolynomial finite element method for time-harmonic scattering from polygons](https://math.dartmouth.edu/~ahb/papers/p.pdf), Alex H. Barnett and Timo Betcke, SIAM J. Sci. Comp., 32 (3), 1417-1441 (2010).
 
+[Fast computation of high frequency Dirichlet eigenmodes via the spectral flow of the interior Neumann-to-Dirichlet map](http://arxiv.org/abs/1112.5665), Alex Barnett and Andrew Hassell, Comm. Pure Appl. Math., 67(3) 351-407 (2014).
 
+[Robust and efficient solution of the drum problem via Nyström approximation of the Fredholm determinant](http://arxiv.org/abs/1406.5252), L. Zhao and A. H. Barnett, SIAM J. Numer. Anal., 53 (4) 1984--2007 (2015).
+
+[A new integral representation for quasi-periodic scattering problems in two dimensions](https://math.dartmouth.edu/~ahb/papers/qpsc.pdf), Alex Barnett and Leslie Greengard, BIT Numer. Math. 51, 67-90 (2011)
 
 
 ## To do list
