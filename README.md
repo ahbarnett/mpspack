@@ -32,7 +32,7 @@ V. Rokhlin, L. N. Trefethen, A. Pataki, Z. Gimbutas, D. M. Schwarz, S. Hawkins, 
 
 1. MATLAB 2008a or newer (in particular, no toolboxes needed)
 
-2. Optional requirements for tweaks and fast algorithms (see `doc/manual.pdf`):
+2. Optional requirements for tweaks and fast algorithms (see [manual](doc/manual.pdf)):
   * C and Fortran compilers such as gcc and gfortran.
 
   * GNU Scientific Library [GSL](http://www.gnu.org/software/gsl)
@@ -62,10 +62,10 @@ tested only in a linux environment, from a shell in the directory
 `mpspack` type `make`. If you have trouble, edit the library locations
 in `make.inc`.
 
-See `doc/manual.pdf` for linking to fast algorithms (FMM).
+See the [manual](doc/manual.pdf) for linking to fast algorithms (FMM).
 
-*Note an old [snapshot](https://code.google.com/archive/p/mpspack/)
-of version 1.33 from 2014 remains archived on the sadly-defunct `googlecode`.*
+*Note an obsolete [snapshot](https://code.google.com/archive/p/mpspack/)
+of version 1.33 from 2014 sits on the sadly-defunct `googlecode`. Please use the github version.*
 
 ## Usage
 
@@ -83,7 +83,7 @@ SLP, and DLP bases. Older versions of MATLAB will give only 2 us per eval.
 * `run test/testinpolywrapper` which should compare the slow MATLAB
 against the fast Luong code.
 
-See `doc/tutorial.pdf` and `doc/manual.pdf` for detailed examples and usage.
+See [tutorial](doc/tutorial.pdf) and [manual](doc/manual.pdf) for detailed examples and usage.
 
 ## Examples
 
@@ -97,9 +97,9 @@ See `doc/tutorial.pdf` and `doc/manual.pdf` for detailed examples and usage.
 
 1. Finally, an entertaining example of acoustic (sound-hard) scattering from some digitized letter shapes, computed to 10 digit accuracy by Perrin Meyer. The wave is incident from about 4 o'clock:
 
-  ![contact Perrin Meyer for code](gallery/hny2014_perrin.png)
+  ![contact Perrin Meyer for code](gallery/hny2014_perrin_cut.png)
 
-There are other pictures in `gallery` and plenty in the tutorial.
+There are other pictures in the [gallery](gallery) and plenty in the [tutorial](doc/tutorial.pdf).
 
 ## References
 
