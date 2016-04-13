@@ -35,9 +35,13 @@ and several others.*
 * MATLAB 2008a or newer (in particular, no toolboxes needed)
 
 * Optional requirements for tweaks and fast algorithms (see `doc/manual.pdf`):
+
 ..* C and Fortran compilers such as gcc and gfortran.
+
 ..* GNU Scientific Library [GSL](http://www.gnu.org/software/gsl)
+
 ..* [FMMLIB2D](http://www.cims.nyu.edu/cmcl/fmm2dlib/fmm2dlib.html)
+
 ..* [LP2D](https://math.dartmouth.edu/~ahb/software/lp2d.tgz)
 
 * MPSpack is released under GPL v.3; please contact me for other license
