@@ -6,15 +6,17 @@
 %
 %   Preliminary version: only one domain is supported, with Dirichlet or
 %   Neumann BCs. However, multiple segments and multiply-connected seem to
-%   work ok.
+%   work ok, assuming the method is compatible with corners.
 %
 %   Solution methods available are:
 %    * root-search on the Fredholm determinant of Id -+ 2D (double-layer op).
 %    * min-singular-value root search on (Id -+ 2D).
 %    * crude version of MPS on a single domain with multiple segments.
-%    * weighted-NtD scaling method with various prediction orders
+%    * weighted-NtD scaling method (Dir BCs) with various prediction orders
+%    * filtered-DtN scaling method (Neu BCs) w/ various prediction orders
+%      (for Neumann MPS inclusion methods of 2015 see examples/neumann_evp)
 
-% Copyright (C) 2010 - 2011, Alex Barnett, Timo Betcke
+% Copyright (C) 2010 - 2016, Alex Barnett
 
 classdef evp < problem & handle
   properties
@@ -380,6 +382,7 @@ classdef evp < problem & handle
     end
     
     function [t co] = tension(p, k, o) % crude, one method for now
+      % OBSOLETE - for Neumann tensions see ./gsvdtension.m
       if nargin<3, o = []; end
       if ~isfield(o, 'eps'), o.eps = 1e-14; end
       wantvec = nargout>1;
@@ -752,5 +755,8 @@ classdef evp < problem & handle
     [xm fm info] = iterparabolafit(f, x, y, opts)   % minimization helper
     [A,B,C] = para_fit(e, f)        % parabolic helper
     [t V F G A B] = tensionsq(d, E, opts)  % domain eigenvalue solver helper
+    Fh = spectralfiltermatrix(s,k,opts)    % Neumann inclusion helper for ninc
+    [t V] = gsvdtension(d, k, opts)    % Neumann eigval finding helper for ninc
+    [G An] = intnormmatrix(s, k, A, Dx, Dy)   % helper for gsvdtension
   end
 end

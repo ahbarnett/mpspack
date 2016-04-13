@@ -1,0 +1,31 @@
+This directory contains codes for Neumann inclusion bounds used in the
+paper arxiv:1512.04165 (codename "ninc"), "Comparable upper and lower
+bounds for boundary values of Neumann eigenfunctions and tight
+inclusion of eigenvalues", by A H Barnett, A Hassell, and M Tacy.
+
+Barnett 4/13/16
+
+This uses MFS (exterior point sources) and plain recursive search in k
+(not a scaling-type method) for high-accuracy Neumann eigenvalues and
+their bounds, for a smooth domain. The tightness of the bounds is the
+main point, not the efficiency of locating candidate eigenvalues.
+
+Codes:
+
+tbl_mfsgsvdincl.m : make sweep data, min sing val search, inclusion
+                    bnd data for Table 1, and mode of Figure 3.
+                    This is the main driver script.
+fig_Gh.m : make Figure 1(c-d) showing filter function.
+fig_intromodes.m : compute modes and make Figure 1(a-b).
+fig_tsweeps.m : make Figure 2 using data from swp=1 in tbl_mfsgsvdincl.m
+genrefsetneu.m : use Fred det method to make reference sets of Neumann EVs.
+test_gsvd.m : checking MATLAB's GSVD definition, not same as Golub & van Loan.
+Cennenbach.m : estimate constant C in prior literature (Ennenbach '95)
+
+Also needed for this work, codes which I decided to bring in as @evp/ methods
+(since they are helpers for EVPs, even though they don't act on an evp object):
+
+../../@evp/spectralfiltermatrix.m
+../../@evp/gsvdtension.m
+../../@evp/intnormmatrix.m
+../../@utils/lowestn.m

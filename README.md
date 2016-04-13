@@ -26,33 +26,30 @@ close-evaluation quadratures (Helsing, QBX, etc).
 under grants DMS-0811005 and DMS-1216656; and Betcke for support of
 the Engineering and Physical Sciences Research Council Grant
 EP/H00409/1. We also are thankful for the inclusion of codes by
-V. Rokhlin, L. N. Trefethen,
-A. Pataki, Z. Gimbutas, D. M. Schwarz, S. Hawkins, B. Gustavsson,
-and several others.*
+V. Rokhlin, L. N. Trefethen, A. Pataki, Z. Gimbutas, D. M. Schwarz, S. Hawkins, B. Gustavsson, and several others.*
 
 ## Requirements
 
-* MATLAB 2008a or newer (in particular, no toolboxes needed)
+1. MATLAB 2008a or newer (in particular, no toolboxes needed)
 
-* Optional requirements for tweaks and fast algorithms (see `doc/manual.pdf`):
+2. Optional requirements for tweaks and fast algorithms (see `doc/manual.pdf`):
+  * C and Fortran compilers such as gcc and gfortran.
 
-..* C and Fortran compilers such as gcc and gfortran.
+  * GNU Scientific Library [GSL](http://www.gnu.org/software/gsl)
 
-..* GNU Scientific Library [GSL](http://www.gnu.org/software/gsl)
+  * [FMMLIB2D](http://www.cims.nyu.edu/cmcl/fmm2dlib/fmm2dlib.html) for Helmholtz fast multipole method
 
-..* [FMMLIB2D](http://www.cims.nyu.edu/cmcl/fmm2dlib/fmm2dlib.html)
+  * [LP2D](https://math.dartmouth.edu/~ahb/software/lp2d.tgz) for Alpert quadrature correction to FMM on smooth curves
 
-..* [LP2D](https://math.dartmouth.edu/~ahb/software/lp2d.tgz)
-
-* MPSpack is released under GPL v.3; please contact me for other license
+MPSpack is released under GPL v.3; please contact me for other license
 options.
 
 ## Installation
 
-Install `git`. Eg on an ubuntu/debian
-linux system use `sudo apt-get install git`. Then
-`git clone https://github.com/ahbarnett/mpspack`
-will create the directory `mpspack` containing the package.
+Install `git` (eg on an ubuntu/debian
+linux system use `sudo apt-get install git`). Then as usual do
+```git clone https://github.com/ahbarnett/mpspack```
+to download and create the directory `mpspack` containing the package.
 
 In MATLAB, type `addpath /path/to/mpspack`. See Usage below to test your
 installation.

@@ -38,6 +38,7 @@ classdef utils
     [f0 err N] =  extrap(f, hmax, opts)
     c = goodcaxis(u)
     h = arrow(x, y, varargin)
+    y = lowestn(x,n)
     
     % rootfinding and linear algebra helpers...
     [x e y u ier] = intervalrootsboyd(f, int, o)

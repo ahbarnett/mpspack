@@ -52,7 +52,8 @@ d = domain(s, 1);        % create an interior domain
 s.setbc(-1, 'D');        % Dirichlet BC's applied on inside of segment
 p = evp(d);              % sets up eigenvalue problem object
 \end{verbatim}
-There are three main solver methods coded into \mpspack:
+There are three main solver methods coded into \mpspack,
+all of which are based on layer potentials (boundary integral operators):
 \bi
 \item {\tt 'fd'}: the Fredholm determinant method, most efficient and convenient for low-lying
 eigenvalues (i.e.\ the lowest few hundred).
@@ -172,7 +173,40 @@ The reader may benefit from also seeing the
 codes {\tt test/testevp.m}, {\tt test/testevpms.m}
 and the other codes in {\tt examples/} .
 
-There are also methods such as {\tt evp.crudempssolvespectrum}
+
+
+
+
+\bfi % ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+\ig{width=\textwidth}{figs/neu_mode_high.eps}
+\ca{Neumann eigenmode of a nonsymmetric smooth
+planar domain
+{\tt s = segment.smoothnonsym(N, 0.3, 0.2, 3);}
+with eigenfrequency $k=405.003269518228\ldots$,
+around the 42612th eigenvalue of this domain.
+}{f:neuhigh}
+\efi
+
+\subsection{Method of Particular Solutions and inclusion bounds}
+
+The MPS \cite{mps}
+uses basis functions other than layer potentials, and therefore
+results in ill-conditioned and/or rectangular matrices.
+Ironically, despite the name of this package,
+code for the MPS approach to eigenproblems is in a less complete state.
+
+New high-frequency Neumann inclusion bounds (Barnett--Hassell--Tacy 2015)
+are implemented in the codes in \verb+examples/neumann_inclusion+;
+see the {\tt README}. This produces for example, Fig.~\ref{f:neuhigh},
+with 15 digits of eigenvalue accuracy.
+This is computed by the code \verb+examples/neumann_inclusion/tbl_mfsgsvdincl.m+.
+An MFS basis is used, with imaginary displacement for the source point choice.
+
+Work is needed to bring in the various Dirichlet methods into the
+{\tt evp.gsvdtension.m} code which is the optimal implementation for
+the Neumann case.
+
+There are also MPS methods such as {\tt evp.crudempssolvespectrum}
 that are incomplete, orphaned, or in development.
 
 We have not tested \mpspack\ for mixed D-N boundary conditions, although

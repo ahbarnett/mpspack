@@ -719,20 +719,35 @@ nodes used in the complex $y$-direction wavenumber plane, see \cite{qpsc}.
 This class is a subclass of {\tt problem}.
 It solves Laplace eigenvalue problems by searching along the frequency
 axis for frequencies where a nontrivial homogeneous solution is possible.
-There are three different approaches available to the user
+
+{\bf Boundary integral approaches.}
+There are several different approaches available to the user
 via the {\tt p.solvespectrum} method:
 \ben
-\item Using Boyd's rootfinding method on a Fredholm determinant.
-\item Using the minimum singular value of a double-layer boundary operator.
-\item The Neumann-to-Dirichlet method for Dirichlet BCs of Barnett--Hassell, 2012.
-\item The spectrally-weighed Dirichlet-to-Neumann method for Neumann BCs
-of Barnett--Hassell--Tacy, 2015.
-\cite{sca}
+\item Using Boyd's rootfinding method on a Fredholm determinant,
+via {\tt meth='fd'}, as in \cite{zhaodet}. This can handle Dirichlet or
+Neumann BCs. See {\tt examples/smoothdrummodesboyd.m} and {\tt examples/tridrummodes.m}
+\item Using the minimum singular value of a double-layer boundary operator,
+via {\tt meth='ms'}, called the ``reference method'' in \cite{sca}.
+This is slow but immune to degeneracy problems that Fredholm determinant has.
+\item The Neumann-to-Dirichlet method for Dirichlet BCs of Barnett--Hassell, 2012 \cite{sca}, via {\tt meth='ntd'} and {\tt opts.khat='o'}.
+This is the fastest, and can have high accuracy if the window {\tt opts.eps}
+is kept small.
+\item Various experimental NtD variants for Neumann BCs; see help for
+{\tt p.solvespectrum}.
 \een
-These methods are only coded using layer potentials at this point.
-For now, see the examples in the tutorial.
+These methods all use a layer potential on the boundary, ie a boundary integral
+operator. See the examples in the tutorial.
+
+{\bf Method of Particular Solutions.}
+The {\tt evp} class contains some helper methods for MPS style
+eigenvalue computations.
+In particular, \verb+examples/neumann_inclusion.m+ points to codes for
+the spectrally-weighed boundary norm method for Neumann inclusion of
+of Barnett--Hassell--Tacy, 2015.
+
 Ironically, due to shifts in research direction,
-the MPS approach to eigenvalues is not yet complete.
+a general MPS code for eigenvalues is not complete.
 
 
 
@@ -846,10 +861,11 @@ http://www.math.dartmouth.edu/~ahb/software/#lp2d
 \end{verbatim}
 Install LP2D according to its instructions,
 which includes adding its directory to the \matlab\ path.
-You should then be able to set {\tt o.FMM=1} in the final evaluation
+You should then be able to set finally {\tt o.FMM=1} in the solution
 section of \verb+test/testbvp_fmm.m+
-and see an iterative solution. $N=10^4$ will take 9 second
-to solve, and 0.5 sec to evaluate on the 0.01 grid, on a modern CPU.
+and see an iterative solution (FMM+GMRES). A problem size
+$N=10^4$ will take 9 second
+to solve, then 0.5 sec to evaluate on the 0.01 grid, on a modern CPU.
 
 
 
@@ -866,7 +882,8 @@ of how to reproduce the behavior, using this interface.
 However please note that \mpspack\ will not have much future
 work invested in it. Contact me if you want to contribute.
 
-Here is an old list of limitations and future ideas, from back in 2010:
+Here is an old list of limitations and future ideas, mostly unedited,
+from 2010:
 
 \bi
 \item Two dimensions. Quadrature, decomposition into subdomains, and
@@ -920,20 +937,16 @@ based on \cite{mfs}.
 or other side of a boundary.
 This should then be used by {\tt problem.fillbcmatrix}
 
-\item Incorporation of Fast Multipole Methods for evaluation with MFS and
-layer potentials, and iterative
-methods for second-kind layer potential formulations.
-High-order quadrature for self-evaluation of layer-potentials.
-
 \item Saving plotting-evaluation matrices
 for use with multiple right-hand sides.
 Using QR factors of {\tt problem.A} matrix
 for rapid solution with multiple right-hand sides.
 
 \item Computation of far-field distribution in a scattering problem
-from MFS or layer potential
+from a layer potential
 representation of a radiating solution. This needs a variant of a
-multipole-to-local matrix of $J$-Bessel functions.
+multipole-to-local matrix of $J$-Bessel functions. Stuart Hawkins
+contributed this for the MFS already.
 \ei
 
 
@@ -969,7 +982,8 @@ by Engineering and Physical Sciences Research Council Grant EP/F06795X/1.
 
 \mpspack\ is released under the GNU Public License, as follows:
 \begin{verbatim}
-Copyright (C) 2008 - 2016, Timo Betcke, Alex Barnett
+Copyright (C) 2008 - 2009, Alex Barnett, Timo Betcke
+Copyright (C) 2009 - 2016, Alex Barnett
 
 MPSpack is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

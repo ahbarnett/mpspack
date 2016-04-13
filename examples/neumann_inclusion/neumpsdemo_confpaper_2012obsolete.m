@@ -1,6 +1,7 @@
 % Demo Neumann MPS for eigenvalues. Incomplete.
 % Barnett 6/15/10, adapted Specgeom PSPM conference paper w/ Hassell Feb 2011,
 % adapted into MPSpack tree, 3/19/12
+% OBSOLETE: superceded by other codes in this directory from 2015.
 
 clear;
 a = 0.3; b = 0.2; w = 3; % shape params (default for BNDS: a=.3 b=.2 w=3)
