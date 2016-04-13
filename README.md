@@ -15,7 +15,7 @@ related PDE problems, on piecewise-homogeneous 2D domains.
 Version 1.0 was released in 2009, and co-authored with Timo
 Betcke. Since then I have been the main developer; it has settled
 into a repository for a variety of new numerical methods developed for
-corner domains, periodic problems, and high-frequency Dirichlet and
+corner domains, layer potentials, periodic problems, and high-frequency Dirichlet and
 Neumann eigenvalue problems, enabling this research to be *reproducible*.
 It is stable and will not have much
 future development. Instead I and colleagues expect to release a
@@ -84,6 +84,20 @@ SLP, and DLP bases. Older versions of MATLAB will give only 2 us per eval.
 against the fast Luong code.
 
 See `doc/tutorial.pdf` and `doc/manual.pdf` for detailed examples and usage.
+
+## Examples
+
+1. Frequency-domain scattering from a square, accurate to 10 digits, computed in a few seconds on a laptop. Spectral convergence is achieved using the following ingredients: decomposition into subdomains (nonpolynomial FEM), fractional-order Fourier-Bessel expansions around corners, and an exterior fundamental solutions representation. In MPSpack this only 20 lines of code.
+
+![square scattering](gallery/sqscatt2.png)
+
+2.
+
+## References
+
+[An exponentially convergent nonpolynomial finite element method for time-harmonic scattering from polygons](https://math.dartmouth.edu/~ahb/papers/p.pdf), Alex H. Barnett and Timo Betcke, SIAM J. Sci. Comp., 32 (3), 1417-1441 (2010).
+
+
 
 
 ## To do list
