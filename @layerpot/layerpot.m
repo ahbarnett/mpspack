@@ -20,7 +20,8 @@ classdef layerpot < handle & basis
 %
 % See also: DOMAIN/ADDLAYERPOT
 
-% Copyright (C) 2008-2012, Alex Barnett and Timo Betcke
+% auto check for FMM MEX 4/12/16
+% Copyright (C) 2008-2016, Alex Barnett
   properties
     real                            % true if fund sol is Y_0, false for H_0^1
     seg                             % handle of segment on which density sits
@@ -45,7 +46,7 @@ classdef layerpot < handle & basis
         opts.fast = 0;               % downgrade the speed if 103 not available
       end
       b.fast = opts.fast;
-      b.HFMMable = 1;   % is Helmholtz FMM MEX available? (set to 1 if true)
+      b.HFMMable = (exist('fmm2d_r2012a')==3);   % is Helmholtz FMM MEX avail?
       if ~isfield(opts, 'real'), opts.real = 0; end
       b.real = opts.real;
       if isfield(opts, 'quad'), b.quad = opts.quad; end  % quad=[] is default

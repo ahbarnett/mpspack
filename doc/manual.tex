@@ -827,30 +827,29 @@ tweaking your {\tt mexopts.sh} file in your \matlab\ distribution
 to include extra library flags such as {\tt -fopenmp}.
 Let {\tt fmmlib2d} now signify its
 location.
-Add {\tt fmmlib2d/matlab} to your \matlab\ path.
-In {\tt mpspack/@utils/} execute
-\co{ln -s fmmlib2d/matlab/hfmm2dpart.m hfmm2dparttarg.m \\
-ln -s fmmlib2d/matlab/hfmm2dpart.m}
-Finally, check the first method in {\tt mpspack/@layerpot/layerpot.m}
-has the line {\tt b.HFMMable = 1;}
+Add {\tt fmmlib2d/matlab} to your \matlab\ path (you may want to do this
+in {\tt startup.m}).
+From {\tt mpspack/@utils/} execute in a shell
+\co{ln -s fmmlib2d/matlab/hfmm2dpart.m hfmm2dparttarg.m}
 You may now try \verb+test/testbvp_fmm.m+
-which can test the FMM for potential evaluations,
-and should run in a fraction of a second.
+but first I suggest you set {\tt o.FMM=0} in the first solution section.
+Leave {\tt o.FMM=1} in the final potential evaluation, which
+should run in a fraction of a second.
 
 {\bf Iterative solutions:}
-To use FMM for iterative solution (this is an independent task from the
+To use FMM for applying the boundary integral operator in an
+iterative solution (this is an independent task from the
 evaluation tested above),
-you'll need the fast Alpert quadrature correction codes of Barnett, from
+you'll also need the fast Alpert quadrature correction codes of Barnett, from
 \begin{verbatim}
 http://www.math.dartmouth.edu/~ahb/software/#lp2d
 \end{verbatim}
-Install LP2D according to its instructions.
-You should then be able to set {\tt o.FMM=1} in the solution
+Install LP2D according to its instructions,
+which includes adding its directory to the \matlab\ path.
+You should then be able to set {\tt o.FMM=1} in the final evaluation
 section of \verb+test/testbvp_fmm.m+
-and see an iterative solution. $N=10^4$ will take less than 10 seconds
-to solve, and 0.3 sec to evaluate, on a modern CPU.
-
-
+and see an iterative solution. $N=10^4$ will take 9 second
+to solve, and 0.5 sec to evaluate on the 0.01 grid, on a modern CPU.
 
 
 

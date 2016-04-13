@@ -19,7 +19,8 @@ corner domains, periodic problems, and high-frequency Dirichlet and
 Neumann eigenvalue problems, enabling this research to be *reproducible*.
 It is stable and will not have much
 future development. Instead I and colleagues expect to release a
-replacement package for integral equations.
+replacement package for integral equations which will include
+close-evaluation quadratures (Helsing, QBX, etc).
 
 *I am grateful for the support of the National Science Foundation
 under grants DMS-0811005 and DMS-1216656; and Betcke for support of
@@ -62,7 +63,7 @@ in `make.inc`.
 
 See `doc/manual.pdf` for linking to fast algorithms (FMM).
 
-*Note a [snapshot](https://code.google.com/archive/p/mpspack/)
+*Note an old [snapshot](https://code.google.com/archive/p/mpspack/)
 of version 1.33 from 2014 remains archived on the sadly-defunct `googlecode`.*
 
 ## Usage

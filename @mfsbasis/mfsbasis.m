@@ -25,6 +25,7 @@ classdef mfsbasis < handle & basis
 %  opts.real  - (false) If true, use real part of Hankel functions only
 %  opts.tau   - (0) Creates charge curve Z(t+i.tau) rather than Z(t)
 
+% 4/12/16 auto check for MEX FMM.
 % Copyright (C) 2008 - 2011, Alex Barnett, Timo Betcke
 
 properties
@@ -64,7 +65,7 @@ properties
           b.realflag=opts.real;
           b.eta=opts.eta;
           b.nmultiplier=opts.nmultiplier;
-          b.HFMMable = 1;  % is Helmholtz FMM MEX available?
+          b.HFMMable = (exist('fmm2d_r2012a')==3); % is Helmholtz FMM MEX avail?
 
           % Evaluate the input arguments
           if isa(varargin{1},'segment')      % must come before pointset since
