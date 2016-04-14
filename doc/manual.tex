@@ -783,8 +783,8 @@ The user may change this property for each relevant basis object.
 Speed tests are in {\tt test/testbasis.m} cases 6 to 11.
 
 \item Point-in-polygon checking can be sped up via Bruno Luong's
-excellent M-file with shipped MEX executables,
-which is about 100 times faster than native
+excellent M-file with shipped MEX executables and 
+which is about 100 times (!) faster than native
 \matlab, even using a modern post-R2015 version,
 bringing the speed from of order $10^7$ point-vertices/sec
 to $10^9$. This can have effect if the domain has a smooth boundary
@@ -793,6 +793,20 @@ The gateway
 {\tt @utils/inpolywrapper.m} checks if Luong's MEX files are available
 and uses them if so, otherwise reverting to \matlab.
 Ie there is nothing for the user to do to enable this tweak.
+
+Luong requests the following license be included for his insidepoly executables:
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
 \een
 
 In the {\tt test/} directory you will find some routines that
@@ -1012,7 +1026,7 @@ by Z.~Gimbutas.
 by L.~N.~Trefethen \cite{tref}.
 \item {\tt QuadLogExtraPtNodes.m} for Alpert endpoint correction
 quadrature nodes and weights, by Andras Pataki.
-\item {\tt insidepoly.c} algorithm to check if a point is in a polygon,
+\item {\tt insidepoly} MEX algorithm to check if a point is in a polygon,
 Bruno Luong, 2010. (Thanks to Peter Simon.)
 \item {\tt polypn.c} algorithm to check if a point is in a polygon,
 Copyright (C) 1970-2003, Wm.~Randolph Franklin.

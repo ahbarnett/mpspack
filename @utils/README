@@ -1,0 +1,8 @@
+Notes on MPSpack utilities class.
+
+* insidepoly by Bruno Luong:
+With the suggestion by Peter Simon, since 2012 we include this, taken from
+http://www.mathworks.com/matlabcentral/fileexchange/27840-2d-polygon-interior-detection
+And we ship MEX executables for a64, w64, and w32, from Peter Simon.
+Please use the above fileexchange to create executables for other OSes.
+Also please see insidepoly_license.txt
