@@ -10,7 +10,7 @@ include ../make.inc
 
 default: all
 
-all: gslbesselj gslbesseljnu greengardrokhlinhank103 greengardrokhlinhank106 inpolyc
+all: gslbesselj gslbesseljnu greengardrokhlinhank103 greengardrokhlinhank106 inpolyc fmm2d
 
 .PHONY: all clean
 
@@ -34,6 +34,10 @@ hank106.o: hank106.f
 
 inpolyc: inpolyc.c
 	mex inpolyc.c
+
+# set up the link only
+fmm2d:
+	ln -sf $(FMM2D)/matlab/hfmm2dpart.m hfmm2dparttarg.m
 
 # remember not to delete the shipped Luong MEX executables (!):
 clean:

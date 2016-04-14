@@ -1,5 +1,6 @@
-# Make.inc: common compiler and library locations for MPSpack makefiles
-# Barnett, probably 2008.
+# make.inc: common compiler and library locations for MPSpack makefiles for
+# optional tweaks and fast algorithm usage.
+# Barnett. Cleaned up 4/13/16
 
 CC = gcc
 FC = gfortran
@@ -17,8 +18,11 @@ BLAS = -lblas                  # Generic blas package (if installed)
 # Singlethreaded version
 # BLAS = -L/usr/lib64/atlas -lf77blas -lcblas -latlas
 
-# Fast algorithm libs:
-FMM2D = /usr/local/fmmlib2d/     # point to your FMM installation
+# Fast algorithm libs: (be sure to install both as openmp or neither)
+# point to your FMM installation
+FMM2D = /usr/local/fmmlib2d
 # (get from http://www.cims.nyu.edu/cmcl/fmm2dlib/fmm2dlib.html )
-LP2D = /home/alex/physics/leslie/gimbutas/lp2d   # your LP2D installation
+
+# your LP2D installation (not actually used by Makefile currently)
+LP2D = /usr/local/lp2d
 # (get from https://math.dartmouth.edu/~ahb/software/lp2d.tgz )

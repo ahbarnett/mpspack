@@ -839,13 +839,14 @@ if $N$ is large and a fine evaluation grid is required.
 To set this up, install {\tt fmmlib2d}, including compiling its
 libraries and \matlab\ MEX interfaces. This may require:
 tweaking your {\tt mexopts.sh} file in your \matlab\ distribution
-to include extra library flags such as {\tt -fopenmp}.
+to include extra linking flags such as {\tt --openmp}.
 Let {\tt fmmlib2d} now signify its
-location.
-Add {\tt fmmlib2d/matlab} to your \matlab\ path (you may want to do this
+location, which you should edit into {\tt make.inc};
+running {\tt make} will now set up a soft link from
+{\tt @utils/hfmm2dparttarg.m} pointing to {\tt fmmlib2d/matlab/hfmm2dpart.m}
+the gateway to the particle FMM MEX executable.
+Add {\tt fmmlib2d/matlab} to your \matlab\ path (you may want to add this
 in {\tt startup.m}).
-From {\tt mpspack/@utils/} execute in a shell
-\co{ln -s fmmlib2d/matlab/hfmm2dpart.m hfmm2dparttarg.m}
 You may now try \verb+test/testbvp_fmm.m+
 but first I suggest you set {\tt o.FMM=0} in the first solution section.
 Leave {\tt o.FMM=1} in the final potential evaluation, which

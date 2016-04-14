@@ -106,12 +106,14 @@ classdef evp < problem & handle
       datavail=0; dat = []; if isfield(o, 'dat'), dat = o.dat; datavail=1; end
       outdat = nargout>4;       % want saving of spectral data?
       if numel(p.doms)~=1, warning('problem has more than one domain...'); end
+      p.fillquadwei;                         % in case sqrtwei empty
       d = p.doms;                            % the domain(s)
       d1 = d(1);            % the first, and for some methds only, domain
       sx = d1.x; snx = d1.nx; sp = d1.speed; % quad info for the one domain
       ip = @(f,g) sum(p.sqrtwei(:).^2.*conj(f(:)).*g(:));  % unwei inner prod
       xn = real(conj(sx).*snx);                  % x.n
       if strcmp(meth,'int') || strcmp(meth,'ntd')
+        size(p.sqrtwei), size(xn)
         ww = p.sqrtwei.'.^2./xn; % 1/x.n bdry func w/ weights
         ixnip = @(f,g) sum(ww(:).*conj(f(:)).*g(:)); % 1/(x.n)-wei inner prod
         ixnrm = @(g) sqrt(real(ixnip(g,g)));   % 1/(x.n)-weighted bdry norm

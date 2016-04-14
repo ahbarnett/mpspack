@@ -1,6 +1,6 @@
 # MPSpack : 2D Helmholtz scattering and eigenvalue problems via particular solutions and integral equations
 
-### Alex Barnett 4/12/16.  Version 1.4
+### Alex Barnett 4/13/16.  Version 1.4
 
 MPSpack is a user-friendly and fully object-oriented MATLAB toolbox
 that implements the method of particular solutions (aka Trefftz or
@@ -62,7 +62,7 @@ tested only in a linux environment, from a shell in the directory
 `mpspack` type `make`. If you have trouble, edit the library locations
 in `make.inc`.
 
-See the [manual](doc/manual.pdf) for linking to fast algorithms (FMM).
+See Sec. 4.1 of the [manual](doc/manual.pdf) for linking to fast algorithms (FMM).
 
 *Note an obsolete [snapshot](https://code.google.com/archive/p/mpspack/)
 of version 1.33 from 2014 sits on the sadly-defunct `googlecode`. Please use the github version.*

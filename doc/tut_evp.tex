@@ -148,7 +148,11 @@ p.showmodes;
 This takes 4 sec to solve and 4 sec to plot, producing
 Fig.~\ref{f:rfnmodeshigh}.
 For higher-frequencies, fast multipole evaluation of the modes is
-much more efficient. This is not yet documented.
+much more efficient, via {\tt p.showmodes(struct('FMM',1));}
+
+The eigenvalue errors can be assessed via the $L_2$ boundary error of the
+modes, and the mode errors similarly; see \cite{sca}.
+This is poorly implemented right now.
 
 In order to handle corner domain eigenvalue problems, one needs to
 use special quadratures,
@@ -204,7 +208,7 @@ This is computed by the code \verb+examples/neumann_inclusion/tbl_mfsgsvdincl.m+
 An MFS basis is used, with imaginary displacement for the source point choice.
 
 Work is needed to bring in the various Dirichlet methods into the
-{\tt evp.gsvdtension} code which is the cleanest and most accuracte
+{\tt evp.gsvdtension} code which is the cleanest and most accurate
 implementation for the Neumann case.
 
 There are also MPS methods such as {\tt evp.crudempssolvespectrum}
