@@ -1,4 +1,4 @@
-# MPSpack : 2D Helmholtz scattering and eigenvalue problems via particular solutions and integral equations
+# ![logo](gallery/mpspack-logo.gif) MPSpack : 2D Helmholtz scattering and eigenvalue problems via particular solutions and integral equations
 
 ### Alex Barnett 4/13/16.  Version 1.4
 
