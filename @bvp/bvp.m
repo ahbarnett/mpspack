@@ -5,7 +5,8 @@
 %   boundary conditions they carry, and the basis sets associated with the
 %   domains.
 
-% Copyright (C) Alex Barnett & Timo Betcke 2008-2011.
+% Copyright (C) Alex Barnett & Timo Betcke 2008-2019.
+% AHB included use of f(x,y) as bdry data, 1/9/19.
 
 classdef bvp < problem & handle
   properties
@@ -33,14 +34,18 @@ classdef bvp < problem & handle
         if s.bcside==0          % matching condition
           if isnumeric(s.f)
             rhs = [rhs; s.f; s.g];           % data vec, stack as one big col
-          else
+          elseif nargin(s.f)==1
             rhs = [rhs; s.f(s.t); s.g(s.t)]; % func of t, stack as one big col
+          elseif nargin(s.f)==2
+            rhs = [rhs; s.f(real(s.x),imag(s.x)); s.g(real(s.x),imag(s.x))];
           end
         elseif s.bcside==1 | s.bcside==-1    % BC (segment dofs natural order)
           if isnumeric(s.f)
             rhs = [rhs; s.f];       % data vector, stack as one big column
-          else
+          elseif nargin(s.f)==1
             rhs = [rhs; s.f(s.t)];  % function of t, stack as one big column
+          elseif nargin(s.f)==2
+            rhs = [rhs; s.f(real(s.x),imag(s.x))];  % f(x,y) of loc
           end
         end
       end
