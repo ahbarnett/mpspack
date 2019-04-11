@@ -32,6 +32,7 @@ classdef layerpot < handle & basis
     Jfilter                         % (optional) Jfilter structure
     self                            % self-int matrix struct, w/ S, D, DT, T
     qp                              % quasi-periodic neighbor copies info
+    iprec                           % if FMM used, precision (see FMM2D doc)
   end
 
   methods
@@ -47,6 +48,7 @@ classdef layerpot < handle & basis
       end
       b.fast = opts.fast;
       b.HFMMable = (exist('fmm2d')==3);          % is Helmholtz FMM MEX avail?
+      b.iprec = 4;                   % default 12-digits for FMM eval
       if ~isfield(opts, 'real'), opts.real = 0; end
       b.real = opts.real;
       if isfield(opts, 'quad'), b.quad = opts.quad; end  % quad=[] is default
@@ -332,11 +334,10 @@ classdef layerpot < handle & basis
       node = [real(s.x) imag(s.x)].'; nvec = [real(s.nx) imag(s.nx)].';
       target = [real(x) imag(x)].';    % since x is col vecs, but want 2-by-N
       iffldtarg = (nargout>1);
-      iprec=4;                    % 12 digit precision - should be an opts
 
       if ~self                % non-self target (use segment's own quadrature)
         charge = s.w .* co.';       % charge strengths = quadr weights * density
-        U = utils.hfmm2dparttarg(iprec,k,N,node,ifslp,b.a(1)*charge,...
+        U = utils.hfmm2dparttarg(b.iprec,k,N,node,ifslp,b.a(1)*charge,...
                   ifdlp,b.a(2)*charge,nvec,0,0,0,M,target,1,iffldtarg,0);
         % note the dipole strengths vector above has sign change!
         u = U.pottarg.';  % as for mfsbasis, convert to column vec
@@ -351,7 +352,7 @@ classdef layerpot < handle & basis
         if b.quad~='a', error('only know how to apply Alpert quad!'); end
         if numel(find(b.ord==[0 4 8 16]))~=1, error('unknown Alpert order');end
         U = lpevalselfcc(node,nvec,s.speed'/(2*pi), ifslp,b.a(1)*co.', ifdlp,...
-                   b.a(2)*co.', k, [], b.ord, iprec, b.qp, 1, iffldtarg);
+                   b.a(2)*co.', k, [], b.ord, b.iprec, b.qp, 1, iffldtarg);
         u = U.pot;   % convert to col vec
         if b.a(2)~=0    % Jump Relation
           u = u + co*(approachside*b.a(2)/2); % DLP val jump

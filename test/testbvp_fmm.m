@@ -1,5 +1,5 @@
 % test MPSpack iterative Helmholtz BVP demo with FMMLIB2D/LP2D
-% Barnett 3/21/11, tweaked 10/17/12
+% Barnett 3/21/11, tweaked 10/17/12. FMM iprec 4/11/19.
 % See set-up notes in Manual Sec. 4.1, for FMM and for LP2D codes.
 
 clear
@@ -15,6 +15,8 @@ p = bvp(d); p.setoverallwavenumber(k);
 % here you can switch from direct to FMM+LP2D for applying BIO (1/2+D) for iter:
 %o.FMM = 0; o.meth='direct'; % 0 for dense solve (1 requires LP2D Alpert codes)
 o.FMM = 1; o.meth = 'iter'; % FMM w/ GMRES for iterative soln, for large N
+d.bas{1}.iprec = 4;       % shows how to control FMM tol, via basis property
+o.eps = 1e-12;            % ho set GMRES tol
 fprintf('testing N=%d; please wait about %g min...\n', N, N/60000); 
 tic; p.solvecoeffs(o); fprintf('solve done in %.3g sec\n', toc)
 

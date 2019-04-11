@@ -40,6 +40,7 @@ properties
                           % MFS basis. For eta\neq inf
                           % use linear combination of double and single
                           % layer potential MFS basis
+    iprec                 % if FMM used, precision (see FMM2D doc)
   end
   
   methods
@@ -61,6 +62,7 @@ properties
           if opts.fast==1 & exist('@utils/greengardrokhlinhank103')~=3
             opts.fast = 0;    % downgrade the speed 1->0 if 103 not available
           end
+          b.iprec = 4;              % default 1e-12 FMM tol
           b.fast=opts.fast;
           b.realflag=opts.real;
           b.eta=opts.eta;
@@ -226,9 +228,8 @@ properties
       source = [real(b.y); imag(b.y)]; dipvec = [real(b.ny); imag(b.ny)];
       target = [real(x) imag(x)].';    % since x is col vecs, but want 2-by-N
       iffldtarg = (nargout>1);
-      iprec=4;                    % digits precision - should be an opts
       if ~b.realflag || coisreal  % usual complex fundamental solutions
-        U = utils.hfmm2dparttarg(iprec,k,N,source,ifcharge,charge,ifdipole,...
+        U = utils.hfmm2dparttarg(b.iprec,k,N,source,ifcharge,charge,ifdipole,...
                                  co.',dipvec,0,0,0,M,target,1,iffldtarg,0);
         % note the dipole strengths vector has sign change!
         u = U.pottarg.';
