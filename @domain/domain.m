@@ -89,10 +89,15 @@ classdef domain < handle
       function norout = normalscheck(d) % ....... check normal senses of domain
       % NORMALSCHECK - check that senses of normals point away from a domain
         eps = 1e-8;           % small dist from bdry to move in normal direc
-        t = 1/2;              % where to test along seg; so Napprox must be even
         p = zeros(size(d.seg));
         for j = 1:numel(d.seg)
-           p(j) = d.seg(j).Z(t) + eps * d.pm(j) * d.seg(j).Zn(t);
+          if isfield(d.seg(j),'Z')
+            t = 1/2;    % where to test along seg; so Napprox must be even
+            p(j) = d.seg(j).Z(t) + eps * d.pm(j) * d.seg(j).Zn(t);
+          else
+            n = round(numel(d.seg(j).x)/2);
+            p(j) = d.seg(j).x(n) + eps * d.pm(j) * d.seg(j).nx(n);
+          end
         end
         norout = ~d.inside(p);                 % true if points away from domain
       end

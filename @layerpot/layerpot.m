@@ -46,7 +46,7 @@ classdef layerpot < handle & basis
         opts.fast = 0;               % downgrade the speed if 103 not available
       end
       b.fast = opts.fast;
-      b.HFMMable = (exist('fmm2d_r2012a')==3);   % is Helmholtz FMM MEX avail?
+      b.HFMMable = (exist('fmm2d')==3);          % is Helmholtz FMM MEX avail?
       if ~isfield(opts, 'real'), opts.real = 0; end
       b.real = opts.real;
       if isfield(opts, 'quad'), b.quad = opts.quad; end  % quad=[] is default
@@ -332,7 +332,7 @@ classdef layerpot < handle & basis
       node = [real(s.x) imag(s.x)].'; nvec = [real(s.nx) imag(s.nx)].';
       target = [real(x) imag(x)].';    % since x is col vecs, but want 2-by-N
       iffldtarg = (nargout>1);
-      iprec=4;                    % 12 digit precision - should be an opts
+      iprec=1;                    % 12 digit precision - should be an opts
 
       if ~self                % non-self target (use segment's own quadrature)
         charge = s.w .* co.';       % charge strengths = quadr weights * density
