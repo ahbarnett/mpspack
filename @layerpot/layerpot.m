@@ -332,7 +332,7 @@ classdef layerpot < handle & basis
       node = [real(s.x) imag(s.x)].'; nvec = [real(s.nx) imag(s.nx)].';
       target = [real(x) imag(x)].';    % since x is col vecs, but want 2-by-N
       iffldtarg = (nargout>1);
-      iprec=1;                    % 12 digit precision - should be an opts
+      iprec=4;                    % 12 digit precision - should be an opts
 
       if ~self                % non-self target (use segment's own quadrature)
         charge = s.w .* co.';       % charge strengths = quadr weights * density
