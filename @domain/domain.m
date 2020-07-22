@@ -88,7 +88,9 @@ classdef domain < handle
       
       function norout = normalscheck(d) % ....... check normal senses of domain
       % NORMALSCHECK - check that senses of normals point away from a domain
-        eps = 1e-8;           % small dist from bdry to move in normal direc
+      
+      % *** fails when polygon approxv used for inside check, not acc enough.
+        eps = 1e-2;           % small dist from bdry to move in normal direc
         p = zeros(size(d.seg));
         for j = 1:numel(d.seg)
           if isfield(d.seg(j),'Z')
