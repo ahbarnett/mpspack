@@ -55,9 +55,11 @@ pr.fillbcmatrix;
 pr.linsolve;
 
 ptest = pointset(2.5+0.1i);
-pr.pointsolution(ptest)        % check u_scatt at one exterior pt
+utot = pr.pointsolution(ptest) + pr.pointincidentwave(ptest);
+fprintf('total potential at test point:\t%.10g + %.10g i\n',real(utot),imag(utot))
 
 if verb, figure; opts.dx = 0.02; opts.bb = [-1 3 -2 2];
+% opts.FMM=1;  % if you have compiled MEX interface to FMMLIB2D
 tic; pr.showthreefields(opts); fprintf('\tgrid eval in %.2g sec\n', toc);
 hold on; plot(ptest.x,'.','markersize',20);    % test pt
 end
