@@ -1,6 +1,6 @@
 # ![logo](gallery/mpspack-logo.gif) MPSpack : 2D Helmholtz scattering and eigenvalue problems via particular solutions and integral equations
 
-### Alex Barnett 4/13/16.  Version 1.4
+### Alex Barnett 5/31/23.  Version 1.41  [legacy code; barely supported]
 
 MPSpack is a user-friendly and fully object-oriented MATLAB toolbox
 that implements the method of particular solutions (aka Trefftz or
@@ -103,13 +103,13 @@ There are other pictures in the [gallery](gallery) and plenty in the [tutorial](
 
 ## References
 
-[Comparable upper and lower bounds for boundary values of Neumann eigenfunctions and tight inclusion of eigenvalues](http://arxiv.org/abs/1512.04165), Alex Barnett, Andrew Hassell, and Melissa Tacy, submitted, Duke Math. J (2015).
+[Comparable upper and lower bounds for boundary values of Neumann eigenfunctions and tight inclusion of eigenvalues](http://arxiv.org/abs/1512.04165), Alex Barnett, Andrew Hassell, and Melissa Tacy, Duke Math. J. 167(16), 3059-3114 (2018).
 
-[An exponentially convergent nonpolynomial finite element method for time-harmonic scattering from polygons](https://math.dartmouth.edu/~ahb/papers/p.pdf), Alex H. Barnett and Timo Betcke, SIAM J. Sci. Comp., 32 (3), 1417-1441 (2010).
+[An exponentially convergent nonpolynomial finite element method for time-harmonic scattering from polygons](https://math.dartmouth.edu/~ahb/papers/p.pdf), Alex H. Barnett and Timo Betcke, SIAM J. Sci. Comp., 32(3), 1417-1441 (2010).
 
 [Fast computation of high frequency Dirichlet eigenmodes via the spectral flow of the interior Neumann-to-Dirichlet map](http://arxiv.org/abs/1112.5665), Alex Barnett and Andrew Hassell, Comm. Pure Appl. Math., 67(3) 351-407 (2014).
 
-[Robust and efficient solution of the drum problem via Nyström approximation of the Fredholm determinant](http://arxiv.org/abs/1406.5252), L. Zhao and A. H. Barnett, SIAM J. Numer. Anal., 53 (4) 1984--2007 (2015).
+[Robust and efficient solution of the drum problem via Nyström approximation of the Fredholm determinant](http://arxiv.org/abs/1406.5252), L. Zhao and A. H. Barnett, SIAM J. Numer. Anal., 53(4) 1984-2007 (2015).
 
 [A new integral representation for quasi-periodic scattering problems in two dimensions](https://math.dartmouth.edu/~ahb/papers/qpsc.pdf), Alex Barnett and Leslie Greengard, BIT Numer. Math. 51, 67-90 (2011)
 
