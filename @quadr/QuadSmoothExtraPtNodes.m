@@ -2,7 +2,7 @@ function [ExtraNodes, ExtraWeights, NodesToSkip] = QuadSmoothExtraPtNodes(order)
 
     if (order <= 3)
 	M = [
-	    1.666666666666667E-01 5.0000000000 00000E-01
+	    1.666666666666667E-01 5.000000000000000E-01
 	];
 	NodesToSkip = 1;
 

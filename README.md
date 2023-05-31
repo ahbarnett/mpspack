@@ -32,7 +32,7 @@ V. Rokhlin, L. N. Trefethen, A. Pataki, Z. Gimbutas, D. M. Schwarz, S. Hawkins, 
 
 1. MATLAB 2008a or newer (in particular, no toolboxes needed)
 
-2. Optional requirements for tweaks and fast algorithms (see [manual](doc/manual.pdf)):
+1. Optional requirements for tweaks and fast algorithms (see [manual](doc/manual.pdf)):
   * C and Fortran compilers such as gcc and gfortran.
 
   * GNU Scientific Library [GSL](http://www.gnu.org/software/gsl)
@@ -89,15 +89,15 @@ See [tutorial](doc/tutorial.pdf) and [manual](doc/manual.pdf) for detailed examp
 
 1. Frequency-domain scattering from a square, accurate to 10 digits, computed in a few seconds on a laptop. Spectral convergence is achieved using the following ingredients: decomposition into subdomains (nonpolynomial FEM), fractional-order Fourier-Bessel expansions around corners, and an exterior fundamental solutions representation. In MPSpack this only 20 lines of code for Dirichlet or Neumann cases (see `examples/tut_square.m`):
 
-  ![see examples/tut_square.m](gallery/sqscatt2_cut.png)
+   ![see examples/tut_square.m](gallery/sqscatt2_cut.png)
 
 1. The first 45 Dirichlet eigenmodes of a smooth planar domain, computed to 12 digit accuracy and evaluated on a grid of 3600 points, in around 1 second per mode. Convergence is again spectral, using a layer potential, Kress quadratures, and analytic root-finding on a Fredholm determinant. 9 lines of  MPSpack code (see `examples/tut_evp.m`):
 
-  ![see examples/tut_evp.m](gallery/rf_45modes.png)
+   ![see examples/tut_evp.m](gallery/rf_45modes.png)
 
 1. Finally, an entertaining example of acoustic (sound-hard) scattering from some smoothly digitized letter shapes, computed to 10 digit accuracy by Perrin Meyer (contact him for code). The wave is incident from about 4 o'clock:
 
-  ![contact Perrin Meyer for code](gallery/hny2014_perrin_cut.png)
+   ![contact Perrin Meyer for code](gallery/hny2014_perrin_cut.png)
 
 There are other pictures in the [gallery](gallery) and plenty in the [tutorial](doc/tutorial.pdf).
 

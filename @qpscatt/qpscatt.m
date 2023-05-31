@@ -374,7 +374,7 @@ classdef qpscatt < scattering & handle
     function [u d n] = braggpowerfracs(pr, o)
     % BRAGGPOWERFRACS - compute propagating Bragg scattered power fractions
     %
-    % [u d n] = BRAGGPOWERFRACSx(pr) returns upwards and downwards scattered
+    % [u d n] = BRAGGPOWERFRACS(pr) returns upwards and downwards scattered
     %   intensities u, d (for unit incident beam intensity) for periodic
     %   scattering problem pr, given coefficients pr.co. n is respective Bragg
     %   orders list. (u,d,n are column vectors)
